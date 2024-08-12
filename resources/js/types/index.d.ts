@@ -1,4 +1,4 @@
-export interface User {
+export interface TUser {
     id: number;
     name: string;
     email: string;
@@ -7,6 +7,6 @@ export interface User {
 
 export type PageProps<T extends Record<string, unknown> = Record<string, unknown>> = T & {
     auth: {
-        user: User;
+        user: TUser;
     };
 };
