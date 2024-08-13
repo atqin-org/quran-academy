@@ -6,11 +6,19 @@ import {
     SheetContent,
     SheetDescription,
     SheetHeader,
-    SheetTitle,
     SheetTrigger,
 } from "@/Components/ui/sheet";
 import { Button } from "@/Components/ui/button";
 import { Menu } from "lucide-react";
+import { Slash } from "lucide-react";
+import {
+    Breadcrumb,
+    BreadcrumbItem,
+    BreadcrumbLink,
+    BreadcrumbList,
+    BreadcrumbSeparator,
+} from "@/Components/ui/breadcrumb";
+import { Toaster } from "@/Components/ui/sonner";
 
 export default function DashboardLayout({
     user,
@@ -22,9 +30,13 @@ export default function DashboardLayout({
     };
     return (
         <div className="h-screen overflow-y-hidden bg-[url('/background.jpg')] bg-cover bg-center flex w-full">
+            <Toaster
+                position="bottom-right"
+            />
+
             <Sidebar isCollapsed={isCollapsed} toggleSidebar={toggleSidebar} />
 
-            <div className="flex-1 w-full my-5 mx-5 sm:ms-0 p-2 bg-background bg-zinc-50 border-2 border-gray-100 rounded-xl">
+            <div className="overflow-y-scroll  flex-1 w-full my-5 mx-5 sm:ms-0 p-4 sm:px-6 lg:px-8 bg-background bg-zinc-50 border-2 border-gray-100 rounded-xl">
                 <Sheet>
                     <SheetTrigger className="sm:hidden">
                         <Button variant="outline">
@@ -43,8 +55,22 @@ export default function DashboardLayout({
                         </SheetHeader>
                     </SheetContent>
                 </Sheet>
-
-                <main className="p-2">{children}</main>
+                <Breadcrumb className="my-2">
+                    <BreadcrumbList>
+                        <BreadcrumbItem>
+                            <BreadcrumbLink href="/">الطلاب</BreadcrumbLink>
+                        </BreadcrumbItem>
+                        <BreadcrumbSeparator>
+                            <Slash />
+                        </BreadcrumbSeparator>
+                        <BreadcrumbItem>
+                            <BreadcrumbLink href="/components">
+                                تسجيل الطالب
+                            </BreadcrumbLink>
+                        </BreadcrumbItem>
+                    </BreadcrumbList>
+                </Breadcrumb>
+                <main className="mt-4 ">{children}</main>
             </div>
         </div>
     );
