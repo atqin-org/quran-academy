@@ -10,8 +10,21 @@ export default {
     "./resources/views/**/*.blade.php",
     "./resources/js/**/*.tsx",
   ],
-
+  variants: {
+    extend: {
+      width: ['responsive', 'hover', 'focus'],
+    },
+  },
   theme: {
+    extend: {
+        transitionDuration: {
+            '400': '400ms',
+            '600': '600ms',
+          },
+          transitionTimingFunction: {
+            'in-out-quint': 'cubic-bezier(0.83, 0, 0.17, 1)',
+          },
+      },
     container: {
       center: true,
       padding: "2rem",
@@ -76,9 +89,6 @@ export default {
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
-      },
-      backgroundImage: {
-        'custom-image': "url('background.jpg')",
       },
     },
   },
