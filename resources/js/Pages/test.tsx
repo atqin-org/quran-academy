@@ -108,6 +108,7 @@ export default function Dashboard({ auth }: PageProps) {
             </div>
         );
     }
+    
     return (
         <DashboardLayout user={auth.user}>
             <Head title="Dashboard" />
