@@ -21,10 +21,10 @@ export default function DashboardLayout({
         setIsCollapsed(!isCollapsed);
     };
     return (
-        <div className="h-screen overflow-y-hidden bg-[url('background.jpg')] bg-cover flex w-full">
+        <div className="h-screen overflow-y-hidden bg-[url('/background.jpg')] bg-cover bg-center flex w-full">
             <Sidebar isCollapsed={isCollapsed} toggleSidebar={toggleSidebar} />
 
-            <div className="flex-1 w-full my-5 mx-5 sm:ms-0 bg-background bg-zinc-50 border-2 border-gray-100 rounded-xl">
+            <div className="flex-1 w-full my-5 mx-5 sm:ms-0 p-2 bg-background bg-zinc-50 border-2 border-gray-100 rounded-xl">
                 <Sheet>
                     <SheetTrigger className="sm:hidden">
                         <Button variant="outline">
@@ -44,7 +44,7 @@ export default function DashboardLayout({
                     </SheetContent>
                 </Sheet>
 
-                <main className="p-5">{children}</main>
+                <main className="p-2">{children}</main>
             </div>
         </div>
     );
