@@ -1,4 +1,3 @@
-import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { Head, Link } from "@inertiajs/react";
 import { PageProps } from "@/types";
 import DashboardLayout from "@/Layouts/DashboardLayout";
@@ -15,7 +14,6 @@ import {
 import {
     Form,
     FormControl,
-    FormDescription,
     FormField,
     FormItem,
     FormLabel,
@@ -33,7 +31,6 @@ import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Calendar } from "@/Components/ui/calendar";
 import { format } from "date-fns";
-
 const clubs = [
     { id: 1, name: "النادي الاول" },
     { id: 2, name: "النادي الثاني" },
@@ -61,7 +58,7 @@ const FormSchema = z.object({
     birthDate: z.date({
         required_error: "تاريخ الميلاد مطلوب",
     }),
-    familyStatus: z
+    socialStatus: z
         .enum(["good", "mid", "low"])
         .refine((val) => ["good", "mid", "low"].includes(val), {
             message: "الحالة العائلية يجب ان تكون جيدة او متوسطة او ضعيفة",
@@ -70,11 +67,7 @@ const FormSchema = z.object({
         required_error: "هل يعاني من مرض مزمن مطلوب",
     }),
     cronicDisease: z.string().optional(),
-    socialStatus: z
-        .enum(["student", "employee", "unemployed"])
-        .refine((val) => ["student", "employee", "unemployed"].includes(val), {
-            message: "الوضع الاجتماعي يجب ان يكون طالب او موظف او عاطل",
-        }),
+    familyStatus: z.string().optional(),
     fatherJob: z.string({
         required_error: "وظيفة الاب مطلوبة",
     }),
@@ -108,7 +101,6 @@ export default function Dashboard({ auth }: PageProps) {
             </div>
         );
     }
-    
     return (
         <DashboardLayout user={auth.user}>
             <Head title="Dashboard" />
@@ -266,7 +258,8 @@ export default function Dashboard({ auth }: PageProps) {
                                                             )
                                                         ) : (
                                                             <span>
-                                                                اليوم/الشهر/السنة
+                                                                اليوم / الشهر /
+                                                                السنة
                                                             </span>
                                                         )}
                                                         <CalendarIcon className="h-4 w-4 opacity-50" />
@@ -279,8 +272,13 @@ export default function Dashboard({ auth }: PageProps) {
                                             >
                                                 <Calendar
                                                     mode="single"
+                                                    defaultMonth={field.value}
                                                     selected={field.value}
                                                     onSelect={field.onChange}
+                                                    fromYear={1900}
+                                                    toYear={new Date().getFullYear()}
+                                                    fixedWeeks
+                                                    captionLayout="dropdown-buttons"
                                                     disabled={(date) =>
                                                         date > new Date() ||
                                                         date <
@@ -297,11 +295,11 @@ export default function Dashboard({ auth }: PageProps) {
                                 )}
                             />
                             <FormField
-                                name="familyStatus"
+                                name="socialStatus"
                                 control={form.control}
                                 render={({ field }) => (
                                     <FormItem className="w-full">
-                                        <FormLabel>الحالة العائلية</FormLabel>
+                                        <FormLabel>الحالة الاجتماعية</FormLabel>
                                         <Select
                                             onValueChange={field.onChange}
                                             defaultValue={field.value}
@@ -315,7 +313,7 @@ export default function Dashboard({ auth }: PageProps) {
                                                 }
                                             >
                                                 <SelectTrigger>
-                                                    <SelectValue placeholder="اختر الحالة العائلية ..." />
+                                                    <SelectValue placeholder="اختر الحالة الاجتماعية ..." />
                                                 </SelectTrigger>
                                             </FormControl>
                                             <SelectContent>
@@ -406,39 +404,18 @@ export default function Dashboard({ auth }: PageProps) {
                             )}
                         </div>
                         <FormField
-                            name="socialStatus"
+                            name="familyStatus"
                             control={form.control}
                             render={({ field }) => (
                                 <FormItem className="w-full">
-                                    <FormLabel>الحالة الاجتماعية</FormLabel>
-                                    <Select
-                                        onValueChange={field.onChange}
-                                        defaultValue={field.value}
-                                        dir="rtl"
-                                    >
-                                        <FormControl
-                                            className={
-                                                field.value
-                                                    ? ""
-                                                    : "text-slate-500"
-                                            }
-                                        >
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="اختر الحالة الاجتماعية ..." />
-                                            </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                            <SelectItem key="good" value="good">
-                                                {"ميسورة"}
-                                            </SelectItem>
-                                            <SelectItem key="mid" value="mid">
-                                                {"متوسطة"}
-                                            </SelectItem>
-                                            <SelectItem key="low" value="low">
-                                                {"معوزة"}
-                                            </SelectItem>
-                                        </SelectContent>
-                                    </Select>
+                                    <FormLabel>الحالة العائلية</FormLabel>
+                                    <FormControl>
+                                        <Input
+                                            {...field}
+                                            placeholder="اكتب ملاحظات عن الحالة العائلية ان وجدت ..."
+                                            dir="rtl"
+                                        />
+                                    </FormControl>
                                     <FormMessage />
                                 </FormItem>
                             )}
