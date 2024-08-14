@@ -165,13 +165,7 @@ export default function Dashboard({ auth }: PageProps) {
                 <h1 className="text-5xl font-bold text-gray-900">
                     تسجيل الطالب
                 </h1>
-                <Button
-                    onClick={() => {
-                        console.log(form.getValues());
-                    }}
-                >
-                    click
-                </Button>
+                
                 <Form {...form}>
                     <form
                         onSubmit={form.handleSubmit(onSubmit)}
