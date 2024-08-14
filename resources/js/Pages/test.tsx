@@ -177,7 +177,7 @@ export default function Dashboard({ auth }: PageProps) {
                                 </FormItem>
                             )}
                         />
-                        <div className="flex gap-2 w-full">
+                        <div className="flex sm:flex-row flex-col gap-2 w-full">
                             <FormField
                                 name="firstName"
                                 control={form.control}
@@ -254,7 +254,7 @@ export default function Dashboard({ auth }: PageProps) {
                                 )}
                             />
                         </div>
-                        <div className="flex gap-2 w-full">
+                        <div className="flex sm:flex-row flex-col gap-2 w-full">
                             <FormField
                                 name="birthDate"
                                 control={form.control}
@@ -365,7 +365,7 @@ export default function Dashboard({ auth }: PageProps) {
                                 )}
                             />
                         </div>
-                        <div className="flex gap-2 w-full">
+                        <div className="flex sm:flex-row flex-col gap-2 w-full">
                             <FormField
                                 name="hasCronicDisease"
                                 control={form.control}
@@ -445,7 +445,7 @@ export default function Dashboard({ auth }: PageProps) {
                         />
                         <Separator className="h-1" />
 
-                        <div className="flex gap-2 w-full">
+                        <div className="flex sm:flex-row flex-col gap-2 w-full">
                             <FormField
                                 name="fatherJob"
                                 control={form.control}
@@ -481,7 +481,7 @@ export default function Dashboard({ auth }: PageProps) {
                                 )}
                             />
                         </div>
-                        <div className="flex gap-2 w-full">
+                        <div className="flex sm:flex-row flex-col gap-2 w-full">
                             <FormField
                                 name="motherJob"
                                 control={form.control}
@@ -518,7 +518,7 @@ export default function Dashboard({ auth }: PageProps) {
                             />
                         </div>
                         <Separator className="h-1" />
-                        <div className="flex gap-2 w-full">
+                        <div className="flex sm:flex-row flex-col gap-2 w-full">
                             <FormField
                                 name="category"
                                 control={form.control}
