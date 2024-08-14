@@ -29,7 +29,7 @@ export default function DashboardLayout({
         setIsCollapsed(!isCollapsed);
     };
     return (
-        <div className="h-[100dvh] overflow-y-hidden bg-[url('/background.jpg')] bg-cover bg-center flex w-full">
+        <div className="h-[100svh] overflow-y-hidden bg-[url('/background.jpg')] bg-cover bg-center flex w-full">
             <Toaster
                 position="bottom-right"
             />
