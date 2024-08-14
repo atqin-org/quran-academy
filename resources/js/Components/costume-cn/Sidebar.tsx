@@ -105,7 +105,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         >
             <nav
                 className={cn(
-                    `flex flex-col items-center rounded-xl justify-between gap-2 md:gap-8 px-2 py-1 sm:py-5 overflow-hidden`,
+                    `flex flex-col items-center rounded-xl justify-between gap-2 sm:gap-4 lg:gap-8 px-2 sm:py-2 overflow-hidden`,
                     {
                         "bg-background bg-zinc-50 border-2 border-gray-100 m-5":
                             !mobile,
