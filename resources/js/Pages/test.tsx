@@ -113,9 +113,13 @@ const FormSchema = z
             required_error: "التامين مطلوب",
         }),
     })
+        .refine((data) => (data.hasCronicDisease === "yes" ? !!data.cronicDisease : true), {
+        message: "يرجى ادخال اسم المرض",
+        path: ["cronicDisease"],
+    })
     .refine((data) => data.fatherPhone || data.motherPhone, {
         message: "يرجى ادخال رقم هاتف الاب او الام",
-        path: ["fatherPhone", "motherPhone"], // This will highlight both fields in case of an error
+        path: ["fatherPhone"],
     });
 export default function Dashboard({ auth }: PageProps) {
     const form = useForm<z.infer<typeof FormSchema>>({
