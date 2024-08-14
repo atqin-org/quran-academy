@@ -100,7 +100,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                 "w-36": isCollapsed,
                 "w-60": !isCollapsed,
                 "flex justify-center h-96 w-full": mobile,
-                "hidden h-screen sm:flex": !mobile,
+                "hidden h-[100dvh] sm:flex": !mobile,
             })}
         >
             <nav
