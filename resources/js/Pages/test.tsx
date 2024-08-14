@@ -46,78 +46,95 @@ const categories = [
     { id: 3, name: "الفئة 3" },
 ];
 
-const FormSchema = z.object({
-    club: z.enum(["1", "2", "3"], {
-        required_error: "النادي مطلوب",
-    }),
-    firstName: z.string({
-        required_error: "الاسم مطلوب",
-    }),
-    lastName: z.string({
-        required_error: "اللقب مطلوب",
-    }),
-    gender: z
-        .enum(["male", "female"], {
-            required_error: "الجنس مطلوب",
-        })
-        .refine((val) => ["male", "female"].includes(val), {
-            message: "الجنس يجب ان يكون ذكر او انثى",
+const FormSchema = z
+    .object({
+        club: z.enum(["1", "2", "3"], {
+            required_error: "النادي مطلوب",
         }),
-    birthDate: z.date({
-        required_error: "تاريخ الميلاد مطلوب",
-    }),
-    socialStatus: z
-        .enum(["good", "mid", "low"])
-        .refine((val) => ["good", "mid", "low"].includes(val), {
-            message: "الحالة العائلية يجب ان تكون جيدة او متوسطة او ضعيفة",
+        firstName: z.string({
+            required_error: "الاسم مطلوب",
         }),
-    hasCronicDisease: z.enum(["yes", "no"], {
-        required_error: "هل يعاني من مرض مزمن مطلوب",
-    }),
-    cronicDisease: z.string().optional(),
-    familyStatus: z.string().optional(),
-    fatherJob: z.string({
-        required_error: "وظيفة الاب مطلوبة",
-    }),
-    motherJob: z.string({
-        required_error: "وظيفة الام مطلوبة",
-    }),
-    fatherPhone: z
-        .string()
-        .regex(/^0[567]\d{8}$/, {
-            message: "يرجى ادخال رقم هاتف صحيح",
-        })
-        .optional(),
-    motherPhone: z
-        .string()
-        .regex(/^0[567]\d{8}$/, {
-            message: "يرجى ادخال رقم هاتف صحيح",
-        })
-        .optional(),
-    category: z.enum(["1", "2", "3"], {
-        required_error: "الفئة مطلوبة",
-    }),
-    subscription: z
-        .string({ required_error: "الاشتراك الشهري مطلوب" })
-        .regex(/^\d+$/, {
-            message: "الاشتراك الشهري يجب ان يكون رقم",
+        lastName: z.string({
+            required_error: "اللقب مطلوب",
         }),
-    insurance: z.boolean({
-        required_error: "التامين مطلوب",
-    }),
-});
+        gender: z
+            .enum(["male", "female"], {
+                required_error: "الجنس مطلوب",
+            })
+            .refine((val) => ["male", "female"].includes(val), {
+                message: "الجنس يجب ان يكون ذكر او انثى",
+            }),
+        birthDate: z.date({
+            required_error: "تاريخ الميلاد مطلوب",
+        }),
+        socialStatus: z
+            .enum(["good", "mid", "low"], {
+                required_error: "الحالة الاجتماعية مطلوبة",
+            })
+            .refine((val) => ["good", "mid", "low"].includes(val), {
+                message: "الحالة العائلية يجب ان تكون جيدة او متوسطة او ضعيفة",
+            }),
+        hasCronicDisease: z.enum(["yes", "no"], {
+            required_error: "هل يعاني من مرض مزمن مطلوب",
+        }),
+        cronicDisease: z.string().optional(),
+        familyStatus: z.string().optional(),
+        fatherJob: z.string({
+            required_error: "وظيفة الاب مطلوبة",
+        }),
+        motherJob: z.string({
+            required_error: "وظيفة الام مطلوبة",
+        }),
+        fatherPhone: z
+            .union([
+                z.string().regex(/^0[567]\d{8}$/, {
+                    message: "يرجى ادخال رقم هاتف صحيح",
+                }),
+                z.literal(""),
+            ])
+            .optional(),
+        motherPhone: z
+            .union([
+                z.string().regex(/^0[567]\d{8}$/, {
+                    message: "يرجى ادخال رقم هاتف صحيح",
+                }),
+                z.literal(""),
+            ])
+            .optional(),
+        category: z.enum(["1", "2", "3"], {
+            required_error: "الفئة مطلوبة",
+        }),
+        subscription: z
+            .string({ required_error: "الاشتراك الشهري مطلوب" })
+            .regex(/^\d+$/, {
+                message: "الاشتراك الشهري يجب ان يكون رقم",
+            }),
+        insurance: z.boolean({
+            required_error: "التامين مطلوب",
+        }),
+    })
+    .refine((data) => data.fatherPhone || data.motherPhone, {
+        message: "يرجى ادخال رقم هاتف الاب او الام",
+        path: ["fatherPhone", "motherPhone"], // This will highlight both fields in case of an error
+    });
 export default function Dashboard({ auth }: PageProps) {
     const form = useForm<z.infer<typeof FormSchema>>({
         resolver: zodResolver(FormSchema),
     });
 
     function onSubmit(data: z.infer<typeof FormSchema>) {
-        toast.info(
-            <div>
-                <p>
-                    <strong>Club:</strong> {data.club}
-                </p>
-            </div>
+        toast.promise(
+            new Promise((resolve) => {
+                setTimeout(() => {
+                    console.log(data );
+                    resolve("");
+                }, 500);
+            }),
+            {
+                loading: "جاري التسجيل ...",
+                success: "تم التسجيل بنجاح",
+                error: "حدث خطأ اثناء التسجيل",
+            }
         );
     }
     return (
@@ -600,6 +617,7 @@ export default function Dashboard({ auth }: PageProps) {
                                 )}
                             />
                         </div>
+                        <div className="flex sm:flex-row flex-col gap-2 w-full"></div>
                         <Button type="submit">تسجيل</Button>
                     </form>
                 </Form>

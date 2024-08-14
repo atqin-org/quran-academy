@@ -31,7 +31,8 @@ export default function DashboardLayout({
     return (
         <div className="h-[100svh] overflow-y-hidden bg-[url('/background.jpg')] bg-cover bg-center flex w-full">
             <Toaster
-                position="bottom-right"
+                position="bottom-left"
+                richColors
             />
 
             <Sidebar isCollapsed={isCollapsed} toggleSidebar={toggleSidebar} />
