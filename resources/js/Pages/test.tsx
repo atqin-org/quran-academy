@@ -14,6 +14,7 @@ import {
 import {
     Form,
     FormControl,
+    FormDescription,
     FormField,
     FormItem,
     FormLabel,
@@ -31,15 +32,22 @@ import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Calendar } from "@/Components/ui/calendar";
 import { format } from "date-fns";
+import { Switch } from "@/Components/ui/switch";
+import { Separator } from "@/Components/ui/separator";
 const clubs = [
     { id: 1, name: "النادي الاول" },
     { id: 2, name: "النادي الثاني" },
     { id: 3, name: "النادي الثالث" },
     { id: 4, name: "النادي الرابع" },
 ];
+const categories = [
+    { id: 1, name: "الفئة 1" },
+    { id: 2, name: "الفئة 2" },
+    { id: 3, name: "الفئة 3" },
+];
 
 const FormSchema = z.object({
-    club: z.string({
+    club: z.enum(["1", "2", "3"], {
         required_error: "النادي مطلوب",
     }),
     firstName: z.string({
@@ -86,6 +94,17 @@ const FormSchema = z.object({
             message: "يرجى ادخال رقم هاتف صحيح",
         })
         .optional(),
+    category: z.enum(["1", "2", "3"], {
+        required_error: "الفئة مطلوبة",
+    }),
+    subscription: z
+        .string({ required_error: "الاشتراك الشهري مطلوب" })
+        .regex(/^\d+$/, {
+            message: "الاشتراك الشهري يجب ان يكون رقم",
+        }),
+    insurance: z.boolean({
+        required_error: "التامين مطلوب",
+    }),
 });
 export default function Dashboard({ auth }: PageProps) {
     const form = useForm<z.infer<typeof FormSchema>>({
@@ -109,14 +128,18 @@ export default function Dashboard({ auth }: PageProps) {
                 <h1 className="text-5xl font-bold text-gray-900">
                     تسجيل الطالب
                 </h1>
-                <Button variant="default" className="w-fit">
-                    تسجيل
-                </Button>
                 <Form {...form}>
                     <form
                         onSubmit={form.handleSubmit(onSubmit)}
                         className="space-y-6 "
                     >
+                        <Button
+                            type="submit"
+                            variant="default"
+                            className="w-fit"
+                        >
+                            تسجيل
+                        </Button>
                         <FormField
                             name="club"
                             control={form.control}
@@ -143,7 +166,7 @@ export default function Dashboard({ auth }: PageProps) {
                                             {clubs.map((club) => (
                                                 <SelectItem
                                                     key={club.id}
-                                                    value={club.name}
+                                                    value={club.id.toString()}
                                                 >
                                                     {club.name}
                                                 </SelectItem>
@@ -420,6 +443,163 @@ export default function Dashboard({ auth }: PageProps) {
                                 </FormItem>
                             )}
                         />
+                        <Separator className="h-1" />
+
+                        <div className="flex gap-2 w-full">
+                            <FormField
+                                name="fatherJob"
+                                control={form.control}
+                                render={({ field }) => (
+                                    <FormItem className="w-full">
+                                        <FormLabel>وظيفة الاب</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                {...field}
+                                                placeholder="اكتب ..."
+                                                dir="rtl"
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                name="fatherPhone"
+                                control={form.control}
+                                render={({ field }) => (
+                                    <FormItem className="w-full">
+                                        <FormLabel>رقم هاتف الاب</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                {...field}
+                                                placeholder="اكتب ..."
+                                                dir="rtl"
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
+                        <div className="flex gap-2 w-full">
+                            <FormField
+                                name="motherJob"
+                                control={form.control}
+                                render={({ field }) => (
+                                    <FormItem className="w-full">
+                                        <FormLabel>وظيفة الام</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                {...field}
+                                                placeholder="اكتب ..."
+                                                dir="rtl"
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                name="motherPhone"
+                                control={form.control}
+                                render={({ field }) => (
+                                    <FormItem className="w-full">
+                                        <FormLabel>رقم هاتف الام</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                {...field}
+                                                placeholder="اكتب ..."
+                                                dir="rtl"
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
+                        <Separator className="h-1" />
+                        <div className="flex gap-2 w-full">
+                            <FormField
+                                name="category"
+                                control={form.control}
+                                render={({ field }) => (
+                                    <FormItem className="w-full">
+                                        <FormLabel>الفئة</FormLabel>
+                                        <Select
+                                            onValueChange={field.onChange}
+                                            defaultValue={field.value}
+                                            dir="rtl"
+                                        >
+                                            <FormControl
+                                                className={
+                                                    field.value
+                                                        ? ""
+                                                        : "text-slate-500"
+                                                }
+                                            >
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="اختر الفئة ..." />
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                                {categories.map((category) => (
+                                                    <SelectItem
+                                                        key={category.id}
+                                                        value={category.id.toString()}
+                                                    >
+                                                        {category.name}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                name="subscription"
+                                control={form.control}
+                                render={({ field }) => (
+                                    <FormItem className="w-full">
+                                        <FormLabel>الاشتراك الشهري</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                {...field}
+                                                placeholder="اكتب ..."
+                                                dir="rtl"
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                name="insurance"
+                                control={form.control}
+                                render={({ field }) => (
+                                    <FormItem
+                                        dir="ltr"
+                                        className="flex flex-row items-center justify-between gap-10 rounded-lg border p-4"
+                                    >
+                                        <div className="space-y-0.5 text-nowrap">
+                                            <FormLabel className="text-base">
+                                                التامين
+                                            </FormLabel>
+                                            <FormDescription dir="rtl">
+                                                200 دج سنويا
+                                            </FormDescription>
+                                            <FormMessage />
+                                        </div>
+                                        <FormControl>
+                                            <Switch
+                                                checked={field.value}
+                                                onCheckedChange={field.onChange}
+                                            />
+                                        </FormControl>
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
                         <Button type="submit">تسجيل</Button>
                     </form>
                 </Form>
