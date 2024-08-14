@@ -28,12 +28,14 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from "@/Components/ui/popover";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, CloudUpload } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Calendar } from "@/Components/ui/calendar";
 import { format } from "date-fns";
 import { Switch } from "@/Components/ui/switch";
 import { Separator } from "@/Components/ui/separator";
+import Dropzone, { DropzoneState } from "@/Components/costume-cn/Dropzone";
+
 const clubs = [
     { id: 1, name: "النادي الاول" },
     { id: 2, name: "النادي الثاني" },
@@ -112,11 +114,25 @@ const FormSchema = z
         insurance: z.boolean({
             required_error: "التامين مطلوب",
         }),
+        picture: z.object({
+            name: z.string(),
+            size: z.number(),
+            type: z.string(),
+        }).optional(),
+        file: z.object({
+            name: z.string(),
+            size: z.number(),
+            type: z.string(),
+        }).optional(),
     })
-        .refine((data) => (data.hasCronicDisease === "yes" ? !!data.cronicDisease : true), {
-        message: "يرجى ادخال اسم المرض",
-        path: ["cronicDisease"],
-    })
+    .refine(
+        (data) =>
+            data.hasCronicDisease === "yes" ? !!data.cronicDisease : true,
+        {
+            message: "يرجى ادخال اسم المرض",
+            path: ["cronicDisease"],
+        }
+    )
     .refine((data) => data.fatherPhone || data.motherPhone, {
         message: "يرجى ادخال رقم هاتف الاب او الام",
         path: ["fatherPhone"],
@@ -130,7 +146,7 @@ export default function Dashboard({ auth }: PageProps) {
         toast.promise(
             new Promise((resolve) => {
                 setTimeout(() => {
-                    console.log(data );
+                    console.log(data);
                     resolve("");
                 }, 500);
             }),
@@ -149,6 +165,13 @@ export default function Dashboard({ auth }: PageProps) {
                 <h1 className="text-5xl font-bold text-gray-900">
                     تسجيل الطالب
                 </h1>
+                <Button
+                    onClick={() => {
+                        console.log(form.getValues());
+                    }}
+                >
+                    click
+                </Button>
                 <Form {...form}>
                     <form
                         onSubmit={form.handleSubmit(onSubmit)}
@@ -621,7 +644,68 @@ export default function Dashboard({ auth }: PageProps) {
                                 )}
                             />
                         </div>
-                        <div className="flex sm:flex-row flex-col gap-2 w-full"></div>
+                        <div className="flex sm:flex-row flex-col gap-2 w-full">
+                            <FormField
+                                name="picture"
+                                control={form.control}
+                                render={({ field }) => (
+                                    <FormItem className="w-full">
+                                        <FormLabel>الصورة الشخصية</FormLabel>
+                                        <FormControl>
+                                            <Dropzone {...field}>
+                                                {(dropzone: DropzoneState) => (
+                                                    <div className=" flex flex-col items-center justify-center">
+                                                        <CloudUpload className="h-12 w-12 text-gray-400" />
+                                                        <span className="text-md font-semibold text-gray-400">
+                                                            {dropzone.isDragAccept
+                                                                ? "ضع الملفات هنا"
+                                                                : "اضغط او اسحب الملفات هنا"}
+                                                        </span>
+                                                        <span className="mt-0.5 text-sm font-medium text-gray-400">
+                                                            الملفات المقبولة:
+                                                        </span>
+                                                        <span className="text-sm font-medium text-gray-400">
+                                                            jpg, png, jpeg, pdf
+                                                        </span>
+                                                    </div>
+                                                )}
+                                            </Dropzone>
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                name="file"
+                                control={form.control}
+                                render={({ field }) => (
+                                    <FormItem className="w-full">
+                                        <FormLabel>شهادة الميلاد</FormLabel>
+                                        <FormControl>
+                                            <Dropzone {...field}>
+                                                {(dropzone: DropzoneState) => (
+                                                    <div className=" flex flex-col items-center justify-center">
+                                                        <CloudUpload className="h-12 w-12 text-gray-400" />
+                                                        <span className="text-md font-semibold text-gray-400">
+                                                            {dropzone.isDragAccept
+                                                                ? "ضع الملفات هنا"
+                                                                : "اضغط او اسحب الملفات هنا"}
+                                                        </span>
+                                                        <span className="mt-0.5 text-sm font-medium text-gray-400">
+                                                            الملفات المقبولة:
+                                                        </span>
+                                                        <span className="text-sm font-medium text-gray-400">
+                                                            jpg, png, jpeg, pdf
+                                                        </span>
+                                                    </div>
+                                                )}
+                                            </Dropzone>
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
                         <Button type="submit">تسجيل</Button>
                     </form>
                 </Form>

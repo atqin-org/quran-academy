@@ -39,7 +39,7 @@ export default function DashboardLayout({
 
             <div className="overflow-y-scroll  flex-1 w-full my-5 mx-5 sm:ms-0 p-2 sm:px-6 lg:px-8 bg-background bg-zinc-50 border-2 border-gray-100 rounded-xl">
                 <Sheet>
-                    <SheetTrigger className="sm:hidden">
+                    <SheetTrigger className="sm:hidden" asChild>
                         <Button variant="outline">
                             <Menu /> التصفح
                         </Button>
