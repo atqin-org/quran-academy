@@ -117,7 +117,7 @@ const Dropzone = ({
     >
       <div
         { ...dropzone.getRootProps() }
-        className={cn('flex justify-center items-center w-full h-32 border-dashed border-2 border-gray-200 rounded-lg hover:bg-accent hover:text-accent-foreground transition-all select-none cursor-pointer', dropZoneClassName)}
+        className={cn('flex justify-center items-center w-full h-48 border-dashed border-2 border-gray-200 rounded-lg hover:bg-accent hover:text-accent-foreground transition-all select-none cursor-pointer', dropZoneClassName)}
       >
         <input { ...dropzone.getInputProps() } />
         {

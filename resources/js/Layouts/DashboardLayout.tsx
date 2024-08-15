@@ -32,12 +32,13 @@ export default function DashboardLayout({
         <div className="h-[100svh] overflow-y-hidden bg-[url('/background.jpg')] bg-cover bg-center flex w-full">
             <Toaster
                 position="bottom-left"
+                theme="light"
                 richColors
             />
 
             <Sidebar isCollapsed={isCollapsed} toggleSidebar={toggleSidebar} />
 
-            <div className="overflow-y-scroll  flex-1 w-full my-5 mx-5 sm:ms-0 p-2 sm:px-6 lg:px-8 bg-background bg-zinc-50 border-2 border-gray-100 rounded-xl">
+            <div className="flex flex-col overflow-y-scroll flex-1 w-full my-5 mx-5 sm:ms-0 p-2 sm:px-6 lg:px-8 bg-background bg-zinc-50 border-2 border-gray-100 rounded-xl">
                 <Sheet>
                     <SheetTrigger className="sm:hidden" asChild>
                         <Button variant="outline">
@@ -71,7 +72,7 @@ export default function DashboardLayout({
                         </BreadcrumbItem>
                     </BreadcrumbList>
                 </Breadcrumb>
-                <main className="mt-4 ">{children}</main>
+                <main className="mt-4 flex-grow">{children}</main>
             </div>
         </div>
     );
