@@ -27,8 +27,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         setTooltipKey((prevKey) => prevKey + 1);
     }, [isCollapsed]);
 
-    //get the url of the current page
-    const currentUrl = window.location.pathname;
+    const currentUrl = String(window.location.pathname);
 
     // Ensure isCollapsed is false when mobile is true
     const effectiveIsCollapsed = mobile ? false : isCollapsed;
@@ -80,7 +79,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                                 icon={link.icon}
                                 label={link.label}
                                 isCollapsed={effectiveIsCollapsed}
-                                isSelected={link.href === currentUrl}
+                                isSelected={currentUrl.includes(link.href)}
                             />
                         ))}
                     </TooltipProvider>

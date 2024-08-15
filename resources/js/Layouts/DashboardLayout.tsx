@@ -19,6 +19,8 @@ import {
     BreadcrumbSeparator,
 } from "@/Components/ui/breadcrumb";
 import { Toaster } from "@/Components/ui/sonner";
+import { sidebarLinks } from "@/data/routes";
+import { breadcrumbLinks } from "@/data/routes";
 
 export default function DashboardLayout({
     user,
@@ -28,13 +30,16 @@ export default function DashboardLayout({
     const toggleSidebar = () => {
         setIsCollapsed(!isCollapsed);
     };
+    const currentUrl = String(window.location.pathname);
+    const sidebarLinkObj = sidebarLinks.find((link) =>
+        currentUrl.includes(link.href)
+    );
+    const breadcrumbLinkObj = breadcrumbLinks.find((link) =>
+        currentUrl.includes(link.action)
+    );
     return (
         <div className="h-[100svh] overflow-y-hidden bg-[url('/background.jpg')] bg-cover bg-center flex w-full">
-            <Toaster
-                position="bottom-left"
-                theme="light"
-                richColors
-            />
+            <Toaster position="bottom-left" theme="light" richColors />
 
             <Sidebar isCollapsed={isCollapsed} toggleSidebar={toggleSidebar} />
 
@@ -59,16 +64,28 @@ export default function DashboardLayout({
                 </Sheet>
                 <Breadcrumb className="my-2">
                     <BreadcrumbList>
+                        {sidebarLinkObj && (
+                            <BreadcrumbItem>
+                                <BreadcrumbLink href={sidebarLinkObj.href}>
+                                    {sidebarLinkObj.label}
+                                </BreadcrumbLink>
+                            </BreadcrumbItem>
+                        )}
+
                         <BreadcrumbItem>
-                            <BreadcrumbLink href="/">الطلاب</BreadcrumbLink>
-                        </BreadcrumbItem>
-                        <BreadcrumbSeparator>
-                            <Slash />
-                        </BreadcrumbSeparator>
-                        <BreadcrumbItem>
-                            <BreadcrumbLink href="/test">
-                                تسجيل الطالب
-                            </BreadcrumbLink>
+                            {breadcrumbLinkObj && sidebarLinkObj && (sidebarLinkObj.crud===true) ?(
+                                <>
+                                    <BreadcrumbSeparator>
+                                        <Slash />
+                                    </BreadcrumbSeparator>
+                                    <BreadcrumbLink
+                                        href={breadcrumbLinkObj.action}
+                                    >
+                                        {breadcrumbLinkObj.label}{" "}
+                                        {sidebarLinkObj.label}
+                                    </BreadcrumbLink>
+                                </>
+                            ):(<></>)}
                         </BreadcrumbItem>
                     </BreadcrumbList>
                 </Breadcrumb>

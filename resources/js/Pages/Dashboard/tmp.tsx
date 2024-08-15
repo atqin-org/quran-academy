@@ -7,9 +7,9 @@ export default function Dashboard({ auth }: PageProps) {
         <DashboardLayout
             user={auth.user}
         >
-            <Head title="Under Construction" />
+            <Head title="⚠️ Under Construction" />
             <div className="flex flex-col items-center justify-center  h-full">
-                <div className="text-4xl font-bold text-center border-dashed border-4 border-yellow-500 p-12 rounded-lg select-none">
+                <div className="text-4xl font-bold text-center border-dashed border-4 border-yellow-500 p-12 rounded-xl select-none">
                     هذه الصفحة قيد الإنشاء
                     ⚠️🏗️🚧
                 </div>
