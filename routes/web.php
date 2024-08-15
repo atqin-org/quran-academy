@@ -5,9 +5,14 @@ use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
-Route::get('/test', function () {
-    return Inertia::render('test');
+Route::get('/dashboard/student/create', function () {
+    return Inertia::render('Dashboard/Students/create');
 });
+// if (/dashboard/* dont exist) render  /Dashboard/tmp
+Route::get('/dashboard/{any}', function () {
+    return Inertia::render('Dashboard/tmp');
+})->where('any', '.*');
+
 
 Route::get('/', function () {
     return Inertia::render('Welcome', [

@@ -78,7 +78,7 @@ export default function Welcome({
                                 </p>
                                 <div className="">
                                     <li>
-                                        <Link href="/test">لوحة التحكم</Link>
+                                        <Link href="/dashboard/student/create">لوحة التحكم</Link>
                                     </li>
                                 </div>
                             </div>

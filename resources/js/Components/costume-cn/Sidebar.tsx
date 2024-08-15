@@ -16,9 +16,7 @@ import {
     Users,
 } from "lucide-react";
 import { Button } from "@/Components/ui/button";
-import {
-    TooltipProvider,
-} from "../ui/tooltip";
+import { TooltipProvider } from "../ui/tooltip";
 import SidebarLink from "./SidebarLink ";
 interface SidebarProps {
     isCollapsed: boolean;
@@ -30,56 +28,47 @@ const sidebarLinks = [
     {
         icon: <ChartPie />,
         label: "الاحصائيات",
-        href: "#statistic",
-        isSelected: false,
+        href: "/dashboard/statistic",
     },
     {
         icon: <LibraryBig />,
         label: "المداومة",
-        href: "#presence",
-        isSelected: false,
+        href: "/dashboard/presence",
     },
     {
         icon: <Banknote />,
         label: "الدفع",
-        href: "#payment",
-        isSelected: false,
+        href: "/dashboard/payment",
     },
     {
         icon: <Backpack />,
         label: "الطلاب",
-        href: "#students",
-        isSelected: true,
+        href: "/dashboard/student/create",
     },
     {
         icon: <Presentation />,
         label: "المعلمين",
-        href: "#teachers",
-        isSelected: false,
+        href: "/dashboard/teachers",
     },
     {
         icon: <NotebookPen />,
         label: "المساعدين",
-        href: "#assistants",
-        isSelected: false,
+        href: "/dashboard/assistants",
     },
     {
         icon: <House />,
         label: "النوادي",
-        href: "#clubs",
-        isSelected: false,
+        href: "/dashboard/clubs",
     },
     {
         icon: <Users />,
         label: "المشرفين",
-        href: "#supervisors",
-        isSelected: false,
+        href: "/dashboard/supervisors",
     },
     {
         icon: <Settings />,
         label: "الاعدادات",
-        href: "#settings",
-        isSelected: false,
+        href: "/dashboard/settings",
     },
 ];
 
@@ -94,11 +83,17 @@ const Sidebar: React.FC<SidebarProps> = ({
         setTooltipKey((prevKey) => prevKey + 1);
     }, [isCollapsed]);
 
+    //get the url of the current page
+    const currentUrl = window.location.pathname;
+
+    // Ensure isCollapsed is false when mobile is true
+    const effectiveIsCollapsed = mobile ? false : isCollapsed;
+
     return (
         <aside
             className={cn(`transition-width duration-300 z-10 `, {
-                "w-36": isCollapsed,
-                "w-60": !isCollapsed,
+                "w-36": effectiveIsCollapsed,
+                "w-60": !effectiveIsCollapsed,
                 "flex justify-center h-96 w-full": mobile,
                 "hidden h-[100svh] sm:flex": !mobile,
             })}
@@ -114,18 +109,24 @@ const Sidebar: React.FC<SidebarProps> = ({
                 )}
             >
                 <div className="border-2 border-primary w-full px-0.5 py-2 text-center rounded-md flex gap-2 items-center justify-center text-nowrap">
-                    {!isCollapsed && <User />}
-                    {!isCollapsed && "المشرف العام"}
-                    <Button
-                        variant="ghost"
-                        className="p-2"
-                        onClick={toggleSidebar}
-                    >
-                        {isCollapsed ? <ChevronsLeft /> : <ChevronsRight />}
-                    </Button>
+                    {!effectiveIsCollapsed && <User />}
+                    {!effectiveIsCollapsed && "المشرف العام"}
+                    {!mobile && (
+                        <Button
+                            variant="ghost"
+                            className="p-2"
+                            onClick={toggleSidebar}
+                        >
+                            {effectiveIsCollapsed ? (
+                                <ChevronsLeft />
+                            ) : (
+                                <ChevronsRight />
+                            )}
+                        </Button>
+                    )}
                 </div>
 
-                <div className="flex flex-col items-start gap-4 flex-1 w-full px-4 py-1 overflow-y-scroll">
+                <div className="flex flex-col items-start gap-4 flex-1 w-full px-4 py-1 overflow-y-scroll scrollbar-thin scrollbar-webkit">
                     <TooltipProvider key={tooltipKey}>
                         {sidebarLinks.map((link, index) => (
                             <SidebarLink
@@ -134,16 +135,21 @@ const Sidebar: React.FC<SidebarProps> = ({
                                 href={link.href}
                                 icon={link.icon}
                                 label={link.label}
-                                isCollapsed={isCollapsed}
-                                isSelected={link.isSelected}
+                                isCollapsed={effectiveIsCollapsed}
+                                isSelected={link.href === currentUrl}
                             />
                         ))}
                     </TooltipProvider>
                 </div>
                 <div className="flex flex-col items-center gap-4 w-full">
-                    <Button className="flex gap-2 rounded-md w-full">
+                    <Button
+                        className="flex gap-2 rounded-md w-full"
+                        onClick={() => {
+                            console.log(currentUrl);
+                        }}
+                    >
                         <LogOut />
-                        {!isCollapsed && "تسجيل الخروج"}
+                        {!effectiveIsCollapsed && "تسجيل الخروج"}
                     </Button>
                 </div>
             </nav>
