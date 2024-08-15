@@ -75,6 +75,8 @@ export default {
             },
             fontFamily: {
                 sans: ["Figtree", ...defaultTheme.fontFamily.sans],
+                alexandria: ["Alexandria", ...defaultTheme.fontFamily.sans],
+                sansarabic: ["IBM Plex Sans Arabic", ...defaultTheme.fontFamily.sans],
             },
             keyframes: {
                 "accordion-down": {
