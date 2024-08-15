@@ -103,7 +103,7 @@ export default function Login({
                         className="rounded-full w-full flex justify-center items-center"
                         disabled={processing}
                     >
-                        Log in
+                        تسجيل الدخول
                     </Button>
                 </div>
             </form>
