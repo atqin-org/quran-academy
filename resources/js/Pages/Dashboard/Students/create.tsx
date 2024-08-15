@@ -165,7 +165,7 @@ export default function Dashboard({ auth }: PageProps) {
             <Head title="Dashboard" />
 
             <div className=" flex flex-col gap-10">
-                <h1 className="text-5xl font-bold text-gray-900">
+                <h1 className="text-4xl font-bold text-gray-900">
                     تسجيل الطالب
                 </h1>
                 <Form {...form}>
