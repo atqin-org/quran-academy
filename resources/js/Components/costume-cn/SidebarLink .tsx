@@ -18,6 +18,7 @@ const SidebarLink: React.FC<SidebarLinkProps> = ({ href, icon, label, isCollapse
         <Tooltip>
             <TooltipTrigger asChild>
                 <Link
+                    preserveState
                     href={href}
                     className={cn(`flex gap-2 ${
                         isCollapsed ? 'justify-center' : 'justify-start'

@@ -33,7 +33,6 @@ import { cn } from "@/lib/utils";
 import { Calendar } from "@/Components/ui/calendar";
 import { format } from "date-fns";
 import { Switch } from "@/Components/ui/switch";
-import { Separator } from "@/Components/ui/separator";
 import Dropzone, { DropzoneState } from "@/Components/costume-cn/Dropzone";
 
 const clubs = [

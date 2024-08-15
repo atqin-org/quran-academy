@@ -1,76 +1,20 @@
 import React, { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import {
-    Backpack,
-    Banknote,
-    ChartPie,
     ChevronsLeft,
     ChevronsRight,
-    House,
-    LibraryBig,
     LogOut,
-    NotebookPen,
-    Presentation,
-    Settings,
     User,
-    Users,
 } from "lucide-react";
 import { Button } from "@/Components/ui/button";
 import { TooltipProvider } from "../ui/tooltip";
 import SidebarLink from "./SidebarLink ";
+import { sidebarLinks } from "@/data/routes";
 interface SidebarProps {
     isCollapsed: boolean;
     toggleSidebar: () => void;
     mobile?: boolean;
 }
-
-const sidebarLinks = [
-    {
-        icon: <ChartPie />,
-        label: "الاحصائيات",
-        href: "/dashboard/statistic",
-    },
-    {
-        icon: <LibraryBig />,
-        label: "المداومة",
-        href: "/dashboard/presence",
-    },
-    {
-        icon: <Banknote />,
-        label: "الدفع",
-        href: "/dashboard/payment",
-    },
-    {
-        icon: <Backpack />,
-        label: "الطلاب",
-        href: "/dashboard/student/create",
-    },
-    {
-        icon: <Presentation />,
-        label: "المعلمين",
-        href: "/dashboard/teachers",
-    },
-    {
-        icon: <NotebookPen />,
-        label: "المساعدين",
-        href: "/dashboard/assistants",
-    },
-    {
-        icon: <House />,
-        label: "النوادي",
-        href: "/dashboard/clubs",
-    },
-    {
-        icon: <Users />,
-        label: "المشرفين",
-        href: "/dashboard/supervisors",
-    },
-    {
-        icon: <Settings />,
-        label: "الاعدادات",
-        href: "/dashboard/settings",
-    },
-];
 
 const Sidebar: React.FC<SidebarProps> = ({
     isCollapsed,
