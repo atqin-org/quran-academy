@@ -8,14 +8,15 @@ use Inertia\Inertia;
 Route::get('/dashboard/student/create', function () {
     return Inertia::render('Dashboard/Students/create');
 });
+
 Route::get('/dashboard/student', function () {
     return Inertia::render('Dashboard/Students/index');
 });
+
 // if (/dashboard/* dont exist) render  /Dashboard/tmp
 Route::get('/dashboard/{any}', function () {
     return Inertia::render('Dashboard/tmp');
 })->where('any', '.*');
-
 
 Route::get('/', function () {
     return Inertia::render('Welcome', [
@@ -36,4 +37,4 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';
