@@ -15,25 +15,29 @@ class CreateStudentsTable extends Migration
     {
         Schema::create('students', function (Blueprint $table) {
             $table->id();
-            $table->enum('club', ['1', '2', '3']); //foreign key to clubs table
-            $table->string('firstName');
-            $table->string('lastName');
+            $table->string('first_name');
+            $table->string('last_name');
             $table->enum('gender', ['male', 'female']);
-            $table->date('birthDate');
-            $table->enum('socialStatus', ['good', 'mid', 'low']);
-            $table->enum('hasCronicDisease', ['yes', 'no']);
-            $table->string('cronicDisease')->nullable();
-            $table->string('familyStatus')->nullable();
-            $table->string('fatherJob');
-            $table->string('motherJob');
-            $table->string('fatherPhone')->nullable();
-            $table->string('motherPhone')->nullable();
-            $table->enum('category', ['1', '2', '3']); //foreign
-            $table->string('subscription');
-            $table->date('insurance'); //expiration date
+            $table->date('birthdate');
+            $table->enum('social_status', ['good', 'mid', 'low']);
+            $table->boolean('has_cronic_disease');
+            $table->string('cronic_disease')->nullable();
+            $table->string('family_status')->nullable();
+            $table->string('father_job');
+            $table->string('mother_job');
+            $table->string('father_phone')->nullable();
+            $table->string('mother_phone')->nullable();
+            $table->date('subscription_expire_at');
+            $table->date('insurance_expire_at');
+
             $table->string('picture')->nullable();
             $table->string('file')->nullable();
+
+            $table->foreignId('id_club');
+            $table->foreignId('id_category');
+
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 
