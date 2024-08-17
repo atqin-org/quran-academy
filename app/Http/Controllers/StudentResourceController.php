@@ -15,7 +15,7 @@ class StudentResourceController extends Controller
      */
     public function index()
     {
-        return Inertia::render('Dashboard/Students/index',
+        return Inertia::render('Dashboard/Students/Index',
             [
                 'students' => Student::all(),
             ]
@@ -29,7 +29,7 @@ class StudentResourceController extends Controller
     {
         // get all clubs from the database and pass them to the view
         return Inertia::render(
-            'Dashboard/Students/create',
+            'Dashboard/Students/Create',
             [
                 'clubs' => Club::all(),
                 'categories' => Category::all()

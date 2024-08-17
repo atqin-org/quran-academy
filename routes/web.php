@@ -10,7 +10,7 @@ Route::resource('/dashboard/students', StudentResourceController::class);
 
 // if (/dashboard/* dont exist) render  /Dashboard/tmp
 Route::get('/dashboard/{any}', function () {
-    return Inertia::render('Dashboard/tmp');
+    return Inertia::render('Dashboard/Tmp');
 })->where('any', '.*');
 
 Route::get('/', function () {

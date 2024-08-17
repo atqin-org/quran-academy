@@ -1,15 +1,10 @@
-import React, { useEffect, useState } from "react";
-import { cn } from "@/lib/utils";
-import {
-    ChevronsLeft,
-    ChevronsRight,
-    LogOut,
-    User,
-} from "lucide-react";
 import { Button } from "@/Components/ui/button";
+import { sidebarLinks } from "@/Data/Routes";
+import { cn } from "@/lib/utils";
+import { ChevronsLeft, ChevronsRight, LogOut, User } from "lucide-react";
+import React, { useEffect, useState } from "react";
 import { TooltipProvider } from "../ui/tooltip";
 import SidebarLink from "./SidebarLink ";
-import { sidebarLinks } from "@/data/routes";
 interface SidebarProps {
     isCollapsed: boolean;
     toggleSidebar: () => void;

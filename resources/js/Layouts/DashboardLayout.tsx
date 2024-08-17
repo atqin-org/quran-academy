@@ -1,16 +1,4 @@
-import { useState, PropsWithChildren, ReactNode } from "react";
-import { TUser } from "@/types";
 import Sidebar from "@/Components/costume-cn/Sidebar";
-import {
-    Sheet,
-    SheetContent,
-    SheetDescription,
-    SheetHeader,
-    SheetTrigger,
-} from "@/Components/ui/sheet";
-import { Button } from "@/Components/ui/button";
-import { Menu } from "lucide-react";
-import { Slash } from "lucide-react";
 import {
     Breadcrumb,
     BreadcrumbItem,
@@ -18,9 +6,19 @@ import {
     BreadcrumbList,
     BreadcrumbSeparator,
 } from "@/Components/ui/breadcrumb";
+import { Button } from "@/Components/ui/button";
+import {
+    Sheet,
+    SheetContent,
+    SheetDescription,
+    SheetHeader,
+    SheetTrigger,
+} from "@/Components/ui/sheet";
 import { Toaster } from "@/Components/ui/sonner";
-import { sidebarLinks } from "@/data/routes";
-import { breadcrumbLinks } from "@/data/routes";
+import { breadcrumbLinks, sidebarLinks } from "@/Data/Routes";
+import { TUser } from "@/types";
+import { Menu, Slash } from "lucide-react";
+import { PropsWithChildren, useState } from "react";
 
 export default function DashboardLayout({
     user,
