@@ -35,18 +35,6 @@ import { format } from "date-fns";
 import { Switch } from "@/Components/ui/switch";
 import Dropzone, { DropzoneState } from "@/Components/costume-cn/Dropzone";
 
-const clubs = [
-    { id: 1, name: "النادي الاول" },
-    { id: 2, name: "النادي الثاني" },
-    { id: 3, name: "النادي الثالث" },
-    { id: 4, name: "النادي الرابع" },
-];
-const categories = [
-    { id: 1, name: "الفئة 1" },
-    { id: 2, name: "الفئة 2" },
-    { id: 3, name: "الفئة 3" },
-];
-
 const FormSchema = z
     .object({
         club: z.enum(["1", "2", "3"], {
@@ -140,7 +128,12 @@ const FormSchema = z
         message: "يرجى ادخال رقم هاتف الاب او الام",
         path: ["fatherPhone"],
     });
-export default function Dashboard({ auth }: PageProps) {
+    interface DashboardProps extends PageProps {
+        clubs: { id: number; name: string }[];
+        categories: { id: number; name: string }[];
+    }
+
+export default function Dashboard({ auth, clubs,categories }: DashboardProps) {
     const form = useForm<z.infer<typeof FormSchema>>({
         resolver: zodResolver(FormSchema),
     });
