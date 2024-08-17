@@ -65,28 +65,32 @@ export default function DashboardLayout({
                 <Breadcrumb className="my-2">
                     <BreadcrumbList>
                         {sidebarLinkObj && (
-                            <BreadcrumbItem>
-                                <BreadcrumbLink href={sidebarLinkObj.href}>
-                                    {sidebarLinkObj.label}
-                                </BreadcrumbLink>
-                            </BreadcrumbItem>
-                        )}
-
-                        <BreadcrumbItem>
-                            {breadcrumbLinkObj && sidebarLinkObj && (sidebarLinkObj.crud===true) ?(
-                                <>
-                                    <BreadcrumbSeparator>
-                                        <Slash />
-                                    </BreadcrumbSeparator>
-                                    <BreadcrumbLink
-                                        href={breadcrumbLinkObj.action}
-                                    >
-                                        {breadcrumbLinkObj.label}{" "}
+                            <>
+                                <BreadcrumbItem>
+                                    <BreadcrumbLink href={sidebarLinkObj.href}>
                                         {sidebarLinkObj.label}
                                     </BreadcrumbLink>
-                                </>
-                            ):(<></>)}
-                        </BreadcrumbItem>
+                                </BreadcrumbItem>
+                                {breadcrumbLinkObj &&
+                                    sidebarLinkObj.crud === true && (
+                                        <>
+                                            <BreadcrumbSeparator>
+                                                <Slash />
+                                            </BreadcrumbSeparator>
+                                            <BreadcrumbItem>
+                                                <BreadcrumbLink
+                                                    href={
+                                                        breadcrumbLinkObj.action
+                                                    }
+                                                >
+                                                    {breadcrumbLinkObj.label}{" "}
+                                                    {sidebarLinkObj.label}
+                                                </BreadcrumbLink>
+                                            </BreadcrumbItem>
+                                        </>
+                                    )}
+                            </>
+                        )}
                     </BreadcrumbList>
                 </Breadcrumb>
                 <main className="mt-4 flex-grow">{children}</main>
