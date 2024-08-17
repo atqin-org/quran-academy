@@ -4,14 +4,9 @@ use App\Http\Controllers\ProfileController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
+use App\Http\Controllers\StudentResourceController;
 
-Route::get('/dashboard/student/create', function () {
-    return Inertia::render('Dashboard/Students/create');
-});
-
-Route::get('/dashboard/student', function () {
-    return Inertia::render('Dashboard/Students/index');
-});
+Route::resource('/dashboard/students', StudentResourceController::class);
 
 // if (/dashboard/* dont exist) render  /Dashboard/tmp
 Route::get('/dashboard/{any}', function () {
