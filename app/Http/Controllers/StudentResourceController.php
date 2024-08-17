@@ -6,6 +6,7 @@ use App\Models\Category;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Models\Club;
+use App\Models\Student;
 
 class StudentResourceController extends Controller
 {
@@ -14,7 +15,11 @@ class StudentResourceController extends Controller
      */
     public function index()
     {
-        return Inertia::render('Dashboard/Students/index');
+        return Inertia::render('Dashboard/Students/index',
+            [
+                'students' => Student::all(),
+            ]
+    );
     }
 
     /**
