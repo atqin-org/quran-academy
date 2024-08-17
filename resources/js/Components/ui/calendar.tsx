@@ -67,7 +67,6 @@ function Calendar({
                     <ChevronRight className="h-4 w-4" />
                 ),
                 Dropdown: (dropdownProps) => {
-                    console.log({ dropdownProps });
                     const { currentMonth, goToMonth } = useNavigation();
                     const {
                         fromYear,

@@ -3,7 +3,6 @@ import { PageProps } from "@/types";
 import DashboardLayout from "@/Layouts/DashboardLayout";
 import { Button } from "@/Components/ui/button";
 import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
 import {
     Select,
     SelectContent,
@@ -11,16 +10,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/Components/ui/select";
-import {
-    Form,
-    FormControl,
-    FormDescription,
-    FormField,
-    FormItem,
-    FormLabel,
-    FormMessage,
-} from "@/Components/ui/form";
-import { useForm } from "react-hook-form";
+import { useForm } from "@inertiajs/react";
 import { toast } from "sonner";
 import { Input } from "@/Components/ui/input";
 import {
@@ -28,30 +18,76 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from "@/Components/ui/popover";
-import { CalendarIcon, CloudUpload } from "lucide-react";
+import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Calendar } from "@/Components/ui/calendar";
 import { format } from "date-fns";
 import { Switch } from "@/Components/ui/switch";
 import Dropzone, { DropzoneState } from "@/Components/costume-cn/Dropzone";
 import { FormSchema } from "@/Data/Zod/Students";
+import { Label } from "@/Components/ui/label";
+import FileUploaded from "@/Components/costume-cn/FileUploaded";
+
+interface StudentForm {
+    firstName: string;
+    lastName: string;
+    gender: string;
+    birthdate: Date | undefined;
+    socialStatus: string;
+    hasCronicDisease: string;
+    cronicDisease?: string;
+    familyStatus?: string;
+    fatherJob: string;
+    motherJob: string;
+    fatherPhone?: string;
+    motherPhone?: string;
+    club: string;
+    category: string;
+    subscription: string;
+    insurance: boolean;
+    picture?: File;
+    file?: File;
+}
+const initialFormState: StudentForm = {
+    firstName: "",
+    lastName: "",
+    gender: "",
+    birthdate: undefined,
+    socialStatus: "",
+    hasCronicDisease: "",
+    cronicDisease: "",
+    familyStatus: "",
+    fatherJob: "",
+    fatherPhone: "",
+    motherJob: "",
+    motherPhone: "",
+    club: "",
+    category: "",
+    subscription: "",
+    insurance: false,
+    picture: undefined,
+    file: undefined,
+};
+
 interface DashboardProps extends PageProps {
     clubs: { id: number; name: string }[];
     categories: { id: number; name: string }[];
 }
 
 export default function Dashboard({ auth, clubs, categories }: DashboardProps) {
-    const form = useForm<z.infer<typeof FormSchema>>({
-        resolver: zodResolver(FormSchema),
-    });
+    const { data, setData, post, processing, errors } =
+        useForm<StudentForm>(initialFormState);
 
-    function onSubmit(data: z.infer<typeof FormSchema>) {
+    function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+        e.preventDefault();
+        console.log(data);
         toast.promise(
-            new Promise((resolve) => {
-                setTimeout(() => {
-                    console.log(data);
-                    resolve("");
-                }, 500);
+            new Promise(async (resolve, reject) => {
+                try {
+                    console.log(post("/dashboard/students"));
+                } catch (error) {
+                    reject(error);
+                }
             }),
             {
                 loading: "جاري التسجيل ...",
@@ -68,540 +104,452 @@ export default function Dashboard({ auth, clubs, categories }: DashboardProps) {
                 <h1 className="text-4xl font-bold text-gray-900">
                     تسجيل الطالب
                 </h1>
-                <Form {...form}>
-                    <form
-                        onSubmit={form.handleSubmit(onSubmit)}
-                        className="space-y-6"
-                    >
-                        <Button
-                            type="submit"
-                            variant="default"
-                            className="w-fit"
+                <form onSubmit={handleSubmit} className="space-y-6">
+                    <Button type="submit" disabled={processing}>
+                        تسجيل
+                    </Button>
+                    <div>
+                        <Label>النادي</Label>
+                        <Select
+                            onValueChange={(value) => setData("club", value)}
+                            defaultValue={data.club}
+                            dir="rtl"
                         >
-                            تسجيل
-                        </Button>
-                        <FormField
-                            name="club"
-                            control={form.control}
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>النادي</FormLabel>
-                                    <Select
-                                        onValueChange={field.onChange}
-                                        defaultValue={field.value}
-                                        dir="rtl"
+                            <SelectTrigger
+                                className={data.club ? "" : "text-slate-500"}
+                            >
+                                <SelectValue placeholder="اختر نادي" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {clubs.map((club) => (
+                                    <SelectItem
+                                        key={club.id}
+                                        value={club.id.toString()}
                                     >
-                                        <FormControl
-                                            className={
-                                                field.value
-                                                    ? ""
-                                                    : "text-slate-500"
-                                            }
-                                        >
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="اختر نادي" />
-                                            </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                            {clubs.map((club) => (
-                                                <SelectItem
-                                                    key={club.id}
-                                                    value={club.id.toString()}
-                                                >
-                                                    {club.name}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                    <FormMessage />
-                                </FormItem>
+                                        {club.name}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                        {errors.club && (
+                            <span className="text-red-500">{errors.club}</span>
+                        )}
+                    </div>
+                    <div className="flex sm:flex-row flex-col gap-6 w-full">
+                        <div className="w-full">
+                            <Label>الاسم</Label>
+                            <Input
+                                value={data.firstName}
+                                onChange={(e) =>
+                                    setData("firstName", e.target.value)
+                                }
+                                placeholder="اكتب الاسم ..."
+                                dir="rtl"
+                            />
+                            {errors.firstName && (
+                                <span className="text-red-500">
+                                    {errors.firstName}
+                                </span>
                             )}
+                        </div>
+                        <div className="w-full">
+                            <Label>اللقب</Label>
+                            <Input
+                                value={data.lastName}
+                                onChange={(e) =>
+                                    setData("lastName", e.target.value)
+                                }
+                                placeholder="اكتب اللقب ..."
+                                dir="rtl"
+                            />
+                            {errors.lastName && (
+                                <span className="text-red-500">
+                                    {errors.lastName}
+                                </span>
+                            )}
+                        </div>
+                        <div className="w-full">
+                            <Label>الجنس</Label>
+                            <Select
+                                onValueChange={(value) =>
+                                    setData("gender", value)
+                                }
+                                defaultValue={data.gender}
+                                dir="rtl"
+                            >
+                                <SelectTrigger
+                                    className={
+                                        data.gender ? "" : "text-slate-500"
+                                    }
+                                >
+                                    <SelectValue placeholder="اختر الجنس ..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem key={0} value={"male"}>
+                                        {"ذكر"}
+                                    </SelectItem>
+                                    <SelectItem key={1} value={"female"}>
+                                        {"انثى"}
+                                    </SelectItem>
+                                </SelectContent>
+                            </Select>
+                            {errors.gender && (
+                                <span className="text-red-500">
+                                    {errors.gender}
+                                </span>
+                            )}
+                        </div>
+                    </div>
+                    <div className="flex sm:flex-row flex-col gap-6 w-full">
+                        <div className=" w-full">
+                            <Label className=" w-full">تاريخ الميلاد</Label>
+                            <Popover>
+                                <PopoverTrigger asChild>
+                                    <Button
+                                        variant={"outline"}
+                                        className={cn(
+                                            " flex justify-between w-full pl-3 font-normal",
+                                            !data.birthdate &&
+                                                "text-muted-foreground"
+                                        )}
+                                    >
+                                        {data.birthdate ? (
+                                            format(data.birthdate, "yyyy/MM/dd")
+                                        ) : (
+                                            <span>اليوم / الشهر / السنة</span>
+                                        )}
+                                        <CalendarIcon className="h-4 w-4 opacity-50" />
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent
+                                    className="w-auto p-0"
+                                    align="start"
+                                >
+                                    <Calendar
+                                        mode="single"
+                                        defaultMonth={data.birthdate}
+                                        selected={data.birthdate}
+                                        onSelect={(date) =>
+                                            setData("birthdate", date)
+                                        }
+                                        fromYear={1900}
+                                        toYear={new Date().getFullYear()}
+                                        fixedWeeks
+                                        captionLayout="dropdown-buttons"
+                                        disabled={(date) =>
+                                            date > new Date() ||
+                                            date < new Date("1900-01-01")
+                                        }
+                                        initialFocus
+                                    />
+                                </PopoverContent>
+                            </Popover>
+                            {errors.birthdate && (
+                                <span className="text-red-500">
+                                    {errors.birthdate}
+                                </span>
+                            )}
+                        </div>
+                        <div className="w-full">
+                            <Label>الحالة الاجتماعية</Label>
+                            <Select
+                                onValueChange={(value) =>
+                                    setData("socialStatus", value)
+                                }
+                                defaultValue={data.socialStatus}
+                                dir="rtl"
+                            >
+                                <SelectTrigger
+                                    className={
+                                        data.socialStatus
+                                            ? ""
+                                            : "text-slate-500"
+                                    }
+                                >
+                                    <SelectValue placeholder="اختر الحالة الاجتماعية ..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem key="good" value="good">
+                                        {"ميسورة"}
+                                    </SelectItem>
+                                    <SelectItem key="mid" value="mid">
+                                        {"متوسطة"}
+                                    </SelectItem>
+                                    <SelectItem key="low" value="low">
+                                        {"معوزة"}
+                                    </SelectItem>
+                                </SelectContent>
+                            </Select>
+                            {errors.socialStatus && (
+                                <span className="text-red-500">
+                                    {errors.socialStatus}
+                                </span>
+                            )}
+                        </div>
+                    </div>
+                    <div className="flex sm:flex-row flex-col gap-6 w-full">
+                        <div className="w-full">
+                            <Label>هل يعاني من مرض مزمن؟</Label>
+                            <Select
+                                onValueChange={(value) =>
+                                    setData("hasCronicDisease", value)
+                                }
+                                defaultValue={data.hasCronicDisease}
+                                dir="rtl"
+                            >
+                                <SelectTrigger
+                                    className={
+                                        data.hasCronicDisease
+                                            ? ""
+                                            : "text-slate-500"
+                                    }
+                                >
+                                    <SelectValue placeholder="اختر ..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem key="yes" value="yes">
+                                        {"نعم"}
+                                    </SelectItem>
+                                    <SelectItem key="no" value="no">
+                                        {"لا"}
+                                    </SelectItem>
+                                </SelectContent>
+                            </Select>
+                            {errors.hasCronicDisease && (
+                                <span className="text-red-500">
+                                    {errors.hasCronicDisease}
+                                </span>
+                            )}
+                        </div>
+                        {data.hasCronicDisease === "yes" && (
+                            <div className="w-full">
+                                <Label>ماهو المرض؟</Label>
+                                <Input
+                                    value={data.cronicDisease}
+                                    onChange={(e) =>
+                                        setData("cronicDisease", e.target.value)
+                                    }
+                                    placeholder="اكتب ..."
+                                    dir="rtl"
+                                />
+                                {errors.cronicDisease && (
+                                    <span className="text-red-500">
+                                        {errors.cronicDisease}
+                                    </span>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                    <div className="w-full">
+                        <Label>الحالة العائلية</Label>
+                        <Input
+                            value={data.familyStatus}
+                            onChange={(e) =>
+                                setData("familyStatus", e.target.value)
+                            }
+                            placeholder="اكتب ملاحظات عن الحالة العائلية ان وجدت ..."
+                            dir="rtl"
                         />
-                        <div className="flex sm:flex-row flex-col gap-6 w-full">
-                            <FormField
-                                name="firstName"
-                                control={form.control}
-                                render={({ field }) => (
-                                    <FormItem className="w-full">
-                                        <FormLabel>الاسم</FormLabel>
-                                        <FormControl>
-                                            <Input
-                                                {...field}
-                                                placeholder="اكتب الاسم ..."
-                                                dir="rtl"
-                                            />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
+                        {errors.familyStatus && (
+                            <span className="text-red-500">
+                                {errors.familyStatus}
+                            </span>
+                        )}
+                    </div>
+                    <div className="flex sm:flex-row flex-col gap-6 w-full">
+                        <div className="w-full">
+                            <Label>وظيفة الاب</Label>
+                            <Input
+                                value={data.fatherJob}
+                                onChange={(e) =>
+                                    setData("fatherJob", e.target.value)
+                                }
+                                placeholder="اكتب ..."
+                                dir="rtl"
                             />
-                            <FormField
-                                name="lastName"
-                                control={form.control}
-                                render={({ field }) => (
-                                    <FormItem className="w-full">
-                                        <FormLabel>اللقب</FormLabel>
-                                        <FormControl>
-                                            <Input
-                                                {...field}
-                                                placeholder="اكتب اللقب ..."
-                                                dir="rtl"
-                                            />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
+                            {errors.fatherJob && (
+                                <span className="text-red-500">
+                                    {errors.fatherJob}
+                                </span>
+                            )}
+                        </div>
+                        <div className="w-full">
+                            <Label>رقم هاتف الاب</Label>
+                            <Input
+                                value={data.fatherPhone}
+                                onChange={(e) =>
+                                    setData("fatherPhone", e.target.value)
+                                }
+                                placeholder="اكتب ..."
+                                dir="rtl"
                             />
-                            <FormField
-                                name="gender"
-                                control={form.control}
-                                render={({ field }) => (
-                                    <FormItem className="w-full">
-                                        <FormLabel>الجنس</FormLabel>
-                                        <Select
-                                            onValueChange={field.onChange}
-                                            defaultValue={field.value}
-                                            dir="rtl"
+                            {errors.fatherPhone && (
+                                <span className="text-red-500">
+                                    {errors.fatherPhone}
+                                </span>
+                            )}
+                        </div>
+                    </div>
+                    <div className="flex sm:flex-row flex-col gap-6 w-full">
+                        <div className="w-full">
+                            <Label>وظيفة الام</Label>
+                            <Input
+                                value={data.motherJob}
+                                onChange={(e) =>
+                                    setData("motherJob", e.target.value)
+                                }
+                                placeholder="اكتب ..."
+                                dir="rtl"
+                            />
+                            {errors.motherJob && (
+                                <span className="text-red-500">
+                                    {errors.motherJob}
+                                </span>
+                            )}
+                        </div>
+                        <div className="w-full">
+                            <Label>رقم هاتف الام</Label>
+                            <Input
+                                value={data.motherPhone}
+                                onChange={(e) =>
+                                    setData("motherPhone", e.target.value)
+                                }
+                                placeholder="اكتب ..."
+                                dir="rtl"
+                            />
+                            {errors.motherPhone && (
+                                <span className="text-red-500">
+                                    {errors.motherPhone}
+                                </span>
+                            )}
+                        </div>
+                    </div>
+                    <div className="flex sm:flex-row flex-col gap-6 w-full">
+                        <div className="w-full">
+                            <Label>الفئة</Label>
+                            <Select
+                                onValueChange={(value) =>
+                                    setData("category", value)
+                                }
+                                defaultValue={data.category}
+                                dir="rtl"
+                            >
+                                <SelectTrigger
+                                    className={
+                                        data.category ? "" : "text-slate-500"
+                                    }
+                                >
+                                    <SelectValue placeholder="اختر الفئة ..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {categories.map((category) => (
+                                        <SelectItem
+                                            key={category.id}
+                                            value={category.id.toString()}
                                         >
-                                            <FormControl
-                                                className={
-                                                    field.value
-                                                        ? ""
-                                                        : "text-slate-500"
-                                                }
-                                            >
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="اختر الجنس ..." />
-                                                </SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent>
-                                                <SelectItem
-                                                    key={0}
-                                                    value={"male"}
-                                                >
-                                                    {"ذكر"}
-                                                </SelectItem>
-                                                <SelectItem
-                                                    key={1}
-                                                    value={"female"}
-                                                >
-                                                    {"انثى"}
-                                                </SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                        <FormMessage />
-                                    </FormItem>
+                                            {category.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            {errors.category && (
+                                <span className="text-red-500">
+                                    {errors.category}
+                                </span>
+                            )}
+                        </div>
+                        <div className="w-full">
+                            <Label className="truncate">الاشتراك الشهري</Label>
+                            <Input
+                                value={data.subscription}
+                                onChange={(e) =>
+                                    setData("subscription", e.target.value)
+                                }
+                                placeholder="اكتب ..."
+                                dir="rtl"
+                            />
+                            {errors.subscription && (
+                                <span className="text-red-500">
+                                    {errors.subscription}
+                                </span>
+                            )}
+                        </div>
+                        <div
+                            dir="ltr"
+                            className="flex flex-row items-center justify-between gap-10 rounded-lg border p-4"
+                        >
+                            <div className="space-y-0.5 text-nowrap flex flex-col truncate">
+                                <Label className="text-base">التامين</Label>
+                                <span dir="rtl">200 دج سنويا</span>
+                                {errors.insurance && (
+                                    <span className="text-red-500">
+                                        {errors.insurance}
+                                    </span>
                                 )}
+                            </div>
+                            <Switch
+                                checked={data.insurance}
+                                onCheckedChange={(value) =>
+                                    setData("insurance", value)
+                                }
                             />
                         </div>
-                        <div className="flex sm:flex-row flex-col gap-6 w-full">
-                            <FormField
-                                name="birthDate"
-                                control={form.control}
-                                render={({ field }) => (
-                                    <FormItem className=" w-full">
-                                        <FormLabel className=" w-full">
-                                            تاريخ الميلاد
-                                        </FormLabel>
-                                        <Popover>
-                                            <PopoverTrigger asChild>
-                                                <FormControl>
-                                                    <Button
-                                                        variant={"outline"}
-                                                        className={cn(
-                                                            " flex justify-between w-full pl-3 font-normal",
-                                                            !field.value &&
-                                                                "text-muted-foreground"
-                                                        )}
-                                                    >
-                                                        {field.value ? (
-                                                            format(
-                                                                field.value,
-                                                                "yyyy/MM/dd"
-                                                            )
-                                                        ) : (
-                                                            <span>
-                                                                اليوم / الشهر /
-                                                                السنة
-                                                            </span>
-                                                        )}
-                                                        <CalendarIcon className="h-4 w-4 opacity-50" />
-                                                    </Button>
-                                                </FormControl>
-                                            </PopoverTrigger>
-                                            <PopoverContent
-                                                className="w-auto p-0"
-                                                align="start"
-                                            >
-                                                <Calendar
-                                                    mode="single"
-                                                    defaultMonth={field.value}
-                                                    selected={field.value}
-                                                    onSelect={field.onChange}
-                                                    fromYear={1900}
-                                                    toYear={new Date().getFullYear()}
-                                                    fixedWeeks
-                                                    captionLayout="dropdown-buttons"
-                                                    disabled={(date) =>
-                                                        date > new Date() ||
-                                                        date <
-                                                            new Date(
-                                                                "1900-01-01"
-                                                            )
-                                                    }
-                                                    initialFocus
-                                                />
-                                            </PopoverContent>
-                                        </Popover>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <FormField
-                                name="socialStatus"
-                                control={form.control}
-                                render={({ field }) => (
-                                    <FormItem className="w-full">
-                                        <FormLabel>الحالة الاجتماعية</FormLabel>
-                                        <Select
-                                            onValueChange={field.onChange}
-                                            defaultValue={field.value}
-                                            dir="rtl"
-                                        >
-                                            <FormControl
-                                                className={
-                                                    field.value
-                                                        ? ""
-                                                        : "text-slate-500"
-                                                }
-                                            >
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="اختر الحالة الاجتماعية ..." />
-                                                </SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent>
-                                                <SelectItem
-                                                    key="good"
-                                                    value="good"
-                                                >
-                                                    {"ميسورة"}
-                                                </SelectItem>
-                                                <SelectItem
-                                                    key="mid"
-                                                    value="mid"
-                                                >
-                                                    {"متوسطة"}
-                                                </SelectItem>
-                                                <SelectItem
-                                                    key="low"
-                                                    value="low"
-                                                >
-                                                    {"معوزة"}
-                                                </SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                        </div>
-                        <div className="flex sm:flex-row flex-col gap-6 w-full">
-                            <FormField
-                                name="hasCronicDisease"
-                                control={form.control}
-                                render={({ field }) => (
-                                    <FormItem className="w-full">
-                                        <FormLabel>
-                                            هل يعاني من مرض مزمن؟
-                                        </FormLabel>
-                                        <Select
-                                            onValueChange={field.onChange}
-                                            defaultValue={field.value}
-                                            dir="rtl"
-                                        >
-                                            <FormControl
-                                                className={
-                                                    field.value
-                                                        ? ""
-                                                        : "text-slate-500"
-                                                }
-                                            >
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="اختر ..." />
-                                                </SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent>
-                                                <SelectItem
-                                                    key="yes"
-                                                    value="yes"
-                                                >
-                                                    {"نعم"}
-                                                </SelectItem>
-                                                <SelectItem key="no" value="no">
-                                                    {"لا"}
-                                                </SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            {form.watch("hasCronicDisease") === "yes" && (
-                                <FormField
-                                    name="cronicDisease"
-                                    control={form.control}
-                                    render={({ field }) => (
-                                        <FormItem className="w-full">
-                                            <FormLabel>ماهو المرض؟</FormLabel>
-                                            <FormControl>
-                                                <Input
-                                                    {...field}
-                                                    placeholder="اكتب ..."
-                                                    dir="rtl"
-                                                />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
+                    </div>
+                    <div className="flex sm:flex-row flex-col gap-6 w-full">
+                        <div className="w-full">
+                            <Label>الصورة الشخصية</Label>
+                            {data.picture === undefined ? (
+                                <Dropzone
+                                    onDrop={(acceptedFiles) => {
+                                        if (acceptedFiles.length > 0) {
+                                            setData(
+                                                "picture",
+                                                acceptedFiles[0]
+                                            );
+                                        }
+                                    }}
+                                />
+                            ) : (
+                                <FileUploaded
+                                    file={data.picture}
+                                    setData={setData}
+                                    name="picture"
                                 />
                             )}
-                        </div>
-                        <FormField
-                            name="familyStatus"
-                            control={form.control}
-                            render={({ field }) => (
-                                <FormItem className="w-full">
-                                    <FormLabel>الحالة العائلية</FormLabel>
-                                    <FormControl>
-                                        <Input
-                                            {...field}
-                                            placeholder="اكتب ملاحظات عن الحالة العائلية ان وجدت ..."
-                                            dir="rtl"
-                                        />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
+                            {errors.picture && (
+                                <span className="text-red-500">
+                                    {errors.picture}
+                                </span>
                             )}
-                        />
-                        <div className="flex sm:flex-row flex-col gap-6 w-full">
-                            <FormField
-                                name="fatherJob"
-                                control={form.control}
-                                render={({ field }) => (
-                                    <FormItem className="w-full">
-                                        <FormLabel>وظيفة الاب</FormLabel>
-                                        <FormControl>
-                                            <Input
-                                                {...field}
-                                                placeholder="اكتب ..."
-                                                dir="rtl"
-                                            />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <FormField
-                                name="fatherPhone"
-                                control={form.control}
-                                render={({ field }) => (
-                                    <FormItem className="w-full">
-                                        <FormLabel>رقم هاتف الاب</FormLabel>
-                                        <FormControl>
-                                            <Input
-                                                {...field}
-                                                placeholder="اكتب ..."
-                                                dir="rtl"
-                                            />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
                         </div>
-                        <div className="flex sm:flex-row flex-col gap-6 w-full">
-                            <FormField
-                                name="motherJob"
-                                control={form.control}
-                                render={({ field }) => (
-                                    <FormItem className="w-full">
-                                        <FormLabel>وظيفة الام</FormLabel>
-                                        <FormControl>
-                                            <Input
-                                                {...field}
-                                                placeholder="اكتب ..."
-                                                dir="rtl"
-                                            />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <FormField
-                                name="motherPhone"
-                                control={form.control}
-                                render={({ field }) => (
-                                    <FormItem className="w-full">
-                                        <FormLabel>رقم هاتف الام</FormLabel>
-                                        <FormControl>
-                                            <Input
-                                                {...field}
-                                                placeholder="اكتب ..."
-                                                dir="rtl"
-                                            />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
+                        <div className="w-full">
+                            <Label>شهادة الميلاد</Label>
+                            {data.file === undefined ? (
+                                <Dropzone
+                                    onDrop={(acceptedFiles) => {
+                                        if (acceptedFiles.length > 0) {
+                                            setData("file", acceptedFiles[0]);
+                                        }
+                                    }}
+                                />
+                            ) : (
+                                <FileUploaded
+                                    file={data.file}
+                                    setData={setData}
+                                    name="file"
+                                />
+                            )}
+                            {errors.file && (
+                                <span className="text-red-500">
+                                    {errors.file}
+                                </span>
+                            )}
                         </div>
-                        <div className="flex sm:flex-row flex-col gap-6 w-full">
-                            <FormField
-                                name="category"
-                                control={form.control}
-                                render={({ field }) => (
-                                    <FormItem className="w-full">
-                                        <FormLabel>الفئة</FormLabel>
-                                        <Select
-                                            onValueChange={field.onChange}
-                                            defaultValue={field.value}
-                                            dir="rtl"
-                                        >
-                                            <FormControl
-                                                className={
-                                                    field.value
-                                                        ? ""
-                                                        : "text-slate-500"
-                                                }
-                                            >
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="اختر الفئة ..." />
-                                                </SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent>
-                                                {categories.map((category) => (
-                                                    <SelectItem
-                                                        key={category.id}
-                                                        value={category.id.toString()}
-                                                    >
-                                                        {category.name}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <FormField
-                                name="subscription"
-                                control={form.control}
-                                render={({ field }) => (
-                                    <FormItem className="w-full">
-                                        <FormLabel>الاشتراك الشهري</FormLabel>
-                                        <FormControl>
-                                            <Input
-                                                {...field}
-                                                placeholder="اكتب ..."
-                                                dir="rtl"
-                                            />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <FormField
-                                name="insurance"
-                                control={form.control}
-                                render={({ field }) => (
-                                    <FormItem
-                                        dir="ltr"
-                                        className="flex flex-row items-center justify-between gap-10 rounded-lg border p-4"
-                                    >
-                                        <div className="space-y-0.5 text-nowrap">
-                                            <FormLabel className="text-base">
-                                                التامين
-                                            </FormLabel>
-                                            <FormDescription dir="rtl">
-                                                200 دج سنويا
-                                            </FormDescription>
-                                            <FormMessage />
-                                        </div>
-                                        <FormControl>
-                                            <Switch
-                                                checked={field.value}
-                                                onCheckedChange={field.onChange}
-                                            />
-                                        </FormControl>
-                                    </FormItem>
-                                )}
-                            />
-                        </div>
-                        <div className="flex sm:flex-row flex-col gap-6 w-full">
-                            <FormField
-                                name="picture"
-                                control={form.control}
-                                render={({ field }) => (
-                                    <FormItem className="w-full">
-                                        <FormLabel>الصورة الشخصية</FormLabel>
-                                        <FormControl>
-                                            <Dropzone {...field}>
-                                                {(dropzone: DropzoneState) => (
-                                                    <div className=" flex flex-col items-center justify-center">
-                                                        <CloudUpload className="h-12 w-12 text-gray-400" />
-                                                        <span className="text-md font-semibold text-gray-400">
-                                                            {dropzone.isDragAccept
-                                                                ? "ضع الملفات هنا"
-                                                                : "اضغط او اسحب الملفات هنا"}
-                                                        </span>
-                                                        <span className="mt-0.5 text-sm font-medium text-gray-400">
-                                                            الملفات المقبولة:
-                                                        </span>
-                                                        <span className="text-sm font-medium text-gray-400">
-                                                            jpg, png, jpeg, pdf
-                                                        </span>
-                                                    </div>
-                                                )}
-                                            </Dropzone>
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <FormField
-                                name="file"
-                                control={form.control}
-                                render={({ field }) => (
-                                    <FormItem className="w-full">
-                                        <FormLabel>شهادة الميلاد</FormLabel>
-                                        <FormControl>
-                                            <Dropzone {...field}>
-                                                {(dropzone: DropzoneState) => (
-                                                    <div className=" flex flex-col items-center justify-center">
-                                                        <CloudUpload className="h-12 w-12 text-gray-400" />
-                                                        <span className="text-md font-semibold text-gray-400">
-                                                            {dropzone.isDragAccept
-                                                                ? "ضع الملفات هنا"
-                                                                : "اضغط او اسحب الملفات هنا"}
-                                                        </span>
-                                                        <span className="mt-0.5 text-sm font-medium text-gray-400">
-                                                            الملفات المقبولة:
-                                                        </span>
-                                                        <span className="text-sm font-medium text-gray-400">
-                                                            jpg, png, jpeg, pdf
-                                                        </span>
-                                                    </div>
-                                                )}
-                                            </Dropzone>
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                        </div>
-                        <Button type="submit">تسجيل</Button>
-                    </form>
-                </Form>
+                    </div>
+                    <Button type="submit" disabled={processing}>
+                        تسجيل
+                    </Button>
+                </form>
             </div>
         </DashboardLayout>
     );

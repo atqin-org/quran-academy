@@ -87,10 +87,6 @@ export const breadcrumbLinks = [
     },
     {
         label: "عرض",
-        action: "show",
-    },
-    {
-        label: "حذف",
-        action: "delete",
+        action: "",
     },
 ];

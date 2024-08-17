@@ -25,6 +25,13 @@ export default {
                 "in-out-quint": "cubic-bezier(0.83, 0, 0.17, 1)",
             },
         },
+        screens: {
+            xs: "475px",
+            sm: "640px",
+            md: "768px",
+            lg: "1024px",
+            xl: "1280px",
+        },
         container: {
             center: true,
             padding: "2rem",
@@ -76,7 +83,10 @@ export default {
             fontFamily: {
                 sans: ["Figtree", ...defaultTheme.fontFamily.sans],
                 alexandria: ["Alexandria", ...defaultTheme.fontFamily.sans],
-                sansarabic: ["IBM Plex Sans Arabic", ...defaultTheme.fontFamily.sans],
+                sansarabic: [
+                    "IBM Plex Sans Arabic",
+                    ...defaultTheme.fontFamily.sans,
+                ],
             },
             keyframes: {
                 "accordion-down": {

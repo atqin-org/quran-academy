@@ -1,5 +1,5 @@
 import { z } from "zod";
-
+export type TStudent = z.infer<typeof FormSchema>;
 export const FormSchema = z
     .object({
         firstName: z.string({

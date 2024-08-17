@@ -33,12 +33,12 @@ const Sidebar: React.FC<SidebarProps> = ({
                 "w-36": effectiveIsCollapsed,
                 "w-60": !effectiveIsCollapsed,
                 "flex justify-center h-96 w-full": mobile,
-                "hidden h-[100svh] sm:flex": !mobile,
+                "hidden h-[100svh] md:flex": !mobile,
             })}
         >
             <nav
                 className={cn(
-                    `flex flex-col items-center rounded-xl justify-between gap-2 sm:gap-4 lg:gap-8 px-2 sm:py-2 overflow-hidden`,
+                    `flex flex-col items-center rounded-xl justify-between gap-2 md:gap-4 lg:gap-8 px-2 overflow-hidden`,
                     {
                         "bg-background bg-zinc-50 border-2 border-gray-100 m-5":
                             !mobile,

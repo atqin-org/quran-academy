@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Models\Club;
 use App\Models\Student;
+use App\Rules\AtLeastOnePhone;
 
 class StudentResourceController extends Controller
 {
@@ -15,11 +16,12 @@ class StudentResourceController extends Controller
      */
     public function index()
     {
-        return Inertia::render('Dashboard/Students/Index',
+        return Inertia::render(
+            'Dashboard/Students/Index',
             [
                 'students' => Student::all(),
             ]
-    );
+        );
     }
 
     /**
@@ -42,7 +44,30 @@ class StudentResourceController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $request->validate([
+            'firstName' => 'required',
+            'lastName' => 'required',
+            'gender' => 'required|in:male,female',
+            'birthdate' => 'required|date',
+            'socialStatus' => 'required|in:good,mid,low',
+            'hasCronicDisease' => 'required|in:yes,no',
+            'cronicDisease' => 'required_if:hasCronicDisease,yes',
+            'fatherJob' => 'required',
+            'motherJob' => 'required',
+            'fatherPhone' => ['nullable', 'regex:/^0[567]\d{8}$/', new AtLeastOnePhone('motherPhone')],
+            'motherPhone' => ['nullable', 'regex:/^0[567]\d{8}$/', new AtLeastOnePhone('fatherPhone')],
+            'subscription' => 'required|numeric',
+            'insurance' => 'required|accepted',
+            'club' => 'required|exists:clubs,id',
+            'category' => 'required|exists:categories,id',
+            'picture' => 'image',
+            'file' => 'file',
+        ]);
+
+        Student::create($request->all());
+
+        // redirect to the students index page
+        return redirect()->route('students.index')->with('success', 'تم إضافة الطالب بنجاح');
     }
 
     /**
