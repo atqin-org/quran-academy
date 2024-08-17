@@ -23,7 +23,7 @@ import { cn } from "@/lib/utils";
 import { Calendar } from "@/Components/ui/calendar";
 import { format } from "date-fns";
 import { Switch } from "@/Components/ui/switch";
-import Dropzone, { DropzoneState } from "@/Components/costume-cn/Dropzone";
+import Dropzone from "@/Components/costume-cn/Dropzone";
 import { FormSchema } from "@/Data/Zod/Students";
 import { Label } from "@/Components/ui/label";
 import FileUploaded from "@/Components/costume-cn/FileUploaded";
