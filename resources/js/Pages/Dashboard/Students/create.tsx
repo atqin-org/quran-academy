@@ -1,4 +1,4 @@
-import { Head, Link } from "@inertiajs/react";
+import { Head } from "@inertiajs/react";
 import { PageProps } from "@/types";
 import DashboardLayout from "@/Layouts/DashboardLayout";
 import { Button } from "@/Components/ui/button";
@@ -34,106 +34,13 @@ import { Calendar } from "@/Components/ui/calendar";
 import { format } from "date-fns";
 import { Switch } from "@/Components/ui/switch";
 import Dropzone, { DropzoneState } from "@/Components/costume-cn/Dropzone";
+import { FormSchema } from "@/Data/Zod/Students";
+interface DashboardProps extends PageProps {
+    clubs: { id: number; name: string }[];
+    categories: { id: number; name: string }[];
+}
 
-const FormSchema = z
-    .object({
-        club: z.enum(["1", "2", "3"], {
-            required_error: "النادي مطلوب",
-        }),
-        firstName: z.string({
-            required_error: "الاسم مطلوب",
-        }),
-        lastName: z.string({
-            required_error: "اللقب مطلوب",
-        }),
-        gender: z
-            .enum(["male", "female"], {
-                required_error: "الجنس مطلوب",
-            })
-            .refine((val) => ["male", "female"].includes(val), {
-                message: "الجنس يجب ان يكون ذكر او انثى",
-            }),
-        birthDate: z.date({
-            required_error: "تاريخ الميلاد مطلوب",
-        }),
-        socialStatus: z
-            .enum(["good", "mid", "low"], {
-                required_error: "الحالة الاجتماعية مطلوبة",
-            })
-            .refine((val) => ["good", "mid", "low"].includes(val), {
-                message: "الحالة العائلية يجب ان تكون جيدة او متوسطة او ضعيفة",
-            }),
-        hasCronicDisease: z.enum(["yes", "no"], {
-            required_error: "هل يعاني من مرض مزمن مطلوب",
-        }),
-        cronicDisease: z.string().optional(),
-        familyStatus: z.string().optional(),
-        fatherJob: z.string({
-            required_error: "وظيفة الاب مطلوبة",
-        }),
-        motherJob: z.string({
-            required_error: "وظيفة الام مطلوبة",
-        }),
-        fatherPhone: z
-            .union([
-                z.string().regex(/^0[567]\d{8}$/, {
-                    message: "يرجى ادخال رقم هاتف صحيح",
-                }),
-                z.literal(""),
-            ])
-            .optional(),
-        motherPhone: z
-            .union([
-                z.string().regex(/^0[567]\d{8}$/, {
-                    message: "يرجى ادخال رقم هاتف صحيح",
-                }),
-                z.literal(""),
-            ])
-            .optional(),
-        category: z.enum(["1", "2", "3"], {
-            required_error: "الفئة مطلوبة",
-        }),
-        subscription: z
-            .string({ required_error: "الاشتراك الشهري مطلوب" })
-            .regex(/^\d+$/, {
-                message: "الاشتراك الشهري يجب ان يكون رقم",
-            }),
-        insurance: z.boolean({
-            required_error: "التامين مطلوب",
-        }),
-        picture: z
-            .object({
-                name: z.string(),
-                size: z.number(),
-                type: z.string(),
-            })
-            .optional(),
-        file: z
-            .object({
-                name: z.string(),
-                size: z.number(),
-                type: z.string(),
-            })
-            .optional(),
-    })
-    .refine(
-        (data) =>
-            data.hasCronicDisease === "yes" ? !!data.cronicDisease : true,
-        {
-            message: "يرجى ادخال اسم المرض",
-            path: ["cronicDisease"],
-        }
-    )
-    .refine((data) => data.fatherPhone || data.motherPhone, {
-        message: "يرجى ادخال رقم هاتف الاب او الام",
-        path: ["fatherPhone"],
-    });
-    interface DashboardProps extends PageProps {
-        clubs: { id: number; name: string }[];
-        categories: { id: number; name: string }[];
-    }
-
-export default function Dashboard({ auth, clubs,categories }: DashboardProps) {
+export default function Dashboard({ auth, clubs, categories }: DashboardProps) {
     const form = useForm<z.infer<typeof FormSchema>>({
         resolver: zodResolver(FormSchema),
     });
