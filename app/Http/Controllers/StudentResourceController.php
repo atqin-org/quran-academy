@@ -83,7 +83,14 @@ class StudentResourceController extends Controller
      */
     public function edit(string $id)
     {
-        //
+        return Inertia::render(
+            'Dashboard/Students/Update',
+            [
+                'student' => Student::find($id),
+                'clubs' => Club::all(),
+                'categories' => Category::all()
+            ]
+        );
     }
 
     /**

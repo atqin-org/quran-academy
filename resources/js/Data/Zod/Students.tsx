@@ -4,6 +4,7 @@ export const FormSchema = z
         firstName: z.string({
             required_error: "الاسم مطلوب",
         }),
+        // .min(2, "الاسم مطلوب") //
         lastName: z.string({
             required_error: "اللقب مطلوب",
         }),
@@ -68,17 +69,13 @@ export const FormSchema = z
         picture: z
             .instanceof(File, {
                 message: "الصورة مطلوبة",
-
-            }
-            )
+            })
             .refine((file) => file.type.startsWith("image/"), {
                 message: "Must be an image file",
-            })
-            ,
+            }),
         file: z.instanceof(File, {
             message: "الملف مطلوب",
-        }
-        ),
+        }),
     })
     .refine(
         (data) =>

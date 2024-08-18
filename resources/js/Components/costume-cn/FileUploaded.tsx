@@ -1,5 +1,16 @@
 import { cn } from "@/lib/utils";
+import { Download, Eye } from "lucide-react";
 import truncate from "truncate";
+import { Button } from "@/Components/ui/button";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/Components/ui/dialog";
 
 export interface FileUploadedProps {
     file: File;
@@ -73,33 +84,95 @@ const FileUploaded = ({
     name,
     className,
 }: FileUploadedProps) => {
-
+    const handleDownload = () => {
+        const url = URL.createObjectURL(file);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = file.name;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    };
     return (
-        <div className={cn("flex justify-between items-center flex-row w-full h-16 mt-2 px-4 border-solid border-2 border-gray-200 rounded-lg shadow-sm", className)}>
-            <div className="flex items-center flex-row gap-4 h-full">
+        <div
+            className={cn(
+                "flex justify-between items-center flex-row w-full h-16 mt-2 px-4 border-solid border-2 border-gray-200 rounded-lg shadow-sm",
+                className
+            )}
+        >
+            <div className="flex-1 flex items-center flex-row gap-4 h-full">
                 {file.type === "application/pdf" ? (
                     <PDF className="text-rose-700 w-6 h-6" />
                 ) : (
                     <Image className="text-rose-700 w-6 h-6" />
                 )}
-                <div className="flex flex-col gap-0">
-                    <div className="text-[0.85rem] font-medium leading-snug truncate">
-                        {truncate(
-                            file.name.split(".").slice(0, -1).join("."),
-                            30
-                        )}
+                <div className="flex flex-col gap-0 truncate w-10 flex-1">
+                    <div className="text-[0.85rem] font-medium truncate">
+                        {file.name.split(".").slice(0, -1).join(".")}
                     </div>
-                    <div className="text-[0.7rem] text-gray-500 leading-tight">
+                    <div className="text-[0.7rem] text-gray-500">
                         .{file.name.split(".").pop()} •{" "}
                         {(file.size / (1024 * 1024)).toFixed(2)} MB
                     </div>
                 </div>
             </div>
-            <div
-                className="p-2 rounded-full border-solid border-2 border-gray-100 shadow-sm hover:bg-accent transition-all select-none cursor-pointer"
-                onClick={() => setData(name, undefined)}
-            >
-                <Trash className="w-4 h-4" />
+
+            <div className="flex gap-1">
+                <Dialog>
+                    <DialogTrigger asChild>
+                        <div className="p-2  hidden md:inline-block rounded-full border-solid border-2 border-gray-100 shadow-sm hover:bg-accent transition-all select-none cursor-pointer">
+                            <Eye className="w-4 h-4" />
+                        </div>
+                    </DialogTrigger>
+                    <DialogContent className="min-w-[650px]">
+                        <DialogHeader>
+                            <DialogTitle>عرض الملف</DialogTitle>
+                        </DialogHeader>
+                        <DialogDescription>
+                            {file.name} •{" "}
+                            {(file.size / (1024 * 1024)).toFixed(2)} MB
+                        </DialogDescription>
+                        <div className="flex justify-center">
+                            {file.type === "application/pdf" ? (
+                                <embed
+                                    src={URL.createObjectURL(file)}
+                                    type="application/pdf"
+                                    width={600}
+                                    height={400}
+                                />
+                            ) : file.type.startsWith("image/") ? (
+                                <img
+                                    src={URL.createObjectURL(file)}
+                                    alt={file.name}
+                                    className="max-w-full max-h-full"
+                                />
+                            ) : (
+                                <div className="flex flex-col items-center justify-center">
+                                    <p className="text-gray-500">
+                                        لا يمكن عرض هذا النوع من الملفات
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+                        <DialogFooter>
+                            <Button
+                                type="submit"
+                                className="flex gap-1"
+                                onClick={handleDownload}
+                            >
+                                <span>تحميل</span>
+                                <Download className="w-4 h-4" />
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+                <div
+                    className="p-2 rounded-full border-solid border-2 border-gray-100 shadow-sm hover:bg-accent transition-all select-none cursor-pointer"
+                    onClick={() => setData(name, undefined)}
+                >
+                    <Trash className="w-4 h-4" />
+                </div>
             </div>
         </div>
     );
