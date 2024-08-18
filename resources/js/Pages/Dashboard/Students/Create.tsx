@@ -184,11 +184,12 @@ export default function Dashboard({ auth, clubs, categories }: DashboardProps) {
                                 placeholder="اكتب الاسم ..."
                                 dir="rtl"
                             />
-                            {errors.firstName && (
-                                <span className="text-red-500">
-                                    {errors.firstName}
-                                </span>
-                            )}
+                            <FormErrorMessage
+                                formStateErrors={
+                                    form.formState.errors.firstName
+                                }
+                                errors={errors.firstName}
+                            />
                         </div>
                         <div className="w-full">
                             <Label>اللقب</Label>
