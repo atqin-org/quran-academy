@@ -66,12 +66,19 @@ export const FormSchema = z
             required_error: "التامين مطلوب",
         }),
         picture: z
-            .instanceof(File)
+            .instanceof(File, {
+                message: "الصورة مطلوبة",
+
+            }
+            )
             .refine((file) => file.type.startsWith("image/"), {
                 message: "Must be an image file",
             })
-            .optional(),
-        file: z.instanceof(File).optional(),
+            ,
+        file: z.instanceof(File, {
+            message: "الملف مطلوب",
+        }
+        ),
     })
     .refine(
         (data) =>

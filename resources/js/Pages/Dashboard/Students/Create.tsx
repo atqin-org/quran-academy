@@ -29,44 +29,45 @@ import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
 import { toast } from "sonner";
 import { useEffect } from "react";
+import FormErrorMessage from "@/Components/costume-cn/FormErrorMessage";
 
 interface StudentForm {
-    firstName: string;
-    lastName: string;
-    gender: string;
+    firstName: string | undefined;
+    lastName: string | undefined;
+    gender: string | undefined;
     birthdate: Date | undefined;
-    socialStatus: string;
-    hasCronicDisease: string;
-    cronicDisease?: string;
-    familyStatus?: string;
-    fatherJob: string;
-    motherJob: string;
-    fatherPhone?: string;
-    motherPhone?: string;
-    club: string;
-    category: string;
-    subscription: string;
-    insurance: boolean;
+    socialStatus: string | undefined;
+    hasCronicDisease: string | undefined;
+    cronicDisease?: string | undefined;
+    familyStatus?: string | undefined;
+    fatherJob: string | undefined;
+    motherJob: string | undefined;
+    fatherPhone?: string | undefined;
+    motherPhone?: string | undefined;
+    club: string | undefined;
+    category: string | undefined;
+    subscription: string | undefined;
+    insurance: boolean | undefined;
     picture?: File;
     file?: File;
 }
 const initialFormState: StudentForm = {
-    firstName: "",
-    lastName: "",
-    gender: "",
+    firstName: undefined,
+    lastName: undefined,
+    gender: undefined,
     birthdate: undefined,
-    socialStatus: "",
-    hasCronicDisease: "",
-    cronicDisease: "",
-    familyStatus: "",
-    fatherJob: "",
-    fatherPhone: "",
-    motherJob: "",
-    motherPhone: "",
-    club: "",
-    category: "",
-    subscription: "",
-    insurance: false,
+    socialStatus: undefined,
+    hasCronicDisease: undefined,
+    cronicDisease: undefined,
+    familyStatus: undefined,
+    fatherJob: undefined,
+    fatherPhone: undefined,
+    motherJob: undefined,
+    motherPhone: undefined,
+    club: undefined,
+    category: undefined,
+    subscription: undefined,
+    insurance: undefined,
     picture: undefined,
     file: undefined,
 };
@@ -105,7 +106,6 @@ export default function Dashboard({ auth, clubs, categories }: DashboardProps) {
         form.setValue("insurance", data.insurance);
         form.setValue("picture", data.picture);
         form.setValue("file", data.file);
-
         //validate form
         form.trigger().then((isValid) => {
             if (isValid) {
@@ -131,6 +131,7 @@ export default function Dashboard({ auth, clubs, categories }: DashboardProps) {
                 toast.error("يرجى التحقق من البيانات");
             }
         });
+        console.log("form values", form.getValues());
     }
     return (
         <DashboardLayout user={auth.user}>
@@ -167,9 +168,10 @@ export default function Dashboard({ auth, clubs, categories }: DashboardProps) {
                                 ))}
                             </SelectContent>
                         </Select>
-                        {errors.club && (
-                            <span className="text-red-500">{errors.club}</span>
-                        )}
+                        <FormErrorMessage
+                            formStateErrors={form.formState.errors.club}
+                            errors={errors.club}
+                        />
                     </div>
                     <div className="flex sm:flex-row flex-col gap-6 w-full">
                         <div className="w-full">
@@ -198,11 +200,10 @@ export default function Dashboard({ auth, clubs, categories }: DashboardProps) {
                                 placeholder="اكتب اللقب ..."
                                 dir="rtl"
                             />
-                            {errors.lastName && (
-                                <span className="text-red-500">
-                                    {errors.lastName}
-                                </span>
-                            )}
+                            <FormErrorMessage
+                                formStateErrors={form.formState.errors.lastName}
+                                errors={errors.lastName}
+                            />
                         </div>
                         <div className="w-full">
                             <Label>الجنس</Label>
@@ -229,11 +230,10 @@ export default function Dashboard({ auth, clubs, categories }: DashboardProps) {
                                     </SelectItem>
                                 </SelectContent>
                             </Select>
-                            {errors.gender && (
-                                <span className="text-red-500">
-                                    {errors.gender}
-                                </span>
-                            )}
+                            <FormErrorMessage
+                                formStateErrors={form.formState.errors.gender}
+                                errors={errors.gender}
+                            />
                         </div>
                     </div>
                     <div className="flex sm:flex-row flex-col gap-6 w-full">
@@ -280,11 +280,12 @@ export default function Dashboard({ auth, clubs, categories }: DashboardProps) {
                                     />
                                 </PopoverContent>
                             </Popover>
-                            {errors.birthdate && (
-                                <span className="text-red-500">
-                                    {errors.birthdate}
-                                </span>
-                            )}
+                            <FormErrorMessage
+                                formStateErrors={
+                                    form.formState.errors.birthdate
+                                }
+                                errors={errors.birthdate}
+                            />
                         </div>
                         <div className="w-full">
                             <Label>الحالة الاجتماعية</Label>
@@ -316,11 +317,12 @@ export default function Dashboard({ auth, clubs, categories }: DashboardProps) {
                                     </SelectItem>
                                 </SelectContent>
                             </Select>
-                            {errors.socialStatus && (
-                                <span className="text-red-500">
-                                    {errors.socialStatus}
-                                </span>
-                            )}
+                            <FormErrorMessage
+                                formStateErrors={
+                                    form.formState.errors.socialStatus
+                                }
+                                errors={errors.socialStatus}
+                            />
                         </div>
                     </div>
                     <div className="flex sm:flex-row flex-col gap-6 w-full">
@@ -351,11 +353,12 @@ export default function Dashboard({ auth, clubs, categories }: DashboardProps) {
                                     </SelectItem>
                                 </SelectContent>
                             </Select>
-                            {errors.hasCronicDisease && (
-                                <span className="text-red-500">
-                                    {errors.hasCronicDisease}
-                                </span>
-                            )}
+                            <FormErrorMessage
+                                formStateErrors={
+                                    form.formState.errors.hasCronicDisease
+                                }
+                                errors={errors.hasCronicDisease}
+                            />
                         </div>
                         {data.hasCronicDisease === "yes" && (
                             <div className="w-full">
@@ -368,11 +371,12 @@ export default function Dashboard({ auth, clubs, categories }: DashboardProps) {
                                     placeholder="اكتب ..."
                                     dir="rtl"
                                 />
-                                {errors.cronicDisease && (
-                                    <span className="text-red-500">
-                                        {errors.cronicDisease}
-                                    </span>
-                                )}
+                                <FormErrorMessage
+                                    formStateErrors={
+                                        form.formState.errors.cronicDisease
+                                    }
+                                    errors={errors.cronicDisease}
+                                />
                             </div>
                         )}
                     </div>
@@ -386,11 +390,10 @@ export default function Dashboard({ auth, clubs, categories }: DashboardProps) {
                             placeholder="اكتب ملاحظات عن الحالة العائلية ان وجدت ..."
                             dir="rtl"
                         />
-                        {errors.familyStatus && (
-                            <span className="text-red-500">
-                                {errors.familyStatus}
-                            </span>
-                        )}
+                        <FormErrorMessage
+                            formStateErrors={form.formState.errors.familyStatus}
+                            errors={errors.familyStatus}
+                        />
                     </div>
                     <div className="flex sm:flex-row flex-col gap-6 w-full">
                         <div className="w-full">
@@ -403,11 +406,12 @@ export default function Dashboard({ auth, clubs, categories }: DashboardProps) {
                                 placeholder="اكتب ..."
                                 dir="rtl"
                             />
-                            {errors.fatherJob && (
-                                <span className="text-red-500">
-                                    {errors.fatherJob}
-                                </span>
-                            )}
+                            <FormErrorMessage
+                                formStateErrors={
+                                    form.formState.errors.fatherJob
+                                }
+                                errors={errors.fatherJob}
+                            />
                         </div>
                         <div className="w-full">
                             <Label>رقم هاتف الاب</Label>
@@ -419,11 +423,12 @@ export default function Dashboard({ auth, clubs, categories }: DashboardProps) {
                                 placeholder="اكتب ..."
                                 dir="rtl"
                             />
-                            {errors.fatherPhone && (
-                                <span className="text-red-500">
-                                    {errors.fatherPhone}
-                                </span>
-                            )}
+                            <FormErrorMessage
+                                formStateErrors={
+                                    form.formState.errors.fatherPhone
+                                }
+                                errors={errors.fatherPhone}
+                            />
                         </div>
                     </div>
                     <div className="flex sm:flex-row flex-col gap-6 w-full">
@@ -437,11 +442,12 @@ export default function Dashboard({ auth, clubs, categories }: DashboardProps) {
                                 placeholder="اكتب ..."
                                 dir="rtl"
                             />
-                            {errors.motherJob && (
-                                <span className="text-red-500">
-                                    {errors.motherJob}
-                                </span>
-                            )}
+                            <FormErrorMessage
+                                formStateErrors={
+                                    form.formState.errors.motherJob
+                                }
+                                errors={errors.motherJob}
+                            />
                         </div>
                         <div className="w-full">
                             <Label>رقم هاتف الام</Label>
@@ -453,11 +459,12 @@ export default function Dashboard({ auth, clubs, categories }: DashboardProps) {
                                 placeholder="اكتب ..."
                                 dir="rtl"
                             />
-                            {errors.motherPhone && (
-                                <span className="text-red-500">
-                                    {errors.motherPhone}
-                                </span>
-                            )}
+                            <FormErrorMessage
+                                formStateErrors={
+                                    form.formState.errors.motherPhone
+                                }
+                                errors={errors.motherPhone}
+                            />
                         </div>
                     </div>
                     <div className="flex sm:flex-row flex-col gap-6 w-full">
@@ -488,11 +495,10 @@ export default function Dashboard({ auth, clubs, categories }: DashboardProps) {
                                     ))}
                                 </SelectContent>
                             </Select>
-                            {errors.category && (
-                                <span className="text-red-500">
-                                    {errors.category}
-                                </span>
-                            )}
+                            <FormErrorMessage
+                                formStateErrors={form.formState.errors.category}
+                                errors={errors.category}
+                            />
                         </div>
                         <div className="w-full">
                             <Label className="truncate">الاشتراك الشهري</Label>
@@ -504,11 +510,12 @@ export default function Dashboard({ auth, clubs, categories }: DashboardProps) {
                                 placeholder="اكتب ..."
                                 dir="rtl"
                             />
-                            {errors.subscription && (
-                                <span className="text-red-500">
-                                    {errors.subscription}
-                                </span>
-                            )}
+                            <FormErrorMessage
+                                formStateErrors={
+                                    form.formState.errors.subscription
+                                }
+                                errors={errors.subscription}
+                            />
                         </div>
                         <div
                             dir="ltr"
@@ -517,11 +524,12 @@ export default function Dashboard({ auth, clubs, categories }: DashboardProps) {
                             <div className="space-y-0.5 text-nowrap flex flex-col truncate">
                                 <Label className="text-base">التامين</Label>
                                 <span dir="rtl">200 دج سنويا</span>
-                                {errors.insurance && (
-                                    <span className="text-red-500">
-                                        {errors.insurance}
-                                    </span>
-                                )}
+                                <FormErrorMessage
+                                    formStateErrors={
+                                        form.formState.errors.insurance
+                                    }
+                                    errors={errors.insurance}
+                                />
                             </div>
                             <Switch
                                 checked={data.insurance}
@@ -552,11 +560,10 @@ export default function Dashboard({ auth, clubs, categories }: DashboardProps) {
                                     name="picture"
                                 />
                             )}
-                            {errors.picture && (
-                                <span className="text-red-500">
-                                    {errors.picture}
-                                </span>
-                            )}
+                            <FormErrorMessage
+                                formStateErrors={form.formState.errors.picture}
+                                errors={errors.picture}
+                            />
                         </div>
                         <div className="w-full">
                             <Label>شهادة الميلاد</Label>
@@ -575,11 +582,10 @@ export default function Dashboard({ auth, clubs, categories }: DashboardProps) {
                                     name="file"
                                 />
                             )}
-                            {errors.file && (
-                                <span className="text-red-500">
-                                    {errors.file}
-                                </span>
-                            )}
+                            <FormErrorMessage
+                                formStateErrors={form.formState.errors.file}
+                                errors={errors.file}
+                            />
                         </div>
                     </div>
                     <Button type="submit" disabled={processing}>
