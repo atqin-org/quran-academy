@@ -36,7 +36,7 @@ export default function DashboardLayout({
         currentUrl.includes(link.action)
     );
     return (
-        <div className="h-[100svh] overflow-y-hidden bg-custom-bg bg-cover bg-center flex w-full">
+        <div className="h-[100svh] overflow-y-hidden  bg-[url('/background.jpg')] bg-cover bg-center flex w-full">
             <Toaster position="bottom-left" theme="light" richColors />
 
             <Sidebar isCollapsed={isCollapsed} toggleSidebar={toggleSidebar} />

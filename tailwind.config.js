@@ -24,16 +24,6 @@ export default {
             transitionTimingFunction: {
                 "in-out-quint": "cubic-bezier(0.83, 0, 0.17, 1)",
             },
-            backgroundImage: {
-                "custom-bg": "url('/background.jpg')", // Custom background image
-            },
-        },
-        screens: {
-            xs: "475px",
-            sm: "640px",
-            md: "768px",
-            lg: "1024px",
-            xl: "1280px",
         },
         container: {
             center: true,
