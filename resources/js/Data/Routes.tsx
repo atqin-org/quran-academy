@@ -9,7 +9,6 @@ import {
     Settings,
     Users,
 } from "lucide-react";
-
 export const sidebarLinks = [
     {
         icon: <ChartPie />,

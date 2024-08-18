@@ -1,8 +1,14 @@
-import { Head } from "@inertiajs/react";
-import { PageProps } from "@/types";
-import DashboardLayout from "@/Layouts/DashboardLayout";
+import Dropzone from "@/Components/costume-cn/Dropzone";
+import FileUploaded from "@/Components/costume-cn/FileUploaded";
 import { Button } from "@/Components/ui/button";
-import { z } from "zod";
+import { Calendar } from "@/Components/ui/calendar";
+import { Input } from "@/Components/ui/input";
+import { Label } from "@/Components/ui/label";
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from "@/Components/ui/popover";
 import {
     Select,
     SelectContent,
@@ -10,23 +16,14 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/Components/ui/select";
-import { useForm } from "@inertiajs/react";
-import { toast } from "sonner";
-import { Input } from "@/Components/ui/input";
-import {
-    Popover,
-    PopoverContent,
-    PopoverTrigger,
-} from "@/Components/ui/popover";
-import { CalendarIcon } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { Calendar } from "@/Components/ui/calendar";
-import { format } from "date-fns";
 import { Switch } from "@/Components/ui/switch";
-import Dropzone from "@/Components/costume-cn/Dropzone";
-import { FormSchema } from "@/Data/Zod/Students";
-import { Label } from "@/Components/ui/label";
-import FileUploaded from "@/Components/costume-cn/FileUploaded";
+import DashboardLayout from "@/Layouts/DashboardLayout";
+import { cn } from "@/lib/utils";
+import { PageProps } from "@/types";
+import { Head, useForm } from "@inertiajs/react";
+import { format } from "date-fns";
+import { CalendarIcon } from "lucide-react";
+import { toast } from "sonner";
 
 interface StudentForm {
     firstName: string;
