@@ -14,7 +14,7 @@ export const FormSchema = z
             .refine((val) => ["male", "female"].includes(val), {
                 message: "الجنس يجب ان يكون ذكر او انثى",
             }),
-        birthDate: z.date({
+        birthdate: z.date({
             required_error: "تاريخ الميلاد مطلوب",
         }),
         socialStatus: z
@@ -66,19 +66,12 @@ export const FormSchema = z
             required_error: "التامين مطلوب",
         }),
         picture: z
-            .object({
-                name: z.string(),
-                size: z.number(),
-                type: z.string(),
+            .instanceof(File)
+            .refine((file) => file.type.startsWith("image/"), {
+                message: "Must be an image file",
             })
             .optional(),
-        file: z
-            .object({
-                name: z.string(),
-                size: z.number(),
-                type: z.string(),
-            })
-            .optional(),
+        file: z.instanceof(File).optional(),
     })
     .refine(
         (data) =>

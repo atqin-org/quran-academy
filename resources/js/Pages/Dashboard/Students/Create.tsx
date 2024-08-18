@@ -20,10 +20,15 @@ import { Switch } from "@/Components/ui/switch";
 import DashboardLayout from "@/Layouts/DashboardLayout";
 import { cn } from "@/lib/utils";
 import { PageProps } from "@/types";
-import { Head, useForm } from "@inertiajs/react";
+import { Head, useForm as useInertiaForm } from "@inertiajs/react";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { FormSchema } from "@/Data/Zod/Students";
+
 import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
 import { toast } from "sonner";
+import { useEffect } from "react";
 
 interface StudentForm {
     firstName: string;
@@ -73,25 +78,59 @@ interface DashboardProps extends PageProps {
 
 export default function Dashboard({ auth, clubs, categories }: DashboardProps) {
     const { data, setData, post, processing, errors } =
-        useForm<StudentForm>(initialFormState);
+        useInertiaForm<StudentForm>(initialFormState);
+
+    const form = useForm({
+        resolver: zodResolver(FormSchema),
+        defaultValues: data,
+    });
 
     function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();
-        console.log(data);
-        toast.promise(
-            new Promise(async (resolve, reject) => {
-                try {
-                    console.log(post("/dashboard/students"));
-                } catch (error) {
-                    reject(error);
-                }
-            }),
-            {
-                loading: "جاري التسجيل ...",
-                success: "تم التسجيل بنجاح",
-                error: "حدث خطأ اثناء التسجيل",
+        form.setValue("firstName", data.firstName);
+        form.setValue("lastName", data.lastName);
+        form.setValue("gender", data.gender);
+        form.setValue("birthdate", data.birthdate);
+        form.setValue("socialStatus", data.socialStatus);
+        form.setValue("hasCronicDisease", data.hasCronicDisease);
+        form.setValue("cronicDisease", data.cronicDisease);
+        form.setValue("familyStatus", data.familyStatus);
+        form.setValue("fatherJob", data.fatherJob);
+        form.setValue("fatherPhone", data.fatherPhone);
+        form.setValue("motherJob", data.motherJob);
+        form.setValue("motherPhone", data.motherPhone);
+        form.setValue("club", data.club);
+        form.setValue("category", data.category);
+        form.setValue("subscription", data.subscription);
+        form.setValue("insurance", data.insurance);
+        form.setValue("picture", data.picture);
+        form.setValue("file", data.file);
+
+        //validate form
+        form.trigger().then((isValid) => {
+            if (isValid) {
+                console.log("form is valid");
+                toast.promise(
+                    new Promise(async (resolve, reject) => {
+                        try {
+                            post("/dashboard/students");
+                            resolve("تم التسجيل بنجاح");
+                        } catch (error) {
+                            reject("حدث خطأ اثناء التسجيل");
+                        }
+                    }),
+                    {
+                        loading: "جاري التسجيل ...",
+                        success: "تم التسجيل بنجاح",
+                        error: "حدث خطأ اثناء التسجيل",
+                    }
+                );
+            } else {
+                console.log("form is not valid");
+                console.log(form.formState.errors);
+                toast.error("يرجى التحقق من البيانات");
             }
-        );
+        });
     }
     return (
         <DashboardLayout user={auth.user}>

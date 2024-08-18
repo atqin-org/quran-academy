@@ -38,7 +38,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         >
             <nav
                 className={cn(
-                    `flex flex-col items-center rounded-xl justify-between gap-2 md:gap-4 lg:gap-8 px-2 overflow-hidden`,
+                    `flex flex-col items-center rounded-xl justify-between gap-2 md:gap-4 lg:gap-8 px-2 py-2 overflow-hidden`,
                     {
                         "bg-background bg-zinc-50 border-2 border-gray-100 m-5":
                             !mobile,
@@ -64,7 +64,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                     )}
                 </div>
 
-                <div className="flex flex-col items-start gap-4 flex-1 w-full px-4 py-1 overflow-y-scroll overflow-x-hidden scrollbar-wraper">
+                <div className="flex flex-col items-start gap-4 flex-1 w-full px-4 overflow-y-scroll overflow-x-hidden scrollbar-wraper">
                     <TooltipProvider key={tooltipKey}>
                         {sidebarLinks.map((link, index) => (
                             <SidebarLink

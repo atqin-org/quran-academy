@@ -51,15 +51,11 @@ class Student extends Model
     // override the default create method
     public static function create(array $attributes = [])
     {
-        //upload the picture
-        $attributes['picture'] = $attributes['picture']->store('students', 'public');
-        //upload the file (the file is the birth certificate secret)
-        $attributes['file'] = $attributes['file']->store('students', 'public');
-        
-        // create a new student
+        $attributes['picture'] = $attributes['picture']->store('students/pictures', 'public');
+        $attributes['file'] = $attributes['file']->store('students/files', 'public');
+
         $student = new Student();
 
-        // set the student properties
         $student->id_club = $attributes['club'];
         $student->first_name = $attributes['firstName'];
         $student->last_name = $attributes['lastName'];
@@ -79,7 +75,6 @@ class Student extends Model
         $student->picture = $attributes['picture'];
         $student->file = $attributes['file'];
 
-        // save the student
         $student->save();
 
         $paymentInsurance = new Payment([
