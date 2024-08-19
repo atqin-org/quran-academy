@@ -1,13 +1,20 @@
 import { z } from "zod";
+
+const MAX_FILE_SIZE = 6 * 1024 * 1024; // 6MB in bytes
+const ALLOWED_FILE_TYPES = ["application/pdf", "image/jpeg", "image/png"];
+
 export const FormSchema = z
     .object({
-        firstName: z.string({
-            required_error: "الاسم مطلوب",
-        }),
-        // .min(2, "الاسم مطلوب") //
-        lastName: z.string({
-            required_error: "اللقب مطلوب",
-        }),
+        firstName: z
+            .string({
+                required_error: "الاسم مطلوب",
+            })
+            .min(1, "الاسم مطلوب"),
+        lastName: z
+            .string({
+                required_error: "اللقب مطلوب",
+            })
+            .min(1, "اللقب مطلوب"),
         gender: z
             .enum(["male", "female"], {
                 required_error: "الجنس مطلوب",
@@ -30,12 +37,8 @@ export const FormSchema = z
         }),
         cronicDisease: z.string().optional(),
         familyStatus: z.string().optional(),
-        fatherJob: z.string({
-            required_error: "وظيفة الاب مطلوبة",
-        }),
-        motherJob: z.string({
-            required_error: "وظيفة الام مطلوبة",
-        }),
+        fatherJob: z.string().optional(),
+        motherJob: z.string().optional(),
         fatherPhone: z
             .union([
                 z.string().regex(/^0[567]\d{8}$/, {
@@ -70,12 +73,24 @@ export const FormSchema = z
             .instanceof(File, {
                 message: "الصورة مطلوبة",
             })
-            .refine((file) => file.type.startsWith("image/"), {
-                message: "Must be an image file",
-            }),
-        file: z.instanceof(File, {
-            message: "الملف مطلوب",
-        }),
+            .refine((file) => ALLOWED_FILE_TYPES.includes(file.type), {
+                message: "Must be a PDF, JPG, JPEG, or PNG file",
+            })
+            .refine((file) => file.size <= MAX_FILE_SIZE, {
+                message: "File size must be less than 6MB",
+            })
+            .optional(),
+        file: z
+            .instanceof(File, {
+                message: "الملف مطلوب",
+            })
+            .refine((file) => ALLOWED_FILE_TYPES.includes(file.type), {
+                message: "Must be a PDF, JPG, JPEG, or PNG file",
+            })
+            .refine((file) => file.size <= MAX_FILE_SIZE, {
+                message: "File size must be less than 6MB",
+            })
+            .optional(),
     })
     .refine(
         (data) =>

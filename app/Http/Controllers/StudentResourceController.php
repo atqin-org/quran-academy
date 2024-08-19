@@ -52,16 +52,13 @@ class StudentResourceController extends Controller
             'socialStatus' => 'required|in:good,mid,low',
             'hasCronicDisease' => 'required|in:yes,no',
             'cronicDisease' => 'required_if:hasCronicDisease,yes',
-            'fatherJob' => 'required',
-            'motherJob' => 'required',
             'fatherPhone' => ['nullable', 'regex:/^0[567]\d{8}$/', new AtLeastOnePhone('motherPhone')],
             'motherPhone' => ['nullable', 'regex:/^0[567]\d{8}$/', new AtLeastOnePhone('fatherPhone')],
             'subscription' => 'required|numeric',
-            'insurance' => 'required|accepted',
             'club' => 'required|exists:clubs,id',
             'category' => 'required|exists:categories,id',
-            'picture' => 'image',
-            'file' => 'file',
+            'picture' => 'nullable|mimes:jpg,jpeg,png,pdf|max:6144', // 6144 KB = 6 MB
+            'file' => 'nullable|mimes:jpg,jpeg,png,pdf|max:6144',    // 6144 KB = 6 MB
         ]);
 
         Student::create($request->all());

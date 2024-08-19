@@ -121,7 +121,7 @@ const FileUploaded = ({
             <div className="flex gap-1">
                 <Dialog>
                     <DialogTrigger asChild>
-                        <div className="p-2  hidden md:inline-block rounded-full border-solid border-2 border-gray-100 shadow-sm hover:bg-accent transition-all select-none cursor-pointer">
+                        <div className="p-2  hidden sm:inline-block rounded-full border-solid border-2 border-gray-100 shadow-sm hover:bg-accent transition-all select-none cursor-pointer">
                             <Eye className="w-4 h-4" />
                         </div>
                     </DialogTrigger>
@@ -167,6 +167,12 @@ const FileUploaded = ({
                         </DialogFooter>
                     </DialogContent>
                 </Dialog>
+                <div
+                    className="p-2 sm:hidden inline-block rounded-full border-solid border-2 border-gray-100 shadow-sm hover:bg-accent transition-all select-none cursor-pointer"
+                    onClick={handleDownload}
+                >
+                    <Download className="w-4 h-4" />
+                </div>
                 <div
                     className="p-2 rounded-full border-solid border-2 border-gray-100 shadow-sm hover:bg-accent transition-all select-none cursor-pointer"
                     onClick={() => setData(name, undefined)}

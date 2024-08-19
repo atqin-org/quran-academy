@@ -23,12 +23,12 @@ class CreateStudentsTable extends Migration
             $table->boolean('has_cronic_disease');
             $table->string('cronic_disease')->nullable();
             $table->string('family_status')->nullable();
-            $table->string('father_job');
-            $table->string('mother_job');
+            $table->string('father_job')->nullable();
+            $table->string('mother_job')->nullable();
             $table->string('father_phone')->nullable();
             $table->string('mother_phone')->nullable();
-            $table->date('subscription_expire_at');
-            $table->date('insurance_expire_at');
+            $table->date('subscription_expire_at')->nullable();
+            $table->date('insurance_expire_at')->nullable();
 
             $table->string('picture')->nullable();
             $table->string('file')->nullable();

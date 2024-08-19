@@ -51,8 +51,13 @@ class Student extends Model
     // override the default create method
     public static function create(array $attributes = [])
     {
-        $attributes['picture'] = $attributes['picture']->store('students/pictures', 'public');
-        $attributes['file'] = $attributes['file']->store('students/files', 'public');
+        if (isset($attributes['picture']) && $attributes['picture'] !== null) {
+            $attributes['picture'] = $attributes['picture']->store('students/pictures', 'public');
+        }
+
+        if (isset($attributes['file']) && $attributes['file'] !== null) {
+            $attributes['file'] = $attributes['file']->store('students/files', 'public');
+        }
 
         $student = new Student();
 
@@ -71,21 +76,24 @@ class Student extends Model
         $student->mother_phone = $attributes['motherPhone'];
         $student->id_category = $attributes['category'];
         $student->subscription_expire_at = now();
-        $student->insurance_expire_at = now()->addYear();
+        if ($attributes['insurance'] === 'yes') {
+            $student->insurance_expire_at = now()->addYear();
+        }
         $student->picture = $attributes['picture'];
         $student->file = $attributes['file'];
 
         $student->save();
-
-        $paymentInsurance = new Payment([
-            'type' => 'insurance',
-            'value' => 200,
-            'start_at' => now(),
-            'end_at' => now()->addYear(),
-            //TODO: get the user id
-            'id_user' => 1,
-            'id_student' => $student->id,
-        ]);
-        $paymentInsurance->save();
+        if ($attributes['insurance'] === 'yes') {
+            $paymentInsurance = new Payment([
+                'type' => 'insurance',
+                'value' => 200,
+                'start_at' => now(),
+                'end_at' => now()->addYear(),
+                //TODO: get the user id
+                'id_user' => 1,
+                'id_student' => $student->id,
+            ]);
+            $paymentInsurance->save();
+        }
     }
 }

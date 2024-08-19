@@ -25,36 +25,36 @@ import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { FormSchema } from "@/Data/Zod/Students";
 
-import { format } from "date-fns";
+import { format, parse } from "date-fns";
 import { CalendarIcon } from "lucide-react";
 import { toast } from "sonner";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import FormErrorMessage from "@/Components/costume-cn/FormErrorMessage";
 
 interface StudentForm {
-    firstName: string | undefined;
-    lastName: string | undefined;
-    gender: string | undefined;
+    firstName: string ;
+    lastName: string ;
+    gender: string ;
     birthdate: Date | undefined;
     socialStatus: string | undefined;
     hasCronicDisease: string | undefined;
     cronicDisease?: string | undefined;
     familyStatus?: string | undefined;
-    fatherJob: string | undefined;
-    motherJob: string | undefined;
+    fatherJob?: string | undefined;
+    motherJob?: string | undefined;
     fatherPhone?: string | undefined;
     motherPhone?: string | undefined;
     club: string | undefined;
     category: string | undefined;
     subscription: string | undefined;
-    insurance: boolean | undefined;
+    insurance: boolean;
     picture?: File;
     file?: File;
 }
 const initialFormState: StudentForm = {
-    firstName: undefined,
-    lastName: undefined,
-    gender: undefined,
+    firstName: "",
+    lastName: "",
+    gender: "",
     birthdate: undefined,
     socialStatus: undefined,
     hasCronicDisease: undefined,
@@ -67,7 +67,7 @@ const initialFormState: StudentForm = {
     club: undefined,
     category: undefined,
     subscription: undefined,
-    insurance: undefined,
+    insurance: false,
     picture: undefined,
     file: undefined,
 };
@@ -106,10 +106,9 @@ export default function Dashboard({ auth, clubs, categories }: DashboardProps) {
         form.setValue("insurance", data.insurance);
         form.setValue("picture", data.picture);
         form.setValue("file", data.file);
-        //validate form
+
         form.trigger().then((isValid) => {
             if (isValid) {
-                console.log("form is valid");
                 toast.promise(
                     new Promise(async (resolve, reject) => {
                         try {
@@ -126,13 +125,39 @@ export default function Dashboard({ auth, clubs, categories }: DashboardProps) {
                     }
                 );
             } else {
-                console.log("form is not valid");
-                console.log(form.formState.errors);
                 toast.error("يرجى التحقق من البيانات");
             }
         });
-        console.log("form values", form.getValues());
     }
+    const [tmpDate, setTmpDate] = useState<string>(
+        data.birthdate?.toString() || ""
+    );
+    const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setTmpDate(e.target.value);
+    };
+
+    const handleDateBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+        let tmp = tmpDate.replace(/-/g, "/");
+        if (tmp.length === 8) {
+            const day = tmp.substring(0, 2);
+            const month = tmp.substring(2, 4);
+            const year = tmp.substring(4, 8);
+            tmp = day + "/" + month + "/" + year;
+        }
+        console.log(tmp);
+        const parsedDate = parse(tmp, "dd/MM/yyyy", new Date());
+        console.log(parsedDate);
+        if (tmpDate === "") {
+            setData("birthdate", undefined);
+        }
+        else if (!isNaN(parsedDate.getTime())) {
+            setData("birthdate", parsedDate);
+        } else {
+            setData("birthdate", undefined);
+            alert("Invalid date : " + tmp);
+        }
+        setTmpDate(data.birthdate?.toString() || "");
+    };
     return (
         <DashboardLayout user={auth.user}>
             <Head title="Dashboard" />
@@ -240,47 +265,62 @@ export default function Dashboard({ auth, clubs, categories }: DashboardProps) {
                     <div className="flex sm:flex-row flex-col gap-6 w-full">
                         <div className=" w-full">
                             <Label className=" w-full">تاريخ الميلاد</Label>
-                            <Popover>
-                                <PopoverTrigger asChild>
-                                    <Button
-                                        variant={"outline"}
-                                        className={cn(
-                                            " flex justify-between w-full pl-3 font-normal",
-                                            !data.birthdate &&
-                                                "text-muted-foreground"
-                                        )}
+                            <div className="flex gap-1">
+                                <Input
+                                    value={
+                                        tmpDate && tmpDate.length <= 10
+                                            ? tmpDate
+                                            : data.birthdate
+                                            ? format(
+                                                  data.birthdate,
+                                                  "dd/MM/yyyy"
+                                              )
+                                            : ""
+                                    }
+                                    readOnly={false}
+                                    onChange={handleDateChange}
+                                    onBlur={handleDateBlur}
+                                    placeholder="اليوم / الشهر / السنة"
+                                    dir="rtl"
+                                />
+                                <Popover>
+                                    <PopoverTrigger asChild>
+                                        <Button
+                                            variant={"outline"}
+                                            type="button"
+                                            className={cn(
+                                                " flex justify-between w-fit font-normal",
+                                                !data.birthdate &&
+                                                    "text-muted-foreground"
+                                            )}
+                                        >
+                                            <CalendarIcon className="h-4 w-4 opacity-50" />
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent
+                                        className="w-auto p-0"
+                                        align="start"
                                     >
-                                        {data.birthdate ? (
-                                            format(data.birthdate, "yyyy/MM/dd")
-                                        ) : (
-                                            <span>اليوم / الشهر / السنة</span>
-                                        )}
-                                        <CalendarIcon className="h-4 w-4 opacity-50" />
-                                    </Button>
-                                </PopoverTrigger>
-                                <PopoverContent
-                                    className="w-auto p-0"
-                                    align="start"
-                                >
-                                    <Calendar
-                                        mode="single"
-                                        defaultMonth={data.birthdate}
-                                        selected={data.birthdate}
-                                        onSelect={(date) =>
-                                            setData("birthdate", date)
-                                        }
-                                        fromYear={1900}
-                                        toYear={new Date().getFullYear()}
-                                        fixedWeeks
-                                        captionLayout="dropdown-buttons"
-                                        disabled={(date) =>
-                                            date > new Date() ||
-                                            date < new Date("1900-01-01")
-                                        }
-                                        initialFocus
-                                    />
-                                </PopoverContent>
-                            </Popover>
+                                        <Calendar
+                                            mode="single"
+                                            defaultMonth={data.birthdate}
+                                            selected={data.birthdate}
+                                            onSelect={(date) =>
+                                                setData("birthdate", date)
+                                            }
+                                            fromYear={1900}
+                                            toYear={new Date().getFullYear()}
+                                            fixedWeeks
+                                            captionLayout="dropdown-buttons"
+                                            disabled={(date) =>
+                                                date > new Date() ||
+                                                date < new Date("1900-01-01")
+                                            }
+                                            initialFocus
+                                        />
+                                    </PopoverContent>
+                                </Popover>
+                            </div>
                             <FormErrorMessage
                                 formStateErrors={
                                     form.formState.errors.birthdate
