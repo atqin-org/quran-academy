@@ -25,9 +25,19 @@ class CategorySeeder extends Seeder
             ],
             [
                 'name' => 'أقل من 10 سنوات',
+                'gender' => 'male',
+            ],
+            [
+                'name' => 'أقل من 10 سنوات',
+                'gender' => 'female',
             ],
             [
                 'name' => 'أكبر من 10 سنوات',
+                'gender' => 'male',
+            ],
+            [
+                'name' => 'أكبر من 10 سنوات',
+                'gender' => 'female',
             ],
             [
                 'name' => 'النساء',
@@ -37,6 +47,7 @@ class CategorySeeder extends Seeder
             ],
             [
                 'name' => 'محو الأمية',
+                'gender' => 'female',
             ],
         ];
 

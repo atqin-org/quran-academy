@@ -1,6 +1,5 @@
 import { cn } from "@/lib/utils";
 import { Download, Eye } from "lucide-react";
-import truncate from "truncate";
 import { Button } from "@/Components/ui/button";
 import {
     Dialog,
@@ -13,7 +12,7 @@ import {
 } from "@/Components/ui/dialog";
 
 export interface FileUploadedProps {
-    file: File;
+    file: File | string;
     setData: (key: string, value: any) => void;
     name: string;
     className?: string;
@@ -84,16 +83,54 @@ const FileUploaded = ({
     name,
     className,
 }: FileUploadedProps) => {
-    const handleDownload = () => {
-        const url = URL.createObjectURL(file);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = file.name;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
+    const isFileObject = (file: File | string | null): file is File => {
+        return file !== null && (file as File).name !== undefined;
     };
+    const fileUrl = isFileObject(file) ? URL.createObjectURL(file) : `${window.location.origin}/storage/${file}`;
+
+    const handleDownload = () => {
+        if (file) {
+            if (isFileObject(file)) {
+                const url = URL.createObjectURL(file);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = file.name;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            } else {
+                const a = document.createElement("a");
+                a.href = fileUrl;
+                a.download = file.split("/").pop() || "download";
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            }
+        }
+    };
+
+    const fileName = file
+        ? isFileObject(file)
+            ? file.name
+            : fileUrl.split("/").pop() || "unknown"
+        : "unknown";
+
+    const fileSize = file
+        ? isFileObject(file)
+            ? (file.size / (1024 * 1024)).toFixed(2)
+            : (parseFloat(fileName.split("___")[0]) / (1024 * 1024)).toFixed(2) || "unknown"
+        : "unknown";
+
+    const fileType = file
+        ? isFileObject(file)
+            ? file.type
+            : fileUrl.split(".").pop()
+        : "unknown";
+
+        const isImageFile = (fileType: string | undefined) => {
+            return fileType?.includes("jpg") || fileType?.includes("jpeg") || fileType?.includes("png");
+        };
     return (
         <div
             className={cn(
@@ -102,18 +139,17 @@ const FileUploaded = ({
             )}
         >
             <div className="flex-1 flex items-center flex-row gap-4 h-full">
-                {file.type === "application/pdf" ? (
-                    <PDF className="text-rose-700 w-6 h-6" />
-                ) : (
+                {isImageFile(fileType) ? (
                     <Image className="text-rose-700 w-6 h-6" />
+                ) : (
+                    <PDF className="text-rose-700 w-6 h-6" />
                 )}
                 <div className="flex flex-col gap-0 truncate w-10 flex-1">
                     <div className="text-[0.85rem] font-medium truncate">
-                        {file.name.split(".").slice(0, -1).join(".")}
+                        {fileName.split(".").slice(0, -1).join(".")}
                     </div>
                     <div className="text-[0.7rem] text-gray-500">
-                        .{file.name.split(".").pop()} •{" "}
-                        {(file.size / (1024 * 1024)).toFixed(2)} MB
+                        .{fileType} • {fileSize} MB
                     </div>
                 </div>
             </div>
@@ -121,7 +157,7 @@ const FileUploaded = ({
             <div className="flex gap-1">
                 <Dialog>
                     <DialogTrigger asChild>
-                        <div className="p-2  hidden sm:inline-block rounded-full border-solid border-2 border-gray-100 shadow-sm hover:bg-accent transition-all select-none cursor-pointer">
+                        <div className="p-2 hidden sm:inline-block rounded-full border-solid border-2 border-gray-100 shadow-sm hover:bg-accent transition-all select-none cursor-pointer">
                             <Eye className="w-4 h-4" />
                         </div>
                     </DialogTrigger>
@@ -130,21 +166,20 @@ const FileUploaded = ({
                             <DialogTitle>عرض الملف</DialogTitle>
                         </DialogHeader>
                         <DialogDescription>
-                            {file.name} •{" "}
-                            {(file.size / (1024 * 1024)).toFixed(2)} MB
+                            {fileName} • {fileSize} MB
                         </DialogDescription>
                         <div className="flex justify-center">
-                            {file.type === "application/pdf" ? (
+                            {fileType?.includes("pdf") ? (
                                 <embed
-                                    src={URL.createObjectURL(file)}
+                                    src={isFileObject(file) ? URL.createObjectURL(file) : fileUrl}
                                     type="application/pdf"
                                     width={600}
                                     height={400}
                                 />
-                            ) : file.type.startsWith("image/") ? (
+                            ) : isImageFile(fileType) ? (
                                 <img
-                                    src={URL.createObjectURL(file)}
-                                    alt={file.name}
+                                    src={isFileObject(file) ? URL.createObjectURL(file) : fileUrl}
+                                    alt={fileName}
                                     className="max-w-full max-h-full"
                                 />
                             ) : (

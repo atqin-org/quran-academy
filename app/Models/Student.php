@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Storage;
 
 class Student extends Model
 {
@@ -26,6 +27,7 @@ class Student extends Model
         'father_phone',
         'mother_phone',
         'id_category',
+        'subscription',
         'subscription_expire_at',
         'insurance_expire_at',
         'picture',
@@ -52,11 +54,23 @@ class Student extends Model
     public static function create(array $attributes = [])
     {
         if (isset($attributes['picture']) && $attributes['picture'] !== null) {
-            $attributes['picture'] = $attributes['picture']->store('students/pictures', 'public');
+            $originalName = pathinfo($attributes['picture']->getClientOriginalName(), PATHINFO_FILENAME);
+            $fileType = $attributes['picture']->getClientOriginalExtension();
+            $fileSize = $attributes['picture']->getSize();
+            $uniqueChars = bin2hex(random_bytes(5));
+
+            $customFileName = "{$fileSize}___{$originalName}___{$uniqueChars}.{$fileType}";
+            $attributes['picture'] = $attributes['picture']->storeAs('students/pictures', $customFileName, 'public');
         }
 
         if (isset($attributes['file']) && $attributes['file'] !== null) {
-            $attributes['file'] = $attributes['file']->store('students/files', 'public');
+            $originalName = pathinfo($attributes['file']->getClientOriginalName(), PATHINFO_FILENAME);
+            $fileType = $attributes['file']->getClientOriginalExtension();
+            $fileSize = $attributes['file']->getSize();
+            $uniqueChars = bin2hex(random_bytes(5));
+
+            $customFileName = "{$fileSize}___{$originalName}___{$uniqueChars}.{$fileType}";
+            $attributes['file'] = $attributes['file']->storeAs('students/files', $customFileName, 'public');
         }
 
         $student = new Student();
@@ -75,12 +89,16 @@ class Student extends Model
         $student->father_phone = $attributes['fatherPhone'];
         $student->mother_phone = $attributes['motherPhone'];
         $student->id_category = $attributes['category'];
-        $student->subscription_expire_at = now();
+        $student->subscription = $attributes['subscription'];
         if ($attributes['insurance'] === 'yes') {
             $student->insurance_expire_at = now()->addYear();
         }
-        $student->picture = $attributes['picture'];
-        $student->file = $attributes['file'];
+        if (isset($attributes['picture']) && $attributes['picture'] !== null) {
+            $student->picture = $attributes['picture'];
+        }
+        if (isset($attributes['file']) && $attributes['file'] !== null) {
+            $student->file = $attributes['file'];
+        }
 
         $student->save();
         if ($attributes['insurance'] === 'yes') {
@@ -95,5 +113,57 @@ class Student extends Model
             ]);
             $paymentInsurance->save();
         }
+    }
+
+    // Override the default update method
+    public function update(array $attributes = [], array $options = [])
+    {
+        // Handle picture attribute
+        $this->handleFileAttribute($attributes, 'picture', 'students/pictures');
+
+        // Handle file attribute
+        $this->handleFileAttribute($attributes, 'file', 'students/files');
+
+
+        // Update other attributes
+        $this->id_club = $attributes['club'];
+        $this->first_name = $attributes['firstName'];
+        $this->last_name = $attributes['lastName'];
+        $this->gender = $attributes['gender'];
+        $this->birthdate = $attributes['birthdate'];
+        $this->social_status = $attributes['socialStatus'];
+        $this->has_cronic_disease = $attributes['hasCronicDisease'] === 'yes';
+        $this->cronic_disease = $attributes['cronicDisease'];
+        $this->family_status = $attributes['familyStatus'];
+        $this->father_job = $attributes['fatherJob'];
+        $this->mother_job = $attributes['motherJob'];
+        $this->father_phone = $attributes['fatherPhone'];
+        $this->mother_phone = $attributes['motherPhone'];
+        $this->id_category = $attributes['category'];
+        $this->subscription = $attributes['subscription'];
+
+        $this->save($options);
+    }
+    private function handleFileAttribute(array &$attributes, string $attributeName, string $storagePath)
+    {
+            if (!isset($attributes[$attributeName]) || $attributes[$attributeName] === null) {
+                if ($this->$attributeName) {
+                    Storage::disk('public')->delete($this->$attributeName);
+                    $this->$attributeName = null;
+                }
+            } elseif (isset($attributes[$attributeName]) && $attributes[$attributeName] instanceof \Illuminate\Http\UploadedFile) {
+                if ($this->$attributeName) {
+                    Storage::disk('public')->delete($this->$attributeName);
+                }
+                $originalName = pathinfo($attributes[$attributeName]->getClientOriginalName(), PATHINFO_FILENAME);
+                $fileType = $attributes[$attributeName]->getClientOriginalExtension();
+                $fileSize = $attributes[$attributeName]->getSize();
+                $uniqueChars = bin2hex(random_bytes(5));
+
+                $customFileName = "{$fileSize}___{$originalName}___{$uniqueChars}.{$fileType}";
+                $attributes[$attributeName] = $attributes[$attributeName]->storeAs($storagePath, $customFileName, 'public');
+                $this->$attributeName = $attributes[$attributeName];
+            }
+
     }
 }

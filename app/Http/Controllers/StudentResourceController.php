@@ -8,6 +8,7 @@ use Inertia\Inertia;
 use App\Models\Club;
 use App\Models\Student;
 use App\Rules\AtLeastOnePhone;
+use App\Rules\FileOrString;
 
 class StudentResourceController extends Controller
 {
@@ -95,7 +96,28 @@ class StudentResourceController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        //
+        $request->validate([
+            'firstName' => 'required',
+            'lastName' => 'required',
+            'gender' => 'required|in:male,female',
+            'birthdate' => 'required|date',
+            'socialStatus' => 'required|in:good,mid,low',
+            'hasCronicDisease' => 'required|in:yes,no',
+            'cronicDisease' => 'required_if:hasCronicDisease,yes',
+            'fatherPhone' => ['nullable', 'regex:/^0[567]\d{8}$/', new AtLeastOnePhone('motherPhone')],
+            'motherPhone' => ['nullable', 'regex:/^0[567]\d{8}$/', new AtLeastOnePhone('fatherPhone')],
+            'subscription' => 'required|numeric',
+            'club' => 'required|exists:clubs,id',
+            'category' => 'required|exists:categories,id',
+            'picture' => ['nullable', new FileOrString],
+        'file' => ['nullable', new FileOrString],
+        ]);
+
+        $student = Student::find($id);
+
+        $student->update($request->all());
+
+        return redirect()->route('students.index')->with('success', 'تم تحديث الطالب بنجاح');
     }
 
     /**

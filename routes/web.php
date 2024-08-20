@@ -7,6 +7,7 @@ use Inertia\Inertia;
 use App\Http\Controllers\StudentResourceController;
 
 Route::resource('/dashboard/students', StudentResourceController::class);
+Route::post('/dashboard/students/{student}', [StudentResourceController::class, 'update'])->name('students.update');
 
 // if (/dashboard/* dont exist) render  /Dashboard/tmp
 Route::get('/dashboard/{any}', function () {

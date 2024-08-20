@@ -2,7 +2,25 @@ import { z } from "zod";
 
 const MAX_FILE_SIZE = 6 * 1024 * 1024; // 6MB in bytes
 const ALLOWED_FILE_TYPES = ["application/pdf", "image/jpeg", "image/png"];
-
+const isoDateString = z.string().refine((val) => {
+    const date = new Date(val);
+    return !isNaN(date.getTime());
+}, {
+    message: "Invalid date format",
+    params: {
+        description: "يرجى ادخال تاريخ الميلاد بصيغة صحيحة",
+    },
+});
+const fileSchema = z.union([
+    z.instanceof(File, {
+        message: "الملف مطلوب",
+    }).refine((file) => ALLOWED_FILE_TYPES.includes(file.type), {
+        message: "Must be a PDF, JPG, JPEG, or PNG file",
+    }).refine((file) => file.size <= MAX_FILE_SIZE, {
+        message: "File size must be less than 6MB",
+    }),
+    z.string()
+]);
 export const FormSchema = z
     .object({
         firstName: z
@@ -22,9 +40,13 @@ export const FormSchema = z
             .refine((val) => ["male", "female"].includes(val), {
                 message: "الجنس يجب ان يكون ذكر او انثى",
             }),
-        birthdate: z.date({
-            required_error: "تاريخ الميلاد مطلوب",
-        }),
+        birthdate:z.union([
+            isoDateString,
+            z.date({
+                required_error: "تاريخ الميلاد مطلوب",
+                invalid_type_error: "يرجى ادخال تاريخ الميلاد بصيغة صحيحة",
+            })
+        ]),
         socialStatus: z
             .enum(["good", "mid", "low"], {
                 required_error: "الحالة الاجتماعية مطلوبة",
@@ -68,29 +90,9 @@ export const FormSchema = z
             }),
         insurance: z.boolean({
             required_error: "التامين مطلوب",
-        }),
-        picture: z
-            .instanceof(File, {
-                message: "الصورة مطلوبة",
-            })
-            .refine((file) => ALLOWED_FILE_TYPES.includes(file.type), {
-                message: "Must be a PDF, JPG, JPEG, or PNG file",
-            })
-            .refine((file) => file.size <= MAX_FILE_SIZE, {
-                message: "File size must be less than 6MB",
-            })
-            .optional(),
-        file: z
-            .instanceof(File, {
-                message: "الملف مطلوب",
-            })
-            .refine((file) => ALLOWED_FILE_TYPES.includes(file.type), {
-                message: "Must be a PDF, JPG, JPEG, or PNG file",
-            })
-            .refine((file) => file.size <= MAX_FILE_SIZE, {
-                message: "File size must be less than 6MB",
-            })
-            .optional(),
+        }).optional(),
+        picture: fileSchema.optional(),
+        file: fileSchema.optional(),
     })
     .refine(
         (data) =>
