@@ -125,8 +125,9 @@ export default function Update({ auth, student, clubs, categories }: DashboardPr
                         error: "حدث خطأ اثناء التحديث",
                     }
                 );
+            }else
                 toast.error("يرجى التحقق من البيانات");
-            }
+
         });
     }
 
