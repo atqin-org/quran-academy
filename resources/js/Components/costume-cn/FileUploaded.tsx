@@ -115,7 +115,9 @@ const FileUploaded = ({
             ? file.name
             : fileUrl.split("/").pop() || "unknown"
         : "unknown";
-
+        const originalFileName = isFileObject(file)
+        ? file.name
+        : fileName.split("___")[1] || "unknown";
     const fileSize = file
         ? isFileObject(file)
             ? (file.size / (1024 * 1024)).toFixed(2)
@@ -149,7 +151,7 @@ const FileUploaded = ({
                         {fileName.split(".").slice(0, -1).join(".")}
                     </div>
                     <div className="text-[0.7rem] text-gray-500">
-                        .{fileType} • {fileSize} MB
+                        {fileType} • {fileSize} MB
                     </div>
                 </div>
             </div>
@@ -166,7 +168,7 @@ const FileUploaded = ({
                             <DialogTitle>عرض الملف</DialogTitle>
                         </DialogHeader>
                         <DialogDescription>
-                            {fileName} • {fileSize} MB
+                            {originalFileName} • {fileSize} MB
                         </DialogDescription>
                         <div className="flex justify-center">
                             {fileType?.includes("pdf") ? (
