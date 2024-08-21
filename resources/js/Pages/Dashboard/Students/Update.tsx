@@ -5,50 +5,8 @@ import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { FormSchema } from "@/Data/Zod/Students";
 import { toast } from "sonner";
-import { useState, useEffect } from "react";
 import StudentForm from "./Components/StudentForm";
-
-interface TStudentForm {
-    firstName: string;
-    lastName: string;
-    gender: string | undefined;
-    birthdate: Date | undefined;
-    socialStatus: string | undefined;
-    hasCronicDisease: string | undefined;
-    cronicDisease?: string;
-    familyStatus?: string;
-    fatherJob?: string;
-    motherJob?: string;
-    fatherPhone?: string;
-    motherPhone?: string;
-    club: string | undefined;
-    category: string | undefined;
-    subscription: string | undefined;
-    insurance?: boolean;
-    picture?: File | string;
-    file?: File| string;
-}
-interface TStudentFormDB {
-    first_name: string;
-    last_name: string;
-    gender: 'male' | 'female';
-    birthdate: Date;
-    social_status: 'good' | 'mid' | 'low';
-    has_cronic_disease: boolean;
-    cronic_disease?: string;
-    family_status?: string;
-    father_job?: string;
-    mother_job?: string;
-    father_phone?: string;
-    mother_phone?: string;
-    subscription?: string;
-    subscription_expire_at?: Date;
-    insurance_expire_at?: Date;
-    picture?: string;
-    file?: string;
-    id_club: number;
-    id_category: number;
-}
+import { TStudentForm, TStudentFormDB } from "./Types/Student";
 
 interface DashboardProps extends PageProps {
     student: TStudentFormDB;
@@ -56,27 +14,32 @@ interface DashboardProps extends PageProps {
     categories: { id: number; name: string }[];
 }
 
-export default function Update({ auth, student, clubs, categories }: DashboardProps) {
-
-    const { data, setData, post, processing, errors } = useInertiaForm<TStudentForm>({
-        firstName: student.first_name,
-        lastName: student.last_name,
-        gender: student.gender,
-        birthdate: student.birthdate,
-        socialStatus: student.social_status,
-        hasCronicDisease: student.has_cronic_disease ? 'yes' : 'no',
-        cronicDisease: student.cronic_disease || "",
-        familyStatus: student.family_status || "",
-        fatherJob: student.father_job || "",
-        motherJob: student.mother_job || "",
-        fatherPhone: student.father_phone || "",
-        motherPhone: student.mother_phone || "",
-        club: student.id_club.toString(),
-        category: student.id_category.toString(),
-        subscription: student.subscription,
-        picture: student.picture || undefined,
-        file: student.file || undefined,
-    });
+export default function Update({
+    auth,
+    student,
+    clubs,
+    categories,
+}: DashboardProps) {
+    const { data, setData, post, processing, errors } =
+        useInertiaForm<TStudentForm>({
+            firstName: student.first_name,
+            lastName: student.last_name,
+            gender: student.gender,
+            birthdate: student.birthdate,
+            socialStatus: student.social_status,
+            hasCronicDisease: student.has_cronic_disease ? "yes" : "no",
+            cronicDisease: student.cronic_disease || "",
+            familyStatus: student.family_status || "",
+            fatherJob: student.father_job || "",
+            motherJob: student.mother_job || "",
+            fatherPhone: student.father_phone || "",
+            motherPhone: student.mother_phone || "",
+            club: student.id_club.toString(),
+            category: student.id_category.toString(),
+            subscription: student.subscription,
+            picture: student.picture || undefined,
+            file: student.file || undefined,
+        });
 
     const form = useForm({
         resolver: zodResolver(FormSchema),
@@ -85,7 +48,7 @@ export default function Update({ auth, student, clubs, categories }: DashboardPr
 
     const url = window.location.href;
     const from = url.lastIndexOf("/");
-    const id = url.substring(from,from-1);
+    const id = url.substring(from, from - 1);
 
     function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();
@@ -125,9 +88,7 @@ export default function Update({ auth, student, clubs, categories }: DashboardPr
                         error: "حدث خطأ اثناء التحديث",
                     }
                 );
-            }else
-                toast.error("يرجى التحقق من البيانات");
-
+            } else toast.error("يرجى التحقق من البيانات");
         });
     }
 

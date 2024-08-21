@@ -24,27 +24,7 @@ import { CalendarIcon } from "lucide-react";
 import { toast } from "sonner";
 import { useState } from "react";
 import FormErrorMessage from "@/Components/costume-cn/FormErrorMessage";
-
-interface TStudentForm {
-    firstName: string;
-    lastName: string;
-    gender: string | undefined;
-    birthdate: Date | undefined;
-    socialStatus: string | undefined;
-    hasCronicDisease: string | undefined;
-    cronicDisease?: string;
-    familyStatus?: string;
-    fatherJob?: string;
-    motherJob?: string;
-    fatherPhone?: string;
-    motherPhone?: string;
-    club: string | undefined;
-    category: string | undefined;
-    subscription: string | undefined;
-    insurance?: boolean;
-    picture?: File | string;
-    file?: File | string;
-}
+import { TStudentForm } from "../Types/Student";
 
 interface StudentFormProps {
     data: TStudentForm;

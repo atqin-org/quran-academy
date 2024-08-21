@@ -1,33 +1,13 @@
 import DashboardLayout from "@/Layouts/DashboardLayout";
 import { PageProps } from "@/types";
 import { Head, useForm as useInertiaForm } from "@inertiajs/react";
-import { useForm, Controller } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { FormSchema } from "@/Data/Zod/Students";
 import { toast } from "sonner";
-import { useState } from "react";
 import StudentForm from "./Components/StudentForm";
+import { TStudentForm } from "./Types/Student";
 
-interface TStudentForm {
-    firstName: string;
-    lastName: string;
-    gender: string | undefined;
-    birthdate: Date | undefined;
-    socialStatus: string | undefined;
-    hasCronicDisease: string | undefined;
-    cronicDisease?: string;
-    familyStatus?: string;
-    fatherJob?: string;
-    motherJob?: string;
-    fatherPhone?: string;
-    motherPhone?: string;
-    club: string | undefined;
-    category: string | undefined;
-    subscription: string | undefined;
-    insurance?: boolean;
-    picture?: File| string;
-    file?: File| string;
-}
 const initialFormState: TStudentForm = {
     firstName: "",
     lastName: "",
