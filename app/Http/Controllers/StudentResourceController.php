@@ -62,6 +62,8 @@ class StudentResourceController extends Controller
             'file' => 'nullable|mimes:jpg,jpeg,png,pdf|max:6144',    // 6144 KB = 6 MB
         ]);
 
+        //TODO: check if this student was deleted before from the same club
+
         Student::create($request->all());
 
         // redirect to the students index page
