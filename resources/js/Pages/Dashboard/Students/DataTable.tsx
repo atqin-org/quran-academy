@@ -136,12 +136,13 @@ export function DataTable<TData, TValue>({
                             table.getRowModel().rows.map((row) => (
                                 <TableRow
                                     key={row.id}
+
                                     data-state={
                                         row.getIsSelected() && "selected"
                                     }
                                 >
                                     {row.getVisibleCells().map((cell) => (
-                                        <TableCell key={cell.id}>
+                                        <TableCell key={cell.id} className="p-3">
                                             {flexRender(
                                                 cell.column.columnDef.cell,
                                                 cell.getContext()
@@ -162,30 +163,6 @@ export function DataTable<TData, TValue>({
                         )}
                     </TableBody>
                 </Table>
-            </div>
-            <div className="flex items-center py-4">
-                <div className="flex-1 text-sm text-muted-foreground">
-                    {table.getFilteredSelectedRowModel().rows.length} من{" "}
-                    {table.getFilteredRowModel().rows.length} صف(وف) محدد.
-                </div>
-                <div className="flex items-center justify-end space-x-2">
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => table.previousPage()}
-                        disabled={!table.getCanPreviousPage()}
-                    >
-                        Previous
-                    </Button>
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => table.nextPage()}
-                        disabled={!table.getCanNextPage()}
-                    >
-                        Next
-                    </Button>
-                </div>
             </div>
         </div>
     );

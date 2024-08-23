@@ -1,52 +1,21 @@
 import { Head, Link } from "@inertiajs/react";
 import { PageProps } from "@/types";
 import DashboardLayout from "@/Layouts/DashboardLayout";
+import {
+    Pagination,
+    PaginationContent,
+    PaginationEllipsis,
+    PaginationItem,
+    PaginationLink,
+    PaginationNext,
+    PaginationPrevious,
+} from "@/Components/ui/pagination";
+
 import { StudentDisplay, columns } from "./Columns";
 import { DataTable } from "./DataTable";
 
-const data: StudentDisplay[] = [
-    {
-        id: "1",
-        name: "احمد علي",
-        age: 12,
-        club: "مالك ابن أنس",
-        ahzab: 1,
-        category: "التلقين",
-        gender: "male",
-        birthdate: new Date(),
-        subscription: 2000,
-        insurance_expire_at: null,
-        subscription_expire_at:  new Date(),
-    },
-    {
-        id: "2",
-        name: "طارق حمومي",
-        age: 19,
-        club: "مالك ابن أنس",
-        ahzab: 30,
-        category: "التلقين",
-        gender: "female",
-        birthdate: new Date(),
-        subscription: 2000,
-        insurance_expire_at: new Date(),
-        subscription_expire_at:null,
-    },
-    {
-        id: "3",
-        name: "عمر عباس",
-        age: 24,
-        club: "مالك ابن أنس",
-        ahzab: 18,
-        category: "التلقين",
-        gender: "male",
-        birthdate: new Date(),
-        subscription: 2000,
-        insurance_expire_at: new Date("2023-12-12"),
-        subscription_expire_at: new Date("2024-12-25"),
-    },
-];
 interface DashboardProps extends PageProps {
-    students: any[];
+    students: { data: StudentDisplay[]; links: any[] };
 }
 export default function Dashboard({ auth, students }: DashboardProps) {
     return (
@@ -63,21 +32,39 @@ export default function Dashboard({ auth, students }: DashboardProps) {
                         سجل طالب جديد
                     </Link>
                 </div>
-                <DataTable columns={columns} data={data} />
-
-                <div className="mt-4">
-                    <h1 className="text-2xl font-bold text-center">الطلاب</h1>
-                    <div className="grid grid-cols-1 gap-2 mt-4">
-                        {students.map((student) => (
+                <DataTable columns={columns} data={students.data} />
+                <div className="mt-2">
+                    {students.links.map((link) =>
+                        link.url ? (
                             <Link
-                                key={student.id}
-                                href={`/dashboard/students/${student.id}/edit`}
-                                className=" text-black "
-                            >
-                                {student.first_name} {student.last_name}
-                            </Link>
-                        ))}
-                    </div>
+                                preserveState
+                                key={link.label}
+                                href={link.url}
+                                dangerouslySetInnerHTML={{
+                                    __html: link.label.replace(
+                                        "pagination.",
+                                        ""
+                                    ),
+                                }}
+                                className={`p-1.5 mx-1 rounded-lg select-none ${
+                                    link.active
+                                        ? "text-primary-foreground font-bold bg-primary"
+                                        : "text-gray-600 hover:text-neutral-950 hover:bg-neutral-200"
+                                }`}
+                            />
+                        ) : (
+                            <span
+                                key={link.label}
+                                dangerouslySetInnerHTML={{
+                                    __html: link.label.replace(
+                                        "pagination.",
+                                        ""
+                                    ),
+                                }}
+                                className="p-1.5 mx-1 rounded-lg select-none text-gray-400 "
+                            />
+                        )
+                    )}
                 </div>
             </div>
         </DashboardLayout>
