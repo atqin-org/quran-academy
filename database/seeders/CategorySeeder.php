@@ -41,9 +41,11 @@ class CategorySeeder extends Seeder
             ],
             [
                 'name' => 'النساء',
+                'gender' => 'female',
             ],
             [
                 'name' => 'الرجال والشباب',
+                'gender' => 'male',
             ],
             [
                 'name' => 'محو الأمية',
