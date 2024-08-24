@@ -8,8 +8,7 @@ interface DashboardProps extends PageProps {
     students: { data: StudentDisplay[]; links: any[] };
 }
 export default function Dashboard({ auth, students }: DashboardProps) {
-    console.log(students);
-        const translatedLinks = students.links.map((link, index) => {
+    const translatedLinks = students.links.map((link, index) => {
         if (index === 0) {
             link.label = "&laquo;السابق";
         } else if (index === students.links.length - 1) {
@@ -48,7 +47,7 @@ export default function Dashboard({ auth, students }: DashboardProps) {
                                         : "text-neutral-600 hover:text-neutral-950 hover:ring-2 ring-primary"
                                 } ${
                                     !isNaN(link.label) || link.label === "..."
-                                        ? "md:inline-block hidden"
+                                        ? "lg:inline-block hidden"
                                         : ""
                                 }`}
                             />
@@ -60,7 +59,7 @@ export default function Dashboard({ auth, students }: DashboardProps) {
                                 }}
                                 className={`p-1.5 mx-1 rounded-lg select-none text-neutral-400 ${
                                     !isNaN(link.label) || link.label === "..."
-                                        ? "md:inline-block hidden"
+                                        ? "lg:inline-block hidden"
                                         : ""
                                 }`}
                             />

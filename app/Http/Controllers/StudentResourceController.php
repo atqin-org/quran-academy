@@ -20,6 +20,9 @@ class StudentResourceController extends Controller
     {
         // get noly the attributes that we need
         $students = Student::latest()->paginate(10, ['id', 'first_name', 'last_name', 'birthdate', 'insurance_expire_at', 'subscription', 'subscription_expire_at', 'id_club', 'id_category']);
+        if (env('APP_ENV') !== 'local') {
+            $students->setPath(preg_replace("/^http:/i", "https:", $students->path()));
+        }
         $students->getCollection()->transform(function ($student) {
             $student->name = $student->first_name . ' ' . $student->last_name;
             $student->ahzab = rand(1, 30);
