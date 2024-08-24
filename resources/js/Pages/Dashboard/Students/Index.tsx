@@ -9,11 +9,11 @@ interface DashboardProps extends PageProps {
 }
 export default function Dashboard({ auth, students }: DashboardProps) {
     console.log(students);
-    const translatedLinks = students.links.map((link) => {
-        if (link.label === "pagination.previous") {
-            link.label = "<<السابق";
-        } else if (link.label === "pagination.next") {
-            link.label = "التالي>>";
+        const translatedLinks = students.links.map((link, index) => {
+        if (index === 0) {
+            link.label = "&laquo;السابق";
+        } else if (index === students.links.length - 1) {
+            link.label = "التالي&raquo;";
         }
         return link;
     });
