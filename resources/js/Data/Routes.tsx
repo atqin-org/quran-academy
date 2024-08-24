@@ -2,6 +2,7 @@ import {
     Backpack,
     Banknote,
     ChartPie,
+    FormInput,
     House,
     LibraryBig,
     NotebookPen,
@@ -72,6 +73,13 @@ export const sidebarLinks = [
         latin: "Settings",
         crud: false,
         href: "/dashboard/settings",
+    },
+    {
+        icon: <FormInput />,
+        label: "التحكم في الفورم",
+        latin: "Form Control",
+        crud: true,
+        href: "/dashboard/forms",
     },
 ];
 

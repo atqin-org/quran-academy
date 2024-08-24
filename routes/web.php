@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\Controller;
+use App\Http\Controllers\FormController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
@@ -32,5 +34,22 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
+
+Route::group(
+    [
+        'middleware' => ['', ''],
+        'prefix' => 'dashboard',
+        'as' => 'dashboard.',
+    ],
+    function () {
+        Route::get('/forms', [FormController::class, 'index'])->name('forms.index');
+        Route::get('/forms/create', [FormController::class, 'create'])->name('forms.create');
+        Route::post('/forms', [FormController::class, 'store'])->name('forms.store');
+        Route::get('/forms/{form}', [FormController::class, 'edit'])->name('forms.edit');
+        Route::put('/forms/{form}', [FormController::class, 'update'])->name('forms.update');
+        Route::delete('/forms/{form}', [FormController::class, 'destroy'])->name('forms.destroy');
+    }
+);
+
 
 require __DIR__ . '/auth.php';

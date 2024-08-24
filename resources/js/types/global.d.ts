@@ -7,4 +7,12 @@ declare global {
     }
 
     var route: typeof ziggyRoute;
+
+    export interface TForm{
+        id: number;
+        name: string;
+        description: string;
+        created_at: string;
+        updated_at: string;
+    }
 }
