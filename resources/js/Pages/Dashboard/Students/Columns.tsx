@@ -19,6 +19,7 @@ export type StudentDisplay = {
     club: string;
     ahzab: number;
     category: string;
+    category_gender?: "male" | "female";
     gender: "male" | "female";
     birthdate: Date;
     subscription: number;
@@ -126,6 +127,25 @@ export const columns: ColumnDef<StudentDisplay>[] = [
         id: "الفئة",
         accessorKey: "category",
         header: () => <div className="text-start">الفئة</div>,
+        cell: ({ row }) => {
+            const category = row.getValue("الفئة") as string;
+            const category_gender = row.original.category_gender as string;
+            const category_color =
+                category_gender === "male"
+                    ? "text-blue-500"
+                    : category_gender === "female"
+                    ? "text-pink-500"
+                    : "text-black";
+            return (
+                <div
+                    className={`text-start font-medium ${
+                        category_color
+                    }`}
+                >
+                    {category}
+                </div>
+            );
+        },
     },
     {
         id: "التامين",
@@ -236,11 +256,7 @@ export const columns: ColumnDef<StudentDisplay>[] = [
                             </Link>
                         </DropdownMenuItem>
                         <DropdownMenuItem>
-                            <Link
-                                href={`/dashboard/students/`}
-                            >
-                                الدفع
-                            </Link>
+                            <Link href={`/dashboard/students/`}>الدفع</Link>
                         </DropdownMenuItem>
                         <DropdownMenuItem>
                             <Link

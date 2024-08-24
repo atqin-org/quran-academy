@@ -1,16 +1,6 @@
 import { Head, Link } from "@inertiajs/react";
 import { PageProps } from "@/types";
 import DashboardLayout from "@/Layouts/DashboardLayout";
-import {
-    Pagination,
-    PaginationContent,
-    PaginationEllipsis,
-    PaginationItem,
-    PaginationLink,
-    PaginationNext,
-    PaginationPrevious,
-} from "@/Components/ui/pagination";
-
 import { StudentDisplay, columns } from "./Columns";
 import { DataTable } from "./DataTable";
 
@@ -18,6 +8,15 @@ interface DashboardProps extends PageProps {
     students: { data: StudentDisplay[]; links: any[] };
 }
 export default function Dashboard({ auth, students }: DashboardProps) {
+    console.log(students);
+    const translatedLinks = students.links.map((link) => {
+        if (link.label === "pagination.previous") {
+            link.label = "<<السابق";
+        } else if (link.label === "pagination.next") {
+            link.label = "التالي>>";
+        }
+        return link;
+    });
     return (
         <DashboardLayout user={auth.user}>
             <Head title="⚠️ Under Construction" />
@@ -33,35 +32,37 @@ export default function Dashboard({ auth, students }: DashboardProps) {
                     </Link>
                 </div>
                 <DataTable columns={columns} data={students.data} />
-                <div className="mt-2">
-                    {students.links.map((link) =>
+                <div className="mt-2 flex">
+                    {translatedLinks.map((link) =>
                         link.url ? (
                             <Link
                                 preserveState
                                 key={link.label}
                                 href={link.url}
                                 dangerouslySetInnerHTML={{
-                                    __html: link.label.replace(
-                                        "pagination.",
-                                        ""
-                                    ),
+                                    __html: link.label,
                                 }}
-                                className={`p-1.5 mx-1 rounded-lg select-none ${
+                                className={`p-1.5 md:px-2.5 mx-1 rounded-lg select-none ${
                                     link.active
-                                        ? "text-primary-foreground font-bold bg-primary"
-                                        : "text-gray-600 hover:text-neutral-950 hover:bg-neutral-200"
+                                        ? "text-primary-foreground text-base font-bold bg-primary"
+                                        : "text-neutral-600 hover:text-neutral-950 hover:ring-2 ring-primary"
+                                } ${
+                                    !isNaN(link.label) || link.label === "..."
+                                        ? "md:inline-block hidden"
+                                        : ""
                                 }`}
                             />
                         ) : (
                             <span
                                 key={link.label}
                                 dangerouslySetInnerHTML={{
-                                    __html: link.label.replace(
-                                        "pagination.",
-                                        ""
-                                    ),
+                                    __html: link.label,
                                 }}
-                                className="p-1.5 mx-1 rounded-lg select-none text-gray-400 "
+                                className={`p-1.5 mx-1 rounded-lg select-none text-neutral-400 ${
+                                    !isNaN(link.label) || link.label === "..."
+                                        ? "md:inline-block hidden"
+                                        : ""
+                                }`}
                             />
                         )
                     )}

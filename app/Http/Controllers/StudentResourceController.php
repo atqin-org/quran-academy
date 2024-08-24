@@ -26,7 +26,9 @@ class StudentResourceController extends Controller
             $birthdate = Carbon::parse($student->birthdate);
             $student->age = (int) $birthdate->diffInYears(Carbon::now());
             $student->club = Club::find($student->id_club)->name;
-            $student->category = Category::find($student->id_category)->name;
+            $category = Category::find($student->id_category);
+            $student->category = $category->name;
+            $student->category_gender = $category->gender;
             $student->insurance_expire_at = Carbon::parse($student->insurance_expire_at)->format('Y-m-d');
             $student->subscription_expire_at = Carbon::parse($student->subscription_expire_at)->format('Y-m-d');
             return $student;
@@ -89,7 +91,9 @@ class StudentResourceController extends Controller
      */
     public function show(string $id)
     {
-        //
+        $student = Student::find($id);
+
+        dd($student);
     }
 
     /**
