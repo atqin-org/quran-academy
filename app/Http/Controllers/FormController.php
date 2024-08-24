@@ -10,7 +10,9 @@ class FormController extends Controller
 {
     public function index()
     {
-        $forms = Form::all();
+       
+        $forms = Form::paginate(5);
+      
         return Inertia::render('Form/Index', [
             'forms' => $forms,
         ]);

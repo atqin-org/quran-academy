@@ -8,6 +8,15 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use App\Http\Controllers\StudentResourceController;
 
+
+Route::get('dashboard/forms', [FormController::class, 'index'])->name('forms.index');
+Route::get('/forms/create', [FormController::class, 'create'])->name('forms.create');
+Route::post('/forms', [FormController::class, 'store'])->name('forms.store');
+Route::get('/forms/{form}', [FormController::class, 'edit'])->name('forms.edit');
+Route::put('/forms/{form}', [FormController::class, 'update'])->name('forms.update');
+Route::delete('/forms/{form}', [FormController::class, 'destroy'])->name('forms.destroy');
+
+
 Route::resource('/dashboard/students', StudentResourceController::class);
 Route::post('/dashboard/students/{student}', [StudentResourceController::class, 'update'])->name('students.update');
 
@@ -35,21 +44,6 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
-Route::group(
-    [
-        'middleware' => ['', ''],
-        'prefix' => 'dashboard',
-        'as' => 'dashboard.',
-    ],
-    function () {
-        Route::get('/forms', [FormController::class, 'index'])->name('forms.index');
-        Route::get('/forms/create', [FormController::class, 'create'])->name('forms.create');
-        Route::post('/forms', [FormController::class, 'store'])->name('forms.store');
-        Route::get('/forms/{form}', [FormController::class, 'edit'])->name('forms.edit');
-        Route::put('/forms/{form}', [FormController::class, 'update'])->name('forms.update');
-        Route::delete('/forms/{form}', [FormController::class, 'destroy'])->name('forms.destroy');
-    }
-);
 
 
 require __DIR__ . '/auth.php';
