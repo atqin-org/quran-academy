@@ -9,6 +9,7 @@ use App\Models\Club;
 use App\Models\Student;
 use App\Rules\AtLeastOnePhone;
 use App\Rules\FileOrString;
+use Carbon\Carbon;
 
 class StudentResourceController extends Controller
 {
@@ -17,10 +18,25 @@ class StudentResourceController extends Controller
      */
     public function index()
     {
+        // get noly the attributes that we need
+        $students = Student::latest()->paginate(10, ['id', 'first_name', 'last_name', 'birthdate', 'insurance_expire_at', 'subscription', 'subscription_expire_at', 'id_club', 'id_category']);
+        $students->getCollection()->transform(function ($student) {
+            $student->name = $student->first_name . ' ' . $student->last_name;
+            $student->ahzab = rand(1, 30);
+            $birthdate = Carbon::parse($student->birthdate);
+            $student->age = (int) $birthdate->diffInYears(Carbon::now());
+            $student->club = Club::find($student->id_club)->name;
+            $category = Category::find($student->id_category);
+            $student->category = $category->name;
+            $student->category_gender = $category->gender;
+            $student->insurance_expire_at = Carbon::parse($student->insurance_expire_at)->format('Y-m-d');
+            $student->subscription_expire_at = Carbon::parse($student->subscription_expire_at)->format('Y-m-d');
+            return $student;
+        });
         return Inertia::render(
             'Dashboard/Students/Index',
             [
-                'students' => Student::all(),
+                'students' => $students
             ]
         );
     }
@@ -75,7 +91,9 @@ class StudentResourceController extends Controller
      */
     public function show(string $id)
     {
-        //
+        $student = Student::find($id);
+
+        dd($student);
     }
 
     /**
@@ -112,7 +130,7 @@ class StudentResourceController extends Controller
             'club' => 'required|exists:clubs,id',
             'category' => 'required|exists:categories,id',
             'picture' => ['nullable', new FileOrString],
-        'file' => ['nullable', new FileOrString],
+            'file' => ['nullable', new FileOrString],
         ]);
 
         $student = Student::find($id);

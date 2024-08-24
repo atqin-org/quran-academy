@@ -19,6 +19,7 @@ export type StudentDisplay = {
     club: string;
     ahzab: number;
     category: string;
+    category_gender?: "male" | "female";
     gender: "male" | "female";
     birthdate: Date;
     subscription: number;
@@ -126,13 +127,35 @@ export const columns: ColumnDef<StudentDisplay>[] = [
         id: "الفئة",
         accessorKey: "category",
         header: () => <div className="text-start">الفئة</div>,
+        cell: ({ row }) => {
+            const category = row.getValue("الفئة") as string;
+            const category_gender = row.original.category_gender as string;
+            const category_color =
+                category_gender === "male"
+                    ? "text-blue-500"
+                    : category_gender === "female"
+                    ? "text-pink-500"
+                    : "text-black";
+            return (
+                <div
+                    className={`text-start font-medium ${
+                        category_color
+                    }`}
+                >
+                    {category}
+                </div>
+            );
+        },
     },
     {
         id: "التامين",
         accessorKey: "insurance_expire_at",
         header: () => <div className="text-center">التامين</div>,
         cell: ({ row }) => {
-            const insurance = row.getValue("التامين") as Date | null;
+            const insuranceString = row.getValue("التامين") as string | null;
+            const insurance = insuranceString
+                ? new Date(insuranceString)
+                : null;
             const isDatePassed = insurance ? new Date() > insurance : false;
             return (
                 <div className="flex justify-center font-medium">
@@ -159,7 +182,12 @@ export const columns: ColumnDef<StudentDisplay>[] = [
         accessorKey: "subscription_expire_at",
         header: () => <div className="text-center">الاشتراك</div>,
         cell: ({ row }) => {
-            const subscription = row.getValue("الاشتراك") as Date | null;
+            const subscriptionString = row.getValue("الاشتراك") as
+                | string
+                | null;
+            const subscription = subscriptionString
+                ? new Date(subscriptionString)
+                : null;
             const isDatePassed = subscription
                 ? new Date() > subscription
                 : false;
@@ -201,9 +229,9 @@ export const columns: ColumnDef<StudentDisplay>[] = [
         id: "المزيد",
         header: () => <div className="text-start">المزيد</div>,
         cell: ({ row }) => {
-            const payment = row.original;
+            const student = row.original;
             return (
-                <DropdownMenu>
+                <DropdownMenu dir="rtl">
                     <DropdownMenuTrigger asChild>
                         <Button variant="ghost" className="h-8 w-8 p-0">
                             <span className="sr-only">Open menu</span>
@@ -214,15 +242,28 @@ export const columns: ColumnDef<StudentDisplay>[] = [
                         <DropdownMenuLabel>المزيد</DropdownMenuLabel>
                         <DropdownMenuItem
                             onClick={() =>
-                                navigator.clipboard.writeText(payment.id)
+                                navigator.clipboard.writeText(student.id)
                             }
                         >
-                            Copy payment ID
+                            نسخ رقم الطالب
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem>View customer</DropdownMenuItem>
                         <DropdownMenuItem>
-                            View payment details
+                            <Link
+                                href={`/dashboard/students/${student.id}/edit`}
+                            >
+                                تعديل
+                            </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem>
+                            <Link href={`/dashboard/students/`}>الدفع</Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem>
+                            <Link
+                                href={`/dashboard/students/${student.id}/delete`}
+                            >
+                                حذف
+                            </Link>
                         </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
