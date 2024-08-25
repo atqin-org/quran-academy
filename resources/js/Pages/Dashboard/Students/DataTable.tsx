@@ -86,7 +86,7 @@ export function DataTable<TData, TValue>({
 
     return (
         <div className="w-full">
-            <div className="flex items-center py-4  w-full">
+            <div className="flex items-center py-4 gap-2 w-full">
                 <form
                     className="flex items-center gap-2 w-full "
                     onSubmit={handleSearchRequest}
@@ -97,7 +97,7 @@ export function DataTable<TData, TValue>({
                         onChange={handleSearchTermChange}
                         className="max-w-sm"
                     />
-                    <Button className="">
+                    <Button>
                         <Search />
                     </Button>
                 </form>
