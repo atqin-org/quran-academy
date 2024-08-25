@@ -71,13 +71,11 @@ export function DataTable<TData, TValue>({
             rowSelection,
         },
     });
-    console.log(data)
     const handleSearchTermChange = (
         event: React.ChangeEvent<HTMLInputElement>
     ) => {
         const searchValue = event.target.value;
         setData("search", searchValue);
-        console.log(searchValue);
     };
     function handleSearchRequest(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();
