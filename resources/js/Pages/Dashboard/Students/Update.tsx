@@ -47,8 +47,9 @@ export default function Update({
     });
 
     const url = window.location.href;
-    const from = url.lastIndexOf("/");
-    const id = url.substring(from, from - 1);
+    const from = url.split("/");
+    const place = url.split("/").length
+    const id = from[place-2];
 
     function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();

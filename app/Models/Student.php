@@ -124,25 +124,26 @@ class Student extends Model
         // Handle file attribute
         $this->handleFileAttribute($attributes, 'file', 'students/files');
 
+         // Update other attributes
+         $this->fill([
+            'id_club' => $attributes['club'],
+            'first_name' => $attributes['firstName'],
+            'last_name' => $attributes['lastName'],
+            'gender' => $attributes['gender'],
+            'birthdate' => $attributes['birthdate'],
+            'social_status' => $attributes['socialStatus'],
+            'has_cronic_disease' => $attributes['hasCronicDisease'] === 'yes',
+            'cronic_disease' => $attributes['cronicDisease'],
+            'family_status' => $attributes['familyStatus'],
+            'father_job' => $attributes['fatherJob'],
+            'mother_job' => $attributes['motherJob'],
+            'father_phone' => $attributes['fatherPhone'],
+            'mother_phone' => $attributes['motherPhone'],
+            'id_category' => $attributes['category'],
+            'subscription' => $attributes['subscription'],
+        ]);
 
-        // Update other attributes
-        $this->id_club = $attributes['club'];
-        $this->first_name = $attributes['firstName'];
-        $this->last_name = $attributes['lastName'];
-        $this->gender = $attributes['gender'];
-        $this->birthdate = $attributes['birthdate'];
-        $this->social_status = $attributes['socialStatus'];
-        $this->has_cronic_disease = $attributes['hasCronicDisease'] === 'yes';
-        $this->cronic_disease = $attributes['cronicDisease'];
-        $this->family_status = $attributes['familyStatus'];
-        $this->father_job = $attributes['fatherJob'];
-        $this->mother_job = $attributes['motherJob'];
-        $this->father_phone = $attributes['fatherPhone'];
-        $this->mother_phone = $attributes['motherPhone'];
-        $this->id_category = $attributes['category'];
-        $this->subscription = $attributes['subscription'];
-
-        $this->save($options);
+        $this->save();
     }
     private function handleFileAttribute(array &$attributes, string $attributeName, string $storagePath)
     {

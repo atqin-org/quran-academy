@@ -22,7 +22,8 @@ class StudentResourceController extends Controller
         $query = Student::query();
 
         if ($search = $request->input('search')) {
-            $query->where(DB::raw("first_name || ' ' || last_name"), 'like', "%{$search}%");
+            $query->whereRaw("(first_name || ' ' || last_name) like ?", ["%{$search}%"])
+                  ->orWhereRaw("(last_name || ' ' || first_name) like ?", ["%{$search}%"]);
         }
         $students = $query->latest()->paginate(10, ['id', 'first_name', 'last_name', 'birthdate','gender', 'insurance_expire_at', 'subscription', 'subscription_expire_at', 'id_club', 'id_category']);
         if (env('APP_ENV') !== 'local') {
@@ -125,7 +126,8 @@ class StudentResourceController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        $request->validate([
+        // Validate the request
+        $validatedData = $request->validate([
             'firstName' => 'required',
             'lastName' => 'required',
             'gender' => 'required|in:male,female',
@@ -136,19 +138,27 @@ class StudentResourceController extends Controller
             'fatherPhone' => ['nullable', 'regex:/^0[567]\d{8}$/', new AtLeastOnePhone('motherPhone')],
             'motherPhone' => ['nullable', 'regex:/^0[567]\d{8}$/', new AtLeastOnePhone('fatherPhone')],
             'subscription' => 'required|numeric',
+            'familyStatus' => 'nullable',
+            'fatherJob' => 'nullable',
+            'motherJob' => 'nullable',
             'club' => 'required|exists:clubs,id',
             'category' => 'required|exists:categories,id',
             'picture' => ['nullable', new FileOrString],
             'file' => ['nullable', new FileOrString],
         ]);
 
-        $student = Student::find($id);
+        // Find the student by ID
+        $student = Student::findOrFail($id);
+        
+        // Update the student with validated data
+        $student->update($validatedData);
 
-        $student->update($request->all());
+        // Save the updated student
+        $student->save();
 
+        // Redirect with a success message
         return redirect()->route('students.index')->with('success', 'تم تحديث الطالب بنجاح');
     }
-
     /**
      * Remove the specified resource from storage.
      */
