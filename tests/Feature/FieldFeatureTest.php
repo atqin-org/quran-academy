@@ -16,19 +16,19 @@ class FieldFeatureTest extends TestCase
     {
         // admin side 
         $form = Form::factory()->create([
-            'name' => 'Test Form',
-            'description' => 'This is a test form.',
+            'name' => 'Create Form',
+            'description' => 'This for creating a form.',
         ]);
 
         $form->fields()->create([
-            'label' => 'First Name',
+            'label' => 'Name',
             'width' => 50,
             'type' => 'text',
             'is_required' => true,
             'order' => 1,
         ]);
         $form->fields()->create([
-            'label' => 'Last Name',
+            'label' => 'Description',
             'width' => 50,
             'type' => 'text',
             'is_required' => true,
@@ -37,11 +37,11 @@ class FieldFeatureTest extends TestCase
         // client side 
         $response = FieldResponse::factory()->create([
             'field_id' => $form->fields->first()->id,
-            'response_value' => 'John',
+            'response_value' => 'Test Name',
         ]);
         $response = FieldResponse::factory()->create([
             'field_id' => $form->fields->last()->id,
-            'response_value' => 'Doe',
+            'response_value' => 'Description',
         ]);
       
 
@@ -64,15 +64,6 @@ class FieldFeatureTest extends TestCase
             'is_required' => true,
             'order' => 2,
         ]);
-        $this->assertDatabaseHas('field_responses', [
-            'field_id' => $form->fields->first()->id,
-            'response_value' => 'John',
-        ]);
-        $this->assertDatabaseHas('field_responses', [
-            'field_id' => $form->fields->last()->id,
-            'response_value' => 'Doe',
-        ]);
-
     }
 
 

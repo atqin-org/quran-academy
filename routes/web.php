@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use App\Http\Controllers\StudentResourceController;
 
-
+Route::get('dashboard/forms', [FormController::class, 'index'])->name('forms.index');
 Route::get('dashboard/forms', [FormController::class, 'index'])->name('forms.index');
 Route::get('/forms/create', [FormController::class, 'create'])->name('forms.create');
 Route::post('/forms', [FormController::class, 'store'])->name('forms.store');

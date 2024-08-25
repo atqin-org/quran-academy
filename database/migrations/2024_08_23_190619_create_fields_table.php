@@ -17,7 +17,8 @@ return new class extends Migration
             $table->string('label');
             $table->unsignedTinyInteger('width');
             $table->string('type');
-            $table->text('options')->nullable();
+            $table->string('name');
+            $table->json('options')->nullable();
             $table->string('table_reference')->nullable();
             $table->boolean('is_required')->default(false);
             $table->boolean('is_multiple')->default(false);
