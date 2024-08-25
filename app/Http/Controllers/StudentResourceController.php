@@ -22,7 +22,8 @@ class StudentResourceController extends Controller
         $query = Student::query();
 
         if ($search = $request->input('search')) {
-            $query->where(DB::raw("first_name || ' ' || last_name"), 'like', "%{$search}%");
+            $query->whereRaw("(first_name || ' ' || last_name) like ?", ["%{$search}%"])
+                  ->orWhereRaw("(last_name || ' ' || first_name) like ?", ["%{$search}%"]);
         }
         $students = $query->latest()->paginate(10, ['id', 'first_name', 'last_name', 'birthdate','gender', 'insurance_expire_at', 'subscription', 'subscription_expire_at', 'id_club', 'id_category']);
         if (env('APP_ENV') !== 'local') {
