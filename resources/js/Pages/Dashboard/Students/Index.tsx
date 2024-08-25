@@ -8,6 +8,11 @@ interface DashboardProps extends PageProps {
     students: { data: StudentDisplay[]; links: any[] };
 }
 export default function Dashboard({ auth, students }: DashboardProps) {
+    //onload check &search= query param
+    // Extract search query parameter
+    const searchQuery = new URLSearchParams(location.search).get("search");
+
+    // Filter students based on search query
     const translatedLinks = students.links.map((link, index) => {
         if (index === 0) {
             link.label = "&laquo;السابق";
@@ -30,7 +35,7 @@ export default function Dashboard({ auth, students }: DashboardProps) {
                         سجل طالب جديد
                     </Link>
                 </div>
-                <DataTable columns={columns} data={students.data} />
+                <DataTable columns={columns} data={students.data} search={searchQuery} />
                 <div className="mt-2 flex">
                     {translatedLinks.map((link) =>
                         link.url ? (

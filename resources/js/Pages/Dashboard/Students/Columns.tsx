@@ -119,6 +119,26 @@ export const columns: ColumnDef<StudentDisplay>[] = [
         },
     },
     {
+        id: "الجنس",
+        accessorKey: "gender",
+        header: () => <div className="text-center">الجنس</div>,
+        cell: ({ row }) => {
+            const genderOption = true;
+            const labelText =
+                (row.getValue("الجنس") as string) === "male" ? "ذكر" : "أنثى";
+            const color =
+                (row.getValue("الجنس") as string) === "male"
+                    ? "text-blue-500"
+                    : "text-pink-500";
+            return genderOption ? (
+                <div className={`text-center font-medium ${color}`}>
+                    {labelText}
+                </div>
+            ) : null;
+        },
+        // invisible by default
+    },
+    {
         id: "النادي",
         accessorKey: "club",
         header: () => <div className="text-start">النادي</div>,
@@ -137,11 +157,7 @@ export const columns: ColumnDef<StudentDisplay>[] = [
                     ? "text-pink-500"
                     : "text-black";
             return (
-                <div
-                    className={`text-start font-medium ${
-                        category_color
-                    }`}
-                >
+                <div className={`text-start font-medium ${category_color}`}>
                     {category}
                 </div>
             );
