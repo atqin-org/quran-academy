@@ -27,23 +27,31 @@ import {
 } from "@/Components/ui/table";
 import { Button } from "@/Components/ui/button";
 import { Input } from "@/Components/ui/input";
+import { useForm } from "@inertiajs/react";
+import { Search } from "lucide-react";
+import { Cross2Icon } from "@radix-ui/react-icons";
+import { DataTableFacetedFilter } from "./data-table-faceted-filter";
+import { gender } from "./data";
 
 interface DataTableProps<TData, TValue> {
     columns: ColumnDef<TData, TValue>[];
     data: TData[];
+    search: string | null;
 }
 
 export function DataTable<TData, TValue>({
     columns,
     data,
+    search,
 }: DataTableProps<TData, TValue>) {
     const [sorting, setSorting] = React.useState<SortingState>([]);
     const [columnFilters, setColumnFilters] =
         React.useState<ColumnFiltersState>([]);
     const [columnVisibility, setColumnVisibility] =
-        React.useState<VisibilityState>({});
+        React.useState<VisibilityState>({
+        });
     const [rowSelection, setRowSelection] = React.useState({});
-
+    const { setData, get,data : formData } = useForm({ search  });
     const table = useReactTable({
         data,
         columns,
@@ -63,24 +71,38 @@ export function DataTable<TData, TValue>({
             rowSelection,
         },
     });
+    console.log(data)
+    const handleSearchTermChange = (
+        event: React.ChangeEvent<HTMLInputElement>
+    ) => {
+        const searchValue = event.target.value;
+        setData("search", searchValue);
+        console.log(searchValue);
+    };
+    function handleSearchRequest(e: React.FormEvent<HTMLFormElement>) {
+        e.preventDefault();
+        get(route("students.index"), {
+            preserveState: true,
+        });
+    }
 
     return (
         <div className="w-full">
-            <div className="flex items-center py-4 w-full">
-                <Input
-                    placeholder="ابحث عن طالب.."
-                    value={
-                        (table
-                            .getColumn("الاسم")
-                            ?.getFilterValue() as string) ?? ""
-                    }
-                    onChange={(event) =>
-                        table
-                            .getColumn("الاسم")
-                            ?.setFilterValue(event.target.value)
-                    }
-                    className="max-w-sm"
-                />
+            <div className="flex items-center py-4  w-full">
+                <form
+                    className="flex items-center gap-2 w-full "
+                    onSubmit={handleSearchRequest}
+                >
+                    <Input
+                        placeholder="ابحث عن طالب.."
+                        value={formData.search || ""}
+                        onChange={handleSearchTermChange}
+                        className="max-w-sm"
+                    />
+                    <Button className="">
+                        <Search />
+                    </Button>
+                </form>
                 <div className="flex-1"></div>
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -136,13 +158,15 @@ export function DataTable<TData, TValue>({
                             table.getRowModel().rows.map((row) => (
                                 <TableRow
                                     key={row.id}
-
                                     data-state={
                                         row.getIsSelected() && "selected"
                                     }
                                 >
                                     {row.getVisibleCells().map((cell) => (
-                                        <TableCell key={cell.id} className="p-3">
+                                        <TableCell
+                                            key={cell.id}
+                                            className="p-3"
+                                        >
                                             {flexRender(
                                                 cell.column.columnDef.cell,
                                                 cell.getContext()

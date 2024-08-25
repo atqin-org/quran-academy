@@ -10,16 +10,21 @@ use App\Models\Student;
 use App\Rules\AtLeastOnePhone;
 use App\Rules\FileOrString;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class StudentResourceController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        // get noly the attributes that we need
-        $students = Student::latest()->paginate(10, ['id', 'first_name', 'last_name', 'birthdate', 'insurance_expire_at', 'subscription', 'subscription_expire_at', 'id_club', 'id_category']);
+        $query = Student::query();
+
+        if ($search = $request->input('search')) {
+            $query->where(DB::raw("first_name || ' ' || last_name"), 'like', "%{$search}%");
+        }
+        $students = $query->latest()->paginate(10, ['id', 'first_name', 'last_name', 'birthdate','gender', 'insurance_expire_at', 'subscription', 'subscription_expire_at', 'id_club', 'id_category']);
         if (env('APP_ENV') !== 'local') {
             $students->setPath(preg_replace("/^http:/i", "https:", $students->path()));
         }
@@ -36,6 +41,7 @@ class StudentResourceController extends Controller
             $student->subscription_expire_at = Carbon::parse($student->subscription_expire_at)->format('Y-m-d');
             return $student;
         });
+        //dd($students);
         return Inertia::render(
             'Dashboard/Students/Index',
             [
