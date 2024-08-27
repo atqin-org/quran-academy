@@ -74,20 +74,7 @@ export const columns: ColumnDef<StudentDisplay>[] = [
         id: "العمر",
         accessorKey: "age",
         header: ({ column }) => {
-            return (
-                <div className="flex justify-center">
-                    <Button
-                        variant="ghost"
-                        onClick={() =>
-                            column.toggleSorting(column.getIsSorted() === "asc")
-                        }
-                        className="flex justify-start items-center gap-1"
-                    >
-                        العمر
-                        <ArrowUpDown className="ml-2 h-4 w-4" />
-                    </Button>
-                </div>
-            );
+            return <div className="flex justify-center">العمر</div>;
         },
         cell: ({ row }) => {
             const age = row.getValue("العمر") as number;
@@ -98,20 +85,7 @@ export const columns: ColumnDef<StudentDisplay>[] = [
         id: "الحزب",
         accessorKey: "ahzab",
         header: ({ column }) => {
-            return (
-                <div className="flex justify-center">
-                    <Button
-                        variant="ghost"
-                        onClick={() =>
-                            column.toggleSorting(column.getIsSorted() === "asc")
-                        }
-                        className="flex items-center gap-1"
-                    >
-                        الاحزاب
-                        <ArrowUpDown className="ml-2 h-4 w-4" />
-                    </Button>
-                </div>
-            );
+            return <div className="flex justify-center">الاحزاب</div>;
         },
         cell: ({ row }) => {
             const ahzab = row.getValue("الحزب") as number;

@@ -27,6 +27,7 @@ class Student extends Model
         'father_phone',
         'mother_phone',
         'id_category',
+        'ahzab',
         'subscription',
         'subscription_expire_at',
         'insurance_expire_at',

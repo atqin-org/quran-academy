@@ -43,7 +43,7 @@ class StudentFactory extends Factory
             'first_name' => $faker->firstName,
             'last_name' => $faker->lastName,
             'gender' => $faker->randomElement(['male', 'female']),
-            'birthdate' => $faker->date(),
+            'birthdate' => $faker->dateTimeBetween('-60 years', '-3 years')->format('Y-m-d'),
             'social_status' => $faker->randomElement(['good', 'mid', 'low']),
             'has_cronic_disease' => $faker->boolean,
             'cronic_disease' => $faker->optional()->word,
@@ -54,8 +54,9 @@ class StudentFactory extends Factory
             'mother_phone' => $faker->optional()->algerianPhoneNumber(),
             'id_category' => $faker->randomElement(Category::all()->pluck('id')->toArray()),
             'subscription' => $faker->numberBetween(1500, 3000),
-            'subscription_expire_at' => $faker->optional()->dateTimeBetween('-6 months', '+8 months'),
-            'insurance_expire_at' => $faker->optional()->dateTimeBetween('-6 months', '+8 months'),
+            'ahzab' => $faker->numberBetween(0, 60),
+            'subscription_expire_at' => $faker->optional()->dateTimeBetween('-2 months', '+8 months'),
+            'insurance_expire_at' => $faker->optional()->dateTimeBetween('-2 months', '+8 months'),
         ];
     }
 }

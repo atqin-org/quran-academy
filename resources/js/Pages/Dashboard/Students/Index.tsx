@@ -11,6 +11,13 @@ export default function Dashboard({ auth, students }: DashboardProps) {
     //onload check &search= query param
     // Extract search query parameter
     const searchQuery = new URLSearchParams(location.search).get("search");
+    const sortByQuery = new URLSearchParams(location.search).get("sortBy");
+    const sortTypeQuery = new URLSearchParams(location.search).get("sortType");
+    const searchParams = {
+        search: searchQuery,
+        sortBy: sortByQuery,
+        sortType: sortTypeQuery,
+    };
 
     // Filter students based on search query
     const translatedLinks = students.links.map((link, index) => {
@@ -35,7 +42,7 @@ export default function Dashboard({ auth, students }: DashboardProps) {
                         سجل طالب جديد
                     </Link>
                 </div>
-                <DataTable columns={columns} data={students.data} search={searchQuery} />
+                <DataTable columns={columns} data={students.data} searchParams={searchParams} />
                 <div className="mt-2 flex">
                     {translatedLinks.map((link) =>
                         link.url ? (
