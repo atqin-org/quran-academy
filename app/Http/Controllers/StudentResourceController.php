@@ -23,15 +23,30 @@ class StudentResourceController extends Controller
 
         if ($search = $request->input('search')) {
             $query->whereRaw("(first_name || ' ' || last_name) like ?", ["%{$search}%"])
-                  ->orWhereRaw("(last_name || ' ' || first_name) like ?", ["%{$search}%"]);
+                ->orWhereRaw("(last_name || ' ' || first_name) like ?", ["%{$search}%"]);
         }
-        $students = $query->latest()->paginate(10, ['id', 'first_name', 'last_name', 'birthdate','gender', 'insurance_expire_at', 'subscription', 'subscription_expire_at', 'id_club', 'id_category']);
+
+        // Retrieve sorting parameters from the request
+        $sortBy = $request->input('sortBy', 'created_at'); // Default to 'created_at'
+        $sortType = $request->input('sortType', 'desc'); // Default to 'desc'
+
+        if ($sortBy === 'name') {
+            $query->orderBy('first_name', $sortType)->orderBy('last_name', $sortType);
+        } else {
+            $query->orderBy($sortBy, $sortType);
+        }
+
+        // Apply sorting to the query
+        $query->orderBy($sortBy, $sortType);
+
+        $students = $query->paginate(10, ['id', 'first_name', 'last_name', 'birthdate', 'ahzab', 'gender', 'insurance_expire_at', 'subscription', 'subscription_expire_at', 'id_club', 'id_category'])->withQueryString();
+
         if (env('APP_ENV') !== 'local') {
             $students->setPath(preg_replace("/^http:/i", "https:", $students->path()));
         }
+
         $students->getCollection()->transform(function ($student) {
             $student->name = $student->first_name . ' ' . $student->last_name;
-            $student->ahzab = rand(1, 30);
             $birthdate = Carbon::parse($student->birthdate);
             $student->age = (int) $birthdate->diffInYears(Carbon::now());
             $student->club = Club::find($student->id_club)->name;
@@ -42,7 +57,7 @@ class StudentResourceController extends Controller
             $student->subscription_expire_at = Carbon::parse($student->subscription_expire_at)->format('Y-m-d');
             return $student;
         });
-        //dd($students);
+
         return Inertia::render(
             'Dashboard/Students/Index',
             [
@@ -149,7 +164,7 @@ class StudentResourceController extends Controller
 
         // Find the student by ID
         $student = Student::findOrFail($id);
-        
+
         // Update the student with validated data
         $student->update($validatedData);
 

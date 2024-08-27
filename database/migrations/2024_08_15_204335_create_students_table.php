@@ -28,6 +28,7 @@ class CreateStudentsTable extends Migration
             $table->string('father_phone')->nullable();
             $table->string('mother_phone')->nullable();
             $table->string('subscription')->nullable();
+            $table->string('ahzab')->default(0);
             $table->date('subscription_expire_at')->nullable();
             $table->date('insurance_expire_at')->nullable();
 
