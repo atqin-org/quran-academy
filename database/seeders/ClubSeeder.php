@@ -15,27 +15,27 @@ class ClubSeeder extends Seeder
     {
         $clubs = [
             [
-                'name' => 'نادي مالك ابن أنس',
+                'name' => 'مالك ابن أنس',
                 'location' => 'Tlemcen',
             ],
             [
-                'name' => 'نادي أم سلمة',
+                'name' => 'أم سلمة',
                 'location' => 'Tlemcen',
             ],
             [
-                'name' => 'نادي أبي موسى الأشعري',
+                'name' => 'أبي موسى الأشعري',
                 'location' => 'Tlemcen',
             ],
             [
-                'name' => 'نادي أحمد سحنون',
+                'name' => 'أحمد سحنون',
                 'location' => 'Tlemcen',
             ],
             [
-                'name' => 'نادي عبد الرحمان شيبان',
+                'name' => 'عبد الرحمان شيبان',
                 'location' => 'Tlemcen',
             ],
             [
-                'name' => 'نادي يخلف البوعناني',
+                'name' => 'يخلف البوعناني',
                 'location' => 'Tlemcen',
             ],
         ];
