@@ -210,14 +210,14 @@ export function DataTable<TData, TValue>({
                             <Button variant="outline">
                                 {
                                     sortedBy.find(
-                                        (sort) => sort.value === selectedSortBy
+                                        (sort) => sort.value === formData.sortBy
                                     )?.label
                                 }
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                             <DropdownMenuRadioGroup
-                                value={selectedSortBy}
+                                value={formData.sortBy}
                                 onValueChange={handleSortByChange}
                             >
                                 {sortedBy.map((sort) => (
@@ -236,7 +236,8 @@ export function DataTable<TData, TValue>({
                         variant="outline"
                         onClick={() => handleSortTypeChange(!sortTypeIsAsc)}
                     >
-                        {sortTypeIsAsc ? "تصاعديا" : "تنازليا"}
+                        {formData.sortType === "asc"
+                         ? "تصاعديا" : "تنازليا"}
                     </Button>
                 </div>
                 <div className="flex items-center gap-2 mb-4 ps-2 ring-2ring-primary w-fit rounded-md">
