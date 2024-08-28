@@ -36,14 +36,7 @@ class StudentResourceController extends Controller
             $query->orderBy($sortBy, $sortType);
         }
 
-        // Apply sorting to the query
-        $query->orderBy($sortBy, $sortType);
-
         $students = $query->paginate(10, ['id', 'first_name', 'last_name', 'birthdate', 'ahzab', 'gender', 'insurance_expire_at', 'subscription', 'subscription_expire_at', 'id_club', 'id_category'])->withQueryString();
-
-        if (env('APP_ENV') !== 'local') {
-            $students->setPath(preg_replace("/^http:/i", "https:", $students->path()));
-        }
 
         $students->getCollection()->transform(function ($student) {
             $student->name = $student->first_name . ' ' . $student->last_name;
