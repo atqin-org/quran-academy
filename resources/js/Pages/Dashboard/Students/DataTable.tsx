@@ -102,11 +102,11 @@ export function DataTable<TData, TValue>({
         React.useState<ColumnFiltersState>([]);
     const [columnVisibility, setColumnVisibility] =
         React.useState<VisibilityState>({});
+    const [rowSelection, setRowSelection] = React.useState({});
     const [selectedSortBy, setSelectedSortBy] = React.useState(
         sortedBy[0].value
     );
     const [sortTypeIsAsc, setSortTypeIsAsc] = React.useState(false);
-    const [rowSelection, setRowSelection] = React.useState({});
     const [selectedGender, setSelectedGender] = React.useState<string[]>([]);
     const [selectedClub, setSelectedClub] = React.useState<string[]>([]);
     const [selectedCategory, setSelectedCategory] = React.useState<string[]>(
@@ -144,6 +144,8 @@ export function DataTable<TData, TValue>({
             rowSelection,
         },
     });
+    console.log(searchParams);
+
     const handleSearchTermChange = (
         event: React.ChangeEvent<HTMLInputElement>
     ) => {
@@ -231,15 +233,7 @@ export function DataTable<TData, TValue>({
                         <Search />
                     </Button>
                 </form>
-                <div className="flex justify-between items-center gap-2 w-full">
-                    <div className="flex-1">{/* filters */}</div>
-                    {/*
-                    <Button>
-                        <Cross2Icon />
-                        اعادة تعيين
-                    </Button>
-                    */}
-                </div>
+                <div className="flex-1"></div>
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <Button variant="outline" className="ml-auto">
@@ -319,7 +313,7 @@ export function DataTable<TData, TValue>({
                             <DropdownMenuCheckboxItem
                                 dir="rtl"
                                 className="capitalize"
-                                checked={selectedGender.includes("male")}
+                                checked={formData.gender.includes("male")}
                                 onClick={(e) => {
                                     e.preventDefault();
                                     e.stopPropagation();
@@ -331,7 +325,7 @@ export function DataTable<TData, TValue>({
                             <DropdownMenuCheckboxItem
                                 dir="rtl"
                                 className="capitalize"
-                                checked={selectedGender.includes("female")}
+                                checked={formData.gender.includes("female")}
                                 onClick={(e) => {
                                     e.preventDefault();
                                     e.stopPropagation();
@@ -352,7 +346,7 @@ export function DataTable<TData, TValue>({
                                     dir="rtl"
                                     key={category.id}
                                     className="capitalize"
-                                    checked={selectedCategory.includes(
+                                    checked={formData.categories.includes(
                                         category.id.toString()
                                     )}
                                     onClick={(e) => {
@@ -396,7 +390,7 @@ export function DataTable<TData, TValue>({
                                     dir="rtl"
                                     key={club.id}
                                     className="capitalize"
-                                    checked={selectedClub.includes(
+                                    checked={formData.clubs.includes(
                                         club.id.toString()
                                     )}
                                     onClick={(e) => {
