@@ -37,6 +37,9 @@ interface DataTableProps<TData, TValue> {
     columns: ColumnDef<TData, TValue>[];
     data: TData[];
     searchParams: {
+        categories: string[] | null;
+        clubs: string[] | null;
+        gender: string[] | null;
         search: string | null;
         sortBy: string | null;
         sortType: string | null;
@@ -118,9 +121,9 @@ export function DataTable<TData, TValue>({
         search: searchParams.search,
         sortBy: searchParams.sortBy ?? selectedSortBy,
         sortType: searchParams.sortType ?? (sortTypeIsAsc ? "asc" : "desc"),
-        gender: selectedGender,
-        clubs: selectedClub,
-        categories: selectedCategory,
+        gender: searchParams.gender ?? selectedGender,
+        clubs: searchParams.clubs ?? selectedClub,
+        categories: searchParams.categories ?? selectedCategory,
     });
     const table = useReactTable({
         data,
@@ -149,7 +152,6 @@ export function DataTable<TData, TValue>({
     };
     const handleSearchRequest = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        console.log(formData);
         get(route("students.index"), {
             preserveState: true,
             preserveScroll: true,
