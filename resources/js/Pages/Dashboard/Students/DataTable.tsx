@@ -32,6 +32,7 @@ import { Input } from "@/Components/ui/input";
 import { useForm } from "@inertiajs/react";
 import { Search } from "lucide-react";
 import { Separator } from "@/Components/ui/separator";
+import { Badge } from "@/Components/ui/badge";
 
 interface DataTableProps<TData, TValue> {
     columns: ColumnDef<TData, TValue>[];
@@ -97,20 +98,25 @@ export function DataTable<TData, TValue>({
     searchParams,
     dataDependencies,
 }: DataTableProps<TData, TValue>) {
-    const [sorting, setSorting] = React.useState<SortingState>([]);
     const [columnFilters, setColumnFilters] =
         React.useState<ColumnFiltersState>([]);
     const [columnVisibility, setColumnVisibility] =
         React.useState<VisibilityState>({});
     const [rowSelection, setRowSelection] = React.useState({});
     const [selectedSortBy, setSelectedSortBy] = React.useState(
-        sortedBy[0].value
+        searchParams.sortBy ?? sortedBy[0].value
     );
-    const [sortTypeIsAsc, setSortTypeIsAsc] = React.useState(false);
-    const [selectedGender, setSelectedGender] = React.useState<string[]>([]);
-    const [selectedClub, setSelectedClub] = React.useState<string[]>([]);
+    const [sortTypeIsAsc, setSortTypeIsAsc] = React.useState(
+        searchParams.sortType === "asc" ? true : false
+    );
+    const [selectedGender, setSelectedGender] = React.useState<string[]>(
+        searchParams.gender ?? []
+    );
+    const [selectedClub, setSelectedClub] = React.useState<string[]>(
+        searchParams.clubs ?? []
+    );
     const [selectedCategory, setSelectedCategory] = React.useState<string[]>(
-        []
+        searchParams.categories ?? []
     );
     const {
         setData,
@@ -119,18 +125,17 @@ export function DataTable<TData, TValue>({
         processing,
     } = useForm({
         search: searchParams.search,
-        sortBy: searchParams.sortBy ?? selectedSortBy,
-        sortType: searchParams.sortType ?? (sortTypeIsAsc ? "asc" : "desc"),
-        gender: searchParams.gender ?? selectedGender,
-        clubs: searchParams.clubs ?? selectedClub,
-        categories: searchParams.categories ?? selectedCategory,
+        sortBy: selectedSortBy,
+        sortType: sortTypeIsAsc ? "asc" : "desc",
+        gender: selectedGender,
+        clubs: selectedClub,
+        categories: selectedCategory,
     });
     const table = useReactTable({
         data,
         columns,
         getCoreRowModel: getCoreRowModel(),
         getPaginationRowModel: getPaginationRowModel(),
-        onSortingChange: setSorting,
         getSortedRowModel: getSortedRowModel(),
         onColumnFiltersChange: setColumnFilters,
         getFilteredRowModel: getFilteredRowModel(),
@@ -138,7 +143,6 @@ export function DataTable<TData, TValue>({
         onRowSelectionChange: setRowSelection,
 
         state: {
-            sorting,
             columnFilters,
             columnVisibility,
             rowSelection,
@@ -307,7 +311,10 @@ export function DataTable<TData, TValue>({
                 <div className="flex items-center gap-2 ring-2ring-primary w-fit rounded-md">
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="outline">الجنس</Button>
+                            <Button variant="outline" className="flex gap-1">
+                                <span>الجنس</span>
+                                <Badge>{formData.gender.length}</Badge>
+                            </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                             <DropdownMenuCheckboxItem
@@ -338,7 +345,10 @@ export function DataTable<TData, TValue>({
                     </DropdownMenu>
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="outline">الفئة</Button>
+                            <Button variant="outline" className="flex gap-1">
+                                <span>الفئة</span>
+                                <Badge>{formData.categories.length}</Badge>
+                            </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                             {dataDependencies.categories.map((category) => (
@@ -382,7 +392,10 @@ export function DataTable<TData, TValue>({
                     </DropdownMenu>
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="outline">النادي</Button>
+                            <Button variant="outline" className="flex gap-1">
+                                <span>النادي</span>
+                                <Badge>{formData.clubs.length}</Badge>
+                            </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                             {dataDependencies.clubs.map((club) => (
