@@ -6,8 +6,22 @@ import { DataTable } from "./DataTable";
 
 interface DashboardProps extends PageProps {
     students: { data: StudentDisplay[]; links: any[] };
+    dataDependencies: {
+        categories: {
+            id: number;
+            name: string;
+            students_count: number;
+            gender: string | null;
+        }[];
+        clubs: { id: number; name: string; students_count: number }[];
+        genders: { gender: string; total: number }[];
+    };
 }
-export default function Dashboard({ auth, students }: DashboardProps) {
+export default function Dashboard({
+    auth,
+    students,
+    dataDependencies,
+}: DashboardProps) {
     //onload check &search= query param
     // Extract search query parameter
     const searchQuery = new URLSearchParams(location.search).get("search");
@@ -42,8 +56,13 @@ export default function Dashboard({ auth, students }: DashboardProps) {
                         سجل طالب جديد
                     </Link>
                 </div>
-                <DataTable columns={columns} data={students.data} searchParams={searchParams} />
-                <div className="mt-2 flex">
+                <DataTable
+                    columns={columns}
+                    data={students.data}
+                    searchParams={searchParams}
+                    dataDependencies={dataDependencies}
+                />
+                <div className="mt-4 mb-1 flex">
                     {translatedLinks.map((link) =>
                         link.url ? (
                             <Link

@@ -55,8 +55,8 @@ class StudentFactory extends Factory
             'id_category' => $faker->randomElement(Category::all()->pluck('id')->toArray()),
             'subscription' => $faker->numberBetween(1500, 3000),
             'ahzab' => $faker->numberBetween(0, 60),
-            'subscription_expire_at' => $faker->optional()->dateTimeBetween('-2 months', '+8 months'),
-            'insurance_expire_at' => $faker->optional()->dateTimeBetween('-2 months', '+8 months'),
+            'subscription_expire_at' => $faker->optional()->dateTimeBetween('-8 months', '+8 months'),
+            'insurance_expire_at' => $faker->optional()->dateTimeBetween('-8 months', '+8 months'),
         ];
     }
 }
