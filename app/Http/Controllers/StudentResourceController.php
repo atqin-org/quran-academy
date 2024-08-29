@@ -19,6 +19,7 @@ class StudentResourceController extends Controller
      */
     public function index(Request $request)
     {
+        //dd($request->all());
         $query = Student::query();
 
         if ($search = $request->input('search')) {
@@ -35,7 +36,18 @@ class StudentResourceController extends Controller
         } else {
             $query->orderBy($sortBy, $sortType);
         }
+        // Retrieve filter parameters from the request
+        if ($genders = $request->input('gender')) {
+            $query->whereIn('gender', $genders);
+        }
 
+        if ($clubs = $request->input('clubs')) {
+            $query->whereIn('id_club', $clubs);
+        }
+
+        if ($categories = $request->input('categories')) {
+            $query->whereIn('id_category', $categories);
+        }
         $students = $query->paginate(10, ['id', 'first_name', 'last_name', 'birthdate', 'ahzab', 'gender', 'insurance_expire_at', 'subscription', 'subscription_expire_at', 'id_club', 'id_category'])->withQueryString();
 
         $students->getCollection()->transform(function ($student) {
@@ -46,15 +58,20 @@ class StudentResourceController extends Controller
             $category = Category::find($student->id_category);
             $student->category = $category->name;
             $student->category_gender = $category->gender;
-            $student->insurance_expire_at = Carbon::parse($student->insurance_expire_at)->format('Y-m-d');
-            $student->subscription_expire_at = Carbon::parse($student->subscription_expire_at)->format('Y-m-d');
+            $student->insurance_expire_at = $student->insurance_expire_at ? Carbon::parse($student->insurance_expire_at)->format('Y-m-d') : null;
+            $student->subscription_expire_at = $student->subscription_expire_at ? Carbon::parse($student->subscription_expire_at)->format('Y-m-d') : null;
             return $student;
         });
-
         return Inertia::render(
             'Dashboard/Students/Index',
             [
-                'students' => $students
+                'students' => $students,
+                'dataDependencies' => [
+                    'clubs' => Club::withCount('students')->get(),
+                    'categories' => Category::withCount('students')->get(),
+                    'genders' => Student::select('gender', DB::raw('count(*) as total'))
+                        ->groupBy('gender')->get()
+                ]
             ]
         );
     }

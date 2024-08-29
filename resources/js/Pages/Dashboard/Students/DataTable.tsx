@@ -31,9 +31,7 @@ import { Button } from "@/Components/ui/button";
 import { Input } from "@/Components/ui/input";
 import { useForm } from "@inertiajs/react";
 import { Search } from "lucide-react";
-import { Cross2Icon } from "@radix-ui/react-icons";
-import { DataTableFacetedFilter } from "./data-table-faceted-filter";
-import { gender } from "./data";
+import { Separator } from "@/Components/ui/separator";
 
 interface DataTableProps<TData, TValue> {
     columns: ColumnDef<TData, TValue>[];
@@ -42,6 +40,16 @@ interface DataTableProps<TData, TValue> {
         search: string | null;
         sortBy: string | null;
         sortType: string | null;
+    };
+    dataDependencies: {
+        categories: {
+            id: number;
+            name: string;
+            students_count: number;
+            gender: string | null;
+        }[];
+        clubs: { id: number; name: string; students_count: number }[];
+        genders: { gender: string; total: number }[];
     };
 }
 
@@ -84,6 +92,7 @@ export function DataTable<TData, TValue>({
     columns,
     data,
     searchParams,
+    dataDependencies,
 }: DataTableProps<TData, TValue>) {
     const [sorting, setSorting] = React.useState<SortingState>([]);
     const [columnFilters, setColumnFilters] =
@@ -95,14 +104,23 @@ export function DataTable<TData, TValue>({
     );
     const [sortTypeIsAsc, setSortTypeIsAsc] = React.useState(false);
     const [rowSelection, setRowSelection] = React.useState({});
+    const [selectedGender, setSelectedGender] = React.useState<string[]>([]);
+    const [selectedClub, setSelectedClub] = React.useState<string[]>([]);
+    const [selectedCategory, setSelectedCategory] = React.useState<string[]>(
+        []
+    );
     const {
         setData,
         get,
         data: formData,
+        processing,
     } = useForm({
         search: searchParams.search,
-        sortBy: searchParams.sortBy ?? sortedBy[0].value,
+        sortBy: searchParams.sortBy ?? selectedSortBy,
         sortType: searchParams.sortType ?? (sortTypeIsAsc ? "asc" : "desc"),
+        gender: selectedGender,
+        clubs: selectedClub,
+        categories: selectedCategory,
     });
     const table = useReactTable({
         data,
@@ -129,24 +147,70 @@ export function DataTable<TData, TValue>({
         const searchValue = event.target.value;
         setData("search", searchValue);
     };
-    function handleSearchRequest(e: React.FormEvent<HTMLFormElement>) {
+    const handleSearchRequest = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
+        console.log(formData);
         get(route("students.index"), {
             preserveState: true,
+            preserveScroll: true,
         });
-    }
-
+    };
     const handleSortByChange = (value: string) => {
         setSelectedSortBy(value);
-        //save in setData
         setData("sortBy", value);
-        handleSearchRequest
+        //handleSearchRequest((new Event('submit') as unknown) as React.FormEvent<HTMLFormElement>);
     };
     const handleSortTypeChange = (value: boolean) => {
         setSortTypeIsAsc(value);
-        //save in setData
         setData("sortType", value ? "asc" : "desc");
-        handleSearchRequest;
+        //handleSearchRequest(new Event('submit') as unknown as React.FormEvent<HTMLFormElement>);
+    };
+    const handleGenderChange = (gender: string) => {
+        const updatedSelectedGender = (prevSelected: string[]) =>
+            prevSelected.includes(gender)
+                ? prevSelected.filter((item) => item !== gender)
+                : [...prevSelected, gender];
+
+        setSelectedGender((prevSelected) => {
+            const newSelectedGender = updatedSelectedGender(prevSelected);
+            setData("gender", newSelectedGender);
+            return newSelectedGender;
+        });
+        //handleSearchRequest((new Event('submit') as unknown) as React.FormEvent<HTMLFormElement>);
+    };
+    const genderTotals: { [key: string]: number } =
+        dataDependencies.genders.reduce(
+            (acc: { [key: string]: number }, gender) => {
+                acc[gender.gender] = gender.total;
+                return acc;
+            },
+            {}
+        );
+    const handleCategoryChange = (categoryId: string) => {
+        const updatedSelectedCategory = (prevSelected: string[]) =>
+            prevSelected.includes(categoryId)
+                ? prevSelected.filter((item) => item !== categoryId)
+                : [...prevSelected, categoryId];
+
+        setSelectedCategory((prevSelected) => {
+            const newSelectedCategory = updatedSelectedCategory(prevSelected);
+            setData("categories", newSelectedCategory);
+            return newSelectedCategory;
+        });
+        //handleSearchRequest((new Event('submit') as unknown) as React.FormEvent<HTMLFormElement>);
+    };
+    const handleClubChange = (clubId: string) => {
+        const updatedSelectedClub = (prevSelected: string[]) =>
+            prevSelected.includes(clubId)
+                ? prevSelected.filter((item) => item !== clubId)
+                : [...prevSelected, clubId];
+
+        setSelectedClub((prevSelected) => {
+            const newSelectedClub = updatedSelectedClub(prevSelected);
+            setData("clubs", newSelectedClub);
+            return newSelectedClub;
+        });
+        //handleSearchRequest((new Event('submit') as unknown) as React.FormEvent<HTMLFormElement>);
     };
     return (
         <div className="w-full">
@@ -161,7 +225,7 @@ export function DataTable<TData, TValue>({
                         onChange={handleSearchTermChange}
                         className="max-w-sm"
                     />
-                    <Button>
+                    <Button disabled={processing} type="submit">
                         <Search />
                     </Button>
                 </form>
@@ -202,9 +266,9 @@ export function DataTable<TData, TValue>({
                     </DropdownMenuContent>
                 </DropdownMenu>
             </div>
-            <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2 mb-4 ps-2 ring-2 ring-primary w-fit rounded-md">
-                    <span>رتب</span>
+            <div className="flex items-center gap-3 h-fit mb-2">
+                <div className="flex items-center gap-2 ps-2 w-fit rounded-md">
+                    <span>رتب :</span>
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <Button variant="outline">
@@ -217,6 +281,7 @@ export function DataTable<TData, TValue>({
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                             <DropdownMenuRadioGroup
+                                dir="rtl"
                                 value={formData.sortBy}
                                 onValueChange={handleSortByChange}
                             >
@@ -236,12 +301,118 @@ export function DataTable<TData, TValue>({
                         variant="outline"
                         onClick={() => handleSortTypeChange(!sortTypeIsAsc)}
                     >
-                        {formData.sortType === "asc"
-                         ? "تصاعديا" : "تنازليا"}
+                        {formData.sortType === "asc" ? "تصاعديا" : "تنازليا"}
                     </Button>
                 </div>
-                <div className="flex items-center gap-2 mb-4 ps-2 ring-2ring-primary w-fit rounded-md">
-                    {/* filters placeholder */}
+                <Separator
+                    orientation="vertical"
+                    className="h-8 w-0.5 bg-neutral-300 rounded-3xl"
+                />
+                <div className="flex items-center gap-2 ring-2ring-primary w-fit rounded-md">
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="outline">الجنس</Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                            <DropdownMenuCheckboxItem
+                                dir="rtl"
+                                className="capitalize"
+                                checked={selectedGender.includes("male")}
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    handleGenderChange("male");
+                                }}
+                            >
+                                الذكور ({genderTotals.male || 0})
+                            </DropdownMenuCheckboxItem>
+                            <DropdownMenuCheckboxItem
+                                dir="rtl"
+                                className="capitalize"
+                                checked={selectedGender.includes("female")}
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    handleGenderChange("female");
+                                }}
+                            >
+                                الاناث ({genderTotals.female || 0})
+                            </DropdownMenuCheckboxItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="outline">الفئة</Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                            {dataDependencies.categories.map((category) => (
+                                <DropdownMenuCheckboxItem
+                                    dir="rtl"
+                                    key={category.id}
+                                    className="capitalize"
+                                    checked={selectedCategory.includes(
+                                        category.id.toString()
+                                    )}
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        handleCategoryChange(
+                                            category.id.toString()
+                                        );
+                                    }}
+                                >
+                                    <div className="flex gap-2 justify-between w-full">
+                                        <span
+                                            className={`
+                                            ${
+                                                category.gender === "male"
+                                                    ? "text-blue-500"
+                                                    : category.gender ===
+                                                      "female"
+                                                    ? "text-pink-500"
+                                                    : ""
+                                            }
+                                            `}
+                                        >
+                                            {category.name}
+                                        </span>
+                                        <span className="m-0">
+                                            ({category.students_count})
+                                        </span>
+                                    </div>
+                                </DropdownMenuCheckboxItem>
+                            ))}
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="outline">النادي</Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                            {dataDependencies.clubs.map((club) => (
+                                <DropdownMenuCheckboxItem
+                                    dir="rtl"
+                                    key={club.id}
+                                    className="capitalize"
+                                    checked={selectedClub.includes(
+                                        club.id.toString()
+                                    )}
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        handleClubChange(club.id.toString());
+                                    }}
+                                >
+                                    <div className="flex gap-2 justify-between w-full">
+                                        <span>{club.name}</span>
+                                        <span className="m-0">
+                                            ({club.students_count})
+                                        </span>
+                                    </div>
+                                </DropdownMenuCheckboxItem>
+                            ))}
+                        </DropdownMenuContent>
+                    </DropdownMenu>
                 </div>
             </div>
 
