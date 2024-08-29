@@ -24,10 +24,26 @@ export default function Dashboard({
 }: DashboardProps) {
     //onload check &search= query param
     // Extract search query parameter
-    const searchQuery = new URLSearchParams(location.search).get("search");
-    const sortByQuery = new URLSearchParams(location.search).get("sortBy");
-    const sortTypeQuery = new URLSearchParams(location.search).get("sortType");
+    const urlParams = new URLSearchParams(location.search);
+
+    const searchQuery = urlParams.get("search");
+    const sortByQuery = urlParams.get("sortBy");
+    const sortTypeQuery = urlParams.get("sortType");
+
+    const getArrayFromParams = (paramName: string) => {
+        const result: string[] = [];
+        let index = 0;
+        while (urlParams.has(`${paramName}[${index}]`)) {
+            result.push(urlParams.get(`${paramName}[${index}]`) as string);
+            index++;
+        }
+        return result;
+    };
+
     const searchParams = {
+        categories: getArrayFromParams("categories"),
+        clubs: getArrayFromParams("clubs"),
+        gender: getArrayFromParams("gender"),
         search: searchQuery,
         sortBy: sortByQuery,
         sortType: sortTypeQuery,
