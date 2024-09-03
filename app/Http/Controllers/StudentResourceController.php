@@ -19,15 +19,19 @@ class StudentResourceController extends Controller
      */
     public function index(Request $request)
     {
-        //dd($request->all());
         $query = Student::query();
 
         if ($search = $request->input('search')) {
-            $query->whereRaw("(first_name || ' ' || last_name) like ?", ["%{$search}%"])
-                ->orWhereRaw("(last_name || ' ' || first_name) like ?", ["%{$search}%"]);
+            $connectionType = DB::getDriverName();
+            if ($connectionType === 'sqlite') {
+                $query->whereRaw("(first_name || ' ' || last_name) like ?", ["%{$search}%"])
+                      ->orWhereRaw("(last_name || ' ' || first_name) like ?", ["%{$search}%"]);
+            } elseif ($connectionType === 'mysql') {
+                $query->whereRaw("CONCAT(first_name, ' ', last_name) like ?", ["%{$search}%"])
+                      ->orWhereRaw("CONCAT(last_name, ' ', first_name) like ?", ["%{$search}%"]);
+            }
         }
 
-        // Retrieve sorting parameters from the request
         $sortBy = $request->input('sortBy', 'created_at'); // Default to 'created_at'
         $sortType = $request->input('sortType', 'desc'); // Default to 'desc'
 
@@ -36,15 +40,12 @@ class StudentResourceController extends Controller
         } else {
             $query->orderBy($sortBy, $sortType);
         }
-        // Retrieve filter parameters from the request
         if ($genders = $request->input('gender')) {
             $query->whereIn('gender', $genders);
         }
-
         if ($clubs = $request->input('clubs')) {
             $query->whereIn('id_club', $clubs);
         }
-
         if ($categories = $request->input('categories')) {
             $query->whereIn('id_category', $categories);
         }
