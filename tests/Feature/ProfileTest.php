@@ -66,7 +66,7 @@ test('user can delete their account', function () {
         ->assertRedirect('/');
 
     $this->assertGuest();
-    expect($user->fresh())->toBeNull();
+    expect($user->fresh()->deleted_at)->not->toBeNull();
 });
 
 test('correct password must be provided to delete account', function () {
@@ -84,4 +84,59 @@ test('correct password must be provided to delete account', function () {
         ->assertRedirect('/profile');
 
     expect($user->fresh())->not->toBeNull();
+});
+
+test('soft deleted user cannot log in', function () {
+    $user = User::factory()->create();
+    $user->delete();
+
+    $response = $this
+        ->post('/login', [
+            'email' => $user->email,
+            'password' => 'password',
+        ]);
+
+    $response
+        ->assertSessionHasErrors('email')
+        ->assertRedirect('/');
+
+    $this->assertGuest();
+});
+
+test('soft deleted user can be restored', function () {
+    $user = User::factory()->create();
+    $user->delete();
+
+    $this->assertSoftDeleted($user);
+
+    $user->restore();
+
+    $this->assertNotSoftDeleted($user);
+});
+
+test('restored user can log in', function () {
+    $user = User::factory()->create();
+    $user->delete();
+    $user->restore();
+
+    $response = $this
+        ->post('/login', [
+            'email' => $user->email,
+            'password' => 'password',
+        ]);
+
+    $response->assertRedirect('/dashboard');
+    $this->assertAuthenticatedAs($user);
+});
+
+test('restored user can access profile page', function () {
+    $user = User::factory()->create();
+    $user->delete();
+    $user->restore();
+
+    $response = $this
+        ->actingAs($user)
+        ->get('/profile');
+
+    $response->assertOk();
 });
