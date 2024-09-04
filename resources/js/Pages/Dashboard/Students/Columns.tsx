@@ -63,7 +63,7 @@ export const columns: ColumnDef<StudentDisplay>[] = [
             return (
                 <Link
                     href={`/dashboard/students/${row.original.id}`}
-                    className="text-start font-medium hover:underline hover:underline-offset-2"
+                    className="text-nowrap text-start font-medium hover:underline hover:underline-offset-2"
                 >
                     {name}
                 </Link>
@@ -116,6 +116,10 @@ export const columns: ColumnDef<StudentDisplay>[] = [
         id: "النادي",
         accessorKey: "club",
         header: () => <div className="text-start">النادي</div>,
+        cell: ({ row }) => {
+            const club = row.getValue("النادي") as string;
+            return <div className="text-nowrap text-start font-medium">{club}</div>;
+        }
     },
     {
         id: "الفئة",
@@ -131,7 +135,7 @@ export const columns: ColumnDef<StudentDisplay>[] = [
                     ? "text-pink-500"
                     : "text-black";
             return (
-                <div className={`text-start font-medium ${category_color}`}>
+                <div className={`text-nowrap text-start font-medium ${category_color}`}>
                     {category}
                 </div>
             );
