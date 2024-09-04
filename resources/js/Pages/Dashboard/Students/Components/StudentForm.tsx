@@ -324,6 +324,19 @@ const StudentForm = ({
             </div>
             <div className="flex sm:flex-row flex-col gap-6 w-full">
                 <div className="w-full">
+                    <Label>اسم الاب</Label>
+                    <Input
+                        value={data.fatherName}
+                        onChange={(e) => setData("fatherName", e.target.value)}
+                        placeholder="اكتب ..."
+                        dir="rtl"
+                    />
+                    <FormErrorMessage
+                        formStateErrors={form.formState.errors.fatherName}
+                        errors={errors.fatherName}
+                    />
+                </div>
+                <div className="w-full">
                     <Label>وظيفة الاب</Label>
                     <Input
                         value={data.fatherJob}
@@ -351,6 +364,19 @@ const StudentForm = ({
                 </div>
             </div>
             <div className="flex sm:flex-row flex-col gap-6 w-full">
+                <div className="w-full">
+                    <Label>اسم الام</Label>
+                    <Input
+                        value={data.motherName}
+                        onChange={(e) => setData("motherName", e.target.value)}
+                        placeholder="اكتب ..."
+                        dir="rtl"
+                    />
+                    <FormErrorMessage
+                        formStateErrors={form.formState.errors.motherName}
+                        errors={errors.motherName}
+                    />
+                </div>
                 <div className="w-full">
                     <Label>وظيفة الام</Label>
                     <Input

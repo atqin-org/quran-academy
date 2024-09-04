@@ -8,6 +8,8 @@ export interface TStudentForm {
     hasCronicDisease: string | undefined;
     cronicDisease?: string;
     familyStatus?: string;
+    fatherName?: string;
+    motherName?: string;
     fatherJob?: string;
     motherJob?: string;
     fatherPhone?: string;
