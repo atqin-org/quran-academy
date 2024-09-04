@@ -1,5 +1,11 @@
 import { ColumnDef } from "@tanstack/react-table";
-import { MoreHorizontal, ArrowUpDown } from "lucide-react";
+import {
+    MoreHorizontal,
+    ArrowUpDown,
+    Trash2,
+    UserPen,
+    Banknote,
+} from "lucide-react";
 import { Checkbox } from "@/Components/ui/checkbox";
 import { Button } from "@/Components/ui/button";
 import {
@@ -63,7 +69,7 @@ export const columns: ColumnDef<StudentDisplay>[] = [
             return (
                 <Link
                     href={`/dashboard/students/${row.original.id}`}
-                    className="text-start font-medium hover:underline hover:underline-offset-2"
+                    className="text-nowrap max-w-fit text-start font-medium hover:underline hover:underline-offset-2"
                 >
                     {name}
                 </Link>
@@ -73,7 +79,7 @@ export const columns: ColumnDef<StudentDisplay>[] = [
     {
         id: "العمر",
         accessorKey: "age",
-        header: ({ column }) => {
+        header: () => {
             return <div className="flex justify-center">العمر</div>;
         },
         cell: ({ row }) => {
@@ -84,7 +90,7 @@ export const columns: ColumnDef<StudentDisplay>[] = [
     {
         id: "الحزب",
         accessorKey: "ahzab",
-        header: ({ column }) => {
+        header: () => {
             return <div className="flex justify-center">الاحزاب</div>;
         },
         cell: ({ row }) => {
@@ -116,6 +122,12 @@ export const columns: ColumnDef<StudentDisplay>[] = [
         id: "النادي",
         accessorKey: "club",
         header: () => <div className="text-start">النادي</div>,
+        cell: ({ row }) => {
+            const club = row.getValue("النادي") as string;
+            return (
+                <div className="text-nowrap text-start font-medium">{club}</div>
+            );
+        },
     },
     {
         id: "الفئة",
@@ -131,7 +143,9 @@ export const columns: ColumnDef<StudentDisplay>[] = [
                     ? "text-pink-500"
                     : "text-black";
             return (
-                <div className={`text-start font-medium ${category_color}`}>
+                <div
+                    className={`text-nowrap text-start font-medium ${category_color}`}
+                >
                     {category}
                 </div>
             );
@@ -146,7 +160,9 @@ export const columns: ColumnDef<StudentDisplay>[] = [
             const insurance = insuranceString
                 ? new Date(insuranceString)
                 : null;
-            const isDatePassed = insurance ? new Date() > insurance : false;
+            const isDatePassed = insurance
+                ? new Date() > insurance
+                : false || insurance === null;
             return (
                 <div className="flex justify-center font-medium">
                     <div
@@ -172,6 +188,9 @@ export const columns: ColumnDef<StudentDisplay>[] = [
         accessorKey: "subscription_expire_at",
         header: () => <div className="text-center">الاشتراك</div>,
         cell: ({ row }) => {
+            const subscriptionAmount = parseFloat(
+                row.getValue("مبلغ الاشتراك")
+            );
             const subscriptionString = row.getValue("الاشتراك") as
                 | string
                 | null;
@@ -180,17 +199,19 @@ export const columns: ColumnDef<StudentDisplay>[] = [
                 : null;
             const isDatePassed = subscription
                 ? new Date() > subscription
-                : false;
+                : false || subscription === null;
             return (
                 <div className="flex justify-center font-medium">
                     <div
                         className={`w-fit p-2 rounded-xl ${
-                            isDatePassed
+                            isDatePassed && subscriptionAmount !== 0
                                 ? "bg-red-200 text-red-700"
                                 : "bg-emerald-200 text-emerald-700"
                         }`}
                     >
-                        {subscription
+                        {subscriptionAmount === 0
+                            ? "معفى"
+                            : subscription
                             ? new Intl.DateTimeFormat("ar-DZ", {
                                   month: "2-digit",
                                   day: "2-digit",
@@ -229,7 +250,7 @@ export const columns: ColumnDef<StudentDisplay>[] = [
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>المزيد</DropdownMenuLabel>
+                        {/*
                         <DropdownMenuItem
                             onClick={() =>
                                 navigator.clipboard.writeText(student.id)
@@ -238,21 +259,34 @@ export const columns: ColumnDef<StudentDisplay>[] = [
                             نسخ رقم الطالب
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem>
+                        */}
+                        <DropdownMenuItem className="p-0 m-0">
                             <Link
+                                className="w-full px-4 flex items-center gap-2 rounded-md my-0.5"
                                 href={`/dashboard/students/${student.id}/edit`}
                             >
-                                تعديل
+                                <UserPen />
+                                <span className="w-full">تعديل</span>
                             </Link>
                         </DropdownMenuItem>
-                        <DropdownMenuItem>
-                            <Link href={`/dashboard/students/`}>الدفع</Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
+                        <DropdownMenuItem className="p-0 m-0">
                             <Link
-                                href={`/dashboard/students/${student.id}/delete`}
+                                className="w-full px-4 flex items-center gap-2 rounded-md my-0.5"
+                                href={`/dashboard/students/`}
                             >
-                                حذف
+                                <Banknote />
+                                <span className="w-full">الدفع</span>
+                            </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem className="p-0 m-0">
+                            <Link
+                                className="w-full px-4 flex items-center gap-2 hover:bg-red-200 rounded-md my-0.5"
+                                href={`/dashboard/students/${student.id}`}
+                                method="delete"
+                                preserveState={false}
+                            >
+                                <Trash2 />
+                                <span className="w-full">حذف</span>
                             </Link>
                         </DropdownMenuItem>
                     </DropdownMenuContent>
