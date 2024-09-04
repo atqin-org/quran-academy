@@ -1,8 +1,12 @@
 import { z } from "zod";
+import { parseISO, isBefore, isAfter, subYears, addYears } from 'date-fns';
 
 const MAX_FILE_SIZE = 6 * 1024 * 1024; // 6MB in bytes
 const ALLOWED_FILE_TYPES = ["application/pdf", "image/jpeg", "image/png"];
-const isoDateString = z.string().refine((val) => {
+const isoDateString = z.string({
+    required_error: "تاريخ الميلاد مطلوب",
+    invalid_type_error: "يرجى ادخال تاريخ الميلاد بصيغة صحيحة",
+}).refine((val) => {
     const date = new Date(val);
     return !isNaN(date.getTime());
 }, {
@@ -46,7 +50,14 @@ export const FormSchema = z
                 required_error: "تاريخ الميلاد مطلوب",
                 invalid_type_error: "يرجى ادخال تاريخ الميلاد بصيغة صحيحة",
             })
-        ]),
+        ]).refine((date) => {
+            const parsedDate = typeof date === 'string' ? parseISO(date) : date;
+            const minDate = subYears(new Date(), 100);
+            const maxDate = subYears(new Date(), 3);
+            return isAfter(parsedDate, minDate) && isBefore(parsedDate, maxDate);
+        }, {
+            message: "تاريخ الميلاد يجب أن يكون بين 3 سنوات و 100 سنة",
+        }),
         socialStatus: z
             .enum(["good", "mid", "low"], {
                 required_error: "الحالة الاجتماعية مطلوبة",
