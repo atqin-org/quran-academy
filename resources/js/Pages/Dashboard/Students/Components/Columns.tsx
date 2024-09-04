@@ -1,5 +1,11 @@
 import { ColumnDef } from "@tanstack/react-table";
-import { MoreHorizontal, ArrowUpDown } from "lucide-react";
+import {
+    MoreHorizontal,
+    ArrowUpDown,
+    Trash2,
+    UserPen,
+    Banknote,
+} from "lucide-react";
 import { Checkbox } from "@/Components/ui/checkbox";
 import { Button } from "@/Components/ui/button";
 import {
@@ -244,7 +250,7 @@ export const columns: ColumnDef<StudentDisplay>[] = [
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>المزيد</DropdownMenuLabel>
+                        {/*
                         <DropdownMenuItem
                             onClick={() =>
                                 navigator.clipboard.writeText(student.id)
@@ -253,21 +259,34 @@ export const columns: ColumnDef<StudentDisplay>[] = [
                             نسخ رقم الطالب
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem>
+                        */}
+                        <DropdownMenuItem className="p-0 m-0">
                             <Link
+                                className="w-full px-4 flex items-center gap-2 rounded-md my-0.5"
                                 href={`/dashboard/students/${student.id}/edit`}
                             >
-                                تعديل
+                                <UserPen />
+                                <span className="w-full">تعديل</span>
                             </Link>
                         </DropdownMenuItem>
-                        <DropdownMenuItem>
-                            <Link href={`/dashboard/students/`}>الدفع</Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
+                        <DropdownMenuItem className="p-0 m-0">
                             <Link
-                                href={`/dashboard/students/${student.id}/delete`}
+                                className="w-full px-4 flex items-center gap-2 rounded-md my-0.5"
+                                href={`/dashboard/students/`}
                             >
-                                حذف
+                                <Banknote />
+                                <span className="w-full">الدفع</span>
+                            </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem className="p-0 m-0">
+                            <Link
+                                className="w-full px-4 flex items-center gap-2 hover:bg-red-200 rounded-md my-0.5"
+                                href={`/dashboard/students/${student.id}`}
+                                method="delete"
+                                preserveState={false}
+                            >
+                                <Trash2 />
+                                <span className="w-full">حذف</span>
                             </Link>
                         </DropdownMenuItem>
                     </DropdownMenuContent>

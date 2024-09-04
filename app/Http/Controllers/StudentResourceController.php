@@ -25,10 +25,10 @@ class StudentResourceController extends Controller
             $connectionType = DB::getDriverName();
             if ($connectionType === 'sqlite') {
                 $query->whereRaw("(first_name || ' ' || last_name) like ?", ["%{$search}%"])
-                      ->orWhereRaw("(last_name || ' ' || first_name) like ?", ["%{$search}%"]);
+                    ->orWhereRaw("(last_name || ' ' || first_name) like ?", ["%{$search}%"]);
             } elseif ($connectionType === 'mysql') {
                 $query->whereRaw("CONCAT(first_name, ' ', last_name) like ?", ["%{$search}%"])
-                      ->orWhereRaw("CONCAT(last_name, ' ', first_name) like ?", ["%{$search}%"]);
+                    ->orWhereRaw("CONCAT(last_name, ' ', first_name) like ?", ["%{$search}%"]);
             }
         }
 
@@ -190,6 +190,10 @@ class StudentResourceController extends Controller
      */
     public function destroy(string $id)
     {
-        //
+        $student = Student::findOrFail($id);
+
+        $student->delete();
+
+        return redirect()->route('students.index')->with('success', 'تم حذف الطالب بنجاح');
     }
 }
