@@ -129,7 +129,7 @@ class StudentResourceController extends Controller
     {
         $student = Student::find($id);
 
-        dd($student);
+        echo ($student);
     }
 
     /**
