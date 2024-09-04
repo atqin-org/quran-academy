@@ -7,6 +7,7 @@ use App\Models\Club;
 use App\Models\Category;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Faker\Factory as FakerFactory;
+use Illuminate\Support\Lottery;
 
 class StudentFactory extends Factory
 {
@@ -53,10 +54,10 @@ class StudentFactory extends Factory
             'father_phone' => $faker->algerianPhoneNumber(),
             'mother_phone' => $faker->optional()->algerianPhoneNumber(),
             'id_category' => $faker->randomElement(Category::all()->pluck('id')->toArray()),
-            'subscription' => $faker->numberBetween(1500, 3000),
             'ahzab' => $faker->numberBetween(0, 60),
-            'subscription_expire_at' => $faker->optional()->dateTimeBetween('-8 months', '+8 months'),
-            'insurance_expire_at' => $faker->optional()->dateTimeBetween('-8 months', '+8 months'),
+            'subscription' => $faker->randomElement([0, $faker->numberBetween(1500, 3000)]),
+            'subscription_expire_at' => $faker->optional()->dateTimeBetween('-2 months', '+8 months'),
+            'insurance_expire_at' => $faker->optional()->dateTimeBetween('-2 months', '+8 months'),
         ];
     }
 }

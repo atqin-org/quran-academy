@@ -63,7 +63,7 @@ export const columns: ColumnDef<StudentDisplay>[] = [
             return (
                 <Link
                     href={`/dashboard/students/${row.original.id}`}
-                    className="text-nowrap text-start font-medium hover:underline hover:underline-offset-2"
+                    className="text-nowrap max-w-fit text-start font-medium hover:underline hover:underline-offset-2"
                 >
                     {name}
                 </Link>
@@ -73,7 +73,7 @@ export const columns: ColumnDef<StudentDisplay>[] = [
     {
         id: "العمر",
         accessorKey: "age",
-        header: ({ column }) => {
+        header: () => {
             return <div className="flex justify-center">العمر</div>;
         },
         cell: ({ row }) => {
@@ -84,7 +84,7 @@ export const columns: ColumnDef<StudentDisplay>[] = [
     {
         id: "الحزب",
         accessorKey: "ahzab",
-        header: ({ column }) => {
+        header: () => {
             return <div className="flex justify-center">الاحزاب</div>;
         },
         cell: ({ row }) => {
@@ -118,8 +118,10 @@ export const columns: ColumnDef<StudentDisplay>[] = [
         header: () => <div className="text-start">النادي</div>,
         cell: ({ row }) => {
             const club = row.getValue("النادي") as string;
-            return <div className="text-nowrap text-start font-medium">{club}</div>;
-        }
+            return (
+                <div className="text-nowrap text-start font-medium">{club}</div>
+            );
+        },
     },
     {
         id: "الفئة",
@@ -135,7 +137,9 @@ export const columns: ColumnDef<StudentDisplay>[] = [
                     ? "text-pink-500"
                     : "text-black";
             return (
-                <div className={`text-nowrap text-start font-medium ${category_color}`}>
+                <div
+                    className={`text-nowrap text-start font-medium ${category_color}`}
+                >
                     {category}
                 </div>
             );
@@ -150,7 +154,9 @@ export const columns: ColumnDef<StudentDisplay>[] = [
             const insurance = insuranceString
                 ? new Date(insuranceString)
                 : null;
-            const isDatePassed = insurance ? new Date() > insurance : false;
+            const isDatePassed = insurance
+                ? new Date() > insurance
+                : false || insurance === null;
             return (
                 <div className="flex justify-center font-medium">
                     <div
@@ -176,6 +182,9 @@ export const columns: ColumnDef<StudentDisplay>[] = [
         accessorKey: "subscription_expire_at",
         header: () => <div className="text-center">الاشتراك</div>,
         cell: ({ row }) => {
+            const subscriptionAmount = parseFloat(
+                row.getValue("مبلغ الاشتراك")
+            );
             const subscriptionString = row.getValue("الاشتراك") as
                 | string
                 | null;
@@ -184,17 +193,19 @@ export const columns: ColumnDef<StudentDisplay>[] = [
                 : null;
             const isDatePassed = subscription
                 ? new Date() > subscription
-                : false;
+                : false || subscription === null;
             return (
                 <div className="flex justify-center font-medium">
                     <div
                         className={`w-fit p-2 rounded-xl ${
-                            isDatePassed
+                            isDatePassed && subscriptionAmount !== 0
                                 ? "bg-red-200 text-red-700"
                                 : "bg-emerald-200 text-emerald-700"
                         }`}
                     >
-                        {subscription
+                        {subscriptionAmount === 0
+                            ? "معفى"
+                            : subscription
                             ? new Intl.DateTimeFormat("ar-DZ", {
                                   month: "2-digit",
                                   day: "2-digit",

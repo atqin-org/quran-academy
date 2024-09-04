@@ -2,7 +2,6 @@ import * as React from "react";
 import {
     ColumnDef,
     ColumnFiltersState,
-    SortingState,
     getSortedRowModel,
     VisibilityState,
     flexRender,
@@ -141,7 +140,6 @@ export function DataTable<TData, TValue>({
         getFilteredRowModel: getFilteredRowModel(),
         onColumnVisibilityChange: setColumnVisibility,
         onRowSelectionChange: setRowSelection,
-
         state: {
             columnFilters,
             columnVisibility,
