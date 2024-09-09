@@ -16,6 +16,16 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/Components/ui/dropdown-menu";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/Components/ui/dialog";
+
 import { Link } from "@inertiajs/react";
 
 export type StudentDisplay = {
@@ -242,55 +252,77 @@ export const columns: ColumnDef<StudentDisplay>[] = [
         cell: ({ row }) => {
             const student = row.original;
             return (
-                <DropdownMenu dir="rtl">
-                    <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                            <span className="sr-only">Open menu</span>
-                            <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                        {/*
-                        <DropdownMenuItem
-                            onClick={() =>
-                                navigator.clipboard.writeText(student.id)
-                            }
-                        >
-                            نسخ رقم الطالب
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        */}
-                        <DropdownMenuItem className="p-0 m-0">
-                            <Link
-                                className="w-full px-4 flex items-center gap-2 rounded-md my-0.5"
-                                href={`/dashboard/students/${student.id}/edit`}
-                            >
-                                <UserPen />
-                                <span className="w-full">تعديل</span>
-                            </Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem className="p-0 m-0">
-                            <Link
-                                className="w-full px-4 flex items-center gap-2 rounded-md my-0.5"
-                                href={`/dashboard/students/`}
-                            >
-                                <Banknote />
-                                <span className="w-full">الدفع</span>
-                            </Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem className="p-0 m-0">
-                            <Link
-                                className="w-full px-4 flex items-center gap-2 hover:bg-red-200 rounded-md my-0.5"
-                                href={`/dashboard/students/${student.id}`}
-                                method="delete"
-                                preserveState={false}
-                            >
-                                <Trash2 />
-                                <span className="w-full">حذف</span>
-                            </Link>
-                        </DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
+                <Dialog>
+                    <DropdownMenu dir="rtl">
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" className="h-8 w-8 p-0">
+                                <span className="sr-only">Open menu</span>
+                                <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                            <DropdownMenuItem className="p-0 m-0">
+                                <Link
+                                    className="w-full px-4 flex items-center gap-2 rounded-md my-0.5"
+                                    href={`/dashboard/students/${student.id}/edit`}
+                                    as="button"
+                                >
+                                    <UserPen />
+                                    <span className="w-full">تعديل</span>
+                                </Link>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem className="p-0 m-0">
+                                <Link
+                                    className="w-full px-4 flex items-center gap-2 rounded-md my-0.5"
+                                    href={`/dashboard/students/`}
+                                    as="button"
+                                >
+                                    <Banknote />
+                                    <span className="w-full">الدفع</span>
+                                </Link>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem className="p-0 m-0">
+                                <DialogTrigger asChild>
+                                    <div
+                                        className="w-full cursor-pointer px-4 flex items-center gap-2 hover:bg-red-200 rounded-md my-0.5"
+                                        onClick={() => {
+                                            // Add your delete logic here
+                                            console.log(
+                                                "Delete action triggered"
+                                            );
+                                        }}
+                                    >
+                                        <Trash2 />
+                                        <span className="w-full text-center">حذف</span>
+                                    </div>
+                                </DialogTrigger>
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>
+                                هل انت متأكد من حذف هذا الطالب؟
+                            </DialogTitle>
+                            <DialogDescription>
+                                لا يمكن التراجع عن هذا القرار وسيتم تسجيلك كحذف
+                                للطالب
+                            </DialogDescription>
+                            <DialogFooter>
+                                <Link
+                                    className="px-4 flex items-center gap-2 rounded-md my-0.5 bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                    href={`/dashboard/students/${student.id}`}
+                                    method="delete"
+                                    preserveState={false}
+                                    as="button"
+                                >
+                                    <Trash2 />
+                                    <span className="w-full">حذف</span>
+                                </Link>
+                            </DialogFooter>
+                        </DialogHeader>
+                    </DialogContent>
+                </Dialog>
             );
         },
     },
