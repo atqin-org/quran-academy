@@ -1,7 +1,6 @@
 import { ColumnDef } from "@tanstack/react-table";
 import {
     MoreHorizontal,
-    ArrowUpDown,
     Trash2,
     UserPen,
     Banknote,
@@ -12,8 +11,6 @@ import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/Components/ui/dropdown-menu";
 import {
@@ -126,7 +123,6 @@ export const columns: ColumnDef<StudentDisplay>[] = [
                 </div>
             ) : null;
         },
-        // invisible by default
     },
     {
         id: "النادي",
@@ -283,17 +279,11 @@ export const columns: ColumnDef<StudentDisplay>[] = [
                             </DropdownMenuItem>
                             <DropdownMenuItem className="p-0 m-0">
                                 <DialogTrigger asChild>
-                                    <div
-                                        className="w-full cursor-pointer px-4 flex items-center gap-2 hover:bg-red-200 rounded-md my-0.5"
-                                        onClick={() => {
-                                            // Add your delete logic here
-                                            console.log(
-                                                "Delete action triggered"
-                                            );
-                                        }}
-                                    >
+                                    <div className="w-full cursor-pointer px-4 flex items-center gap-2 hover:bg-red-200 rounded-md my-0.5">
                                         <Trash2 />
-                                        <span className="w-full text-center">حذف</span>
+                                        <span className="w-full text-center">
+                                            حذف
+                                        </span>
                                     </div>
                                 </DialogTrigger>
                             </DropdownMenuItem>

@@ -20,13 +20,8 @@ class CreateStudentsTable extends Migration
             $table->enum('gender', ['male', 'female']);
             $table->date('birthdate');
             $table->enum('social_status', ['good', 'mid', 'low']);
-            $table->boolean('has_cronic_disease');
             $table->string('cronic_disease')->nullable();
             $table->string('family_status')->nullable();
-            $table->string('father_job')->nullable();
-            $table->string('mother_job')->nullable();
-            $table->string('father_phone')->nullable();
-            $table->string('mother_phone')->nullable();
             $table->string('subscription')->nullable();
             $table->string('ahzab')->default(0);
             $table->date('subscription_expire_at')->nullable();
@@ -35,8 +30,10 @@ class CreateStudentsTable extends Migration
             $table->string('picture')->nullable();
             $table->string('file')->nullable();
 
-            $table->foreignId('id_club');
-            $table->foreignId('id_category');
+            $table->foreignId('father_id')->nullable();
+            $table->foreignId('mother_id')->nullable();
+            $table->foreignId('club_id');
+            $table->foreignId('category_id');
 
             $table->timestamps();
             $table->softDeletes();

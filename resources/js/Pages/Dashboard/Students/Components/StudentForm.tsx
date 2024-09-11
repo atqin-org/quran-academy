@@ -16,28 +16,47 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/Components/ui/select";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/Components/ui/dialog";
 import { Switch } from "@/Components/ui/switch";
 import { cn } from "@/lib/utils";
-import {  UseFormReturn } from "react-hook-form";
+import { UseFormReturn } from "react-hook-form";
 import { format, parse } from "date-fns";
 import { CalendarIcon } from "lucide-react";
 import { toast } from "sonner";
 import { useState } from "react";
 import FormErrorMessage from "@/Components/costume-cn/FormErrorMessage";
 import { TStudentForm } from "../Types/Student";
+import axios from "axios";
+import { useForm } from "react-hook-form";
+import { FormSchema } from "@/Data/Zod/Students";
+import { zodResolver } from "@hookform/resolvers/zod";
 
 interface StudentFormProps {
     data: TStudentForm;
     setData: (key: string, value: any) => void;
-    errors: Partial<Record<keyof TStudentForm, string>>;
+    errors: any; //Partial<Record<keyof TStudentForm, string>>;
     clubs: { id: number; name: string }[];
-    categories: { id: number; name: string ,gender?: "male" | "female"}[];
+    categories: { id: number; name: string; gender?: "male" | "female" }[];
     processing: boolean;
-    form: UseFormReturn<TStudentForm, any, undefined>;
     mode: "create" | "edit";
+    studentId?: string;
     handleSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
 }
-
+interface GuardianFormProps {
+    "father.name"?: string;
+    "father.job"?: string;
+    "father.phone"?: string;
+    "mother.name"?: string;
+    "mother.job"?: string;
+    "mother.phone"?: string;
+}
 const StudentForm = ({
     data,
     setData,
@@ -45,8 +64,8 @@ const StudentForm = ({
     clubs,
     categories,
     processing,
-    form,
     mode,
+    studentId,
     handleSubmit,
 }: StudentFormProps) => {
     const [tmpDate, setTmpDate] = useState<string>(
@@ -76,8 +95,124 @@ const StudentForm = ({
         }
         setTmpDate(data.birthdate?.toString() || "");
     };
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+    const handleDialogOpen = () => {
+        // Simulate an DialogOpen
+        setIsDialogOpen(!isDialogOpen);
+    };
+    const [dialogConfig, setDialogConfig] = useState({
+        title: "",
+        description: "",
+        confirm: "",
+        cancel: "",
+    });
+    const form = useForm({
+        resolver: zodResolver(FormSchema),
+        defaultValues: data,
+    });
+
+    const handleFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+
+        form.setValue("firstName", data.firstName);
+        form.setValue("lastName", data.lastName);
+        form.setValue("gender", data.gender);
+        form.setValue("birthdate", data.birthdate);
+        form.setValue("socialStatus", data.socialStatus);
+        form.setValue("hasCronicDisease", data.hasCronicDisease);
+        form.setValue("cronicDisease", data.cronicDisease);
+        form.setValue("familyStatus", data.familyStatus);
+        form.setValue("father.name", data.father?.name);
+        form.setValue("mother.name", data.mother?.name);
+        form.setValue("father.job", data.father?.job);
+        form.setValue("father.phone", data.father?.phone);
+        form.setValue("mother.job", data.mother?.job);
+        form.setValue("mother.phone", data.mother?.phone);
+        form.setValue("club", data.club);
+        form.setValue("category", data.category);
+        form.setValue("subscription", data.subscription);
+        form.setValue("insurance", data.insurance);
+        form.setValue("picture", data.picture);
+        form.setValue("file", data.file);
+        form.trigger().then((isValid) => {
+            if (isValid) {
+                toast.promise(
+                    new Promise(async (resolve, reject) => {
+                        try {
+                            const res = await axios.post("/guardian", {
+                                father: data.father,
+                                mother: data.mother,
+                                id: studentId || null,
+                            });
+                            setDialogConfig(
+                                res.data.dialog ?? {
+                                    title: "",
+                                    description: "",
+                                    confirm: "",
+                                    cancel: "",
+                                }
+                            );
+
+                            console.log(res);
+                            if (res.data.status_code === "300") {
+                                //console.log("submit placeholder");
+                                handleSubmit(e);
+                                resolve("تم التسجيل بنجاح");
+                            } else {
+                                handleDialogOpen();
+                                resolve("تم التسجيل بنجاح");
+                            }
+                        } catch (error) {
+                            handleDialogOpen();
+                            reject("حدث خطأ اثناء التسجيل");
+                        }
+                    }),
+                    {
+                        loading: "جاري التسجيل ...",
+                        success: "تم التسجيل بنجاح",
+                        error: "حدث خطأ اثناء التسجيل",
+                    }
+                );
+            } else {
+                toast.error("يرجى التحقق من البيانات");
+            }
+        });
+        if (isDialogOpen) {
+            handleDialogOpen();
+        } else {
+            //handleSubmit(e);
+        }
+    };
     return (
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleFormSubmit} className="space-y-6">
+            <div>
+                <button type="button" onClick={handleDialogOpen}>
+                    Simulate DialogOpen
+                </button>
+
+                <Dialog open={isDialogOpen} onOpenChange={handleDialogOpen}>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>{dialogConfig.title}</DialogTitle>
+                            <DialogDescription>
+                                {dialogConfig.description}
+                            </DialogDescription>
+                        </DialogHeader>
+                        <DialogFooter className="flex gap-2">
+                            <Button
+                                onClick={handleDialogOpen}
+                                variant="secondary"
+                            >
+                                {dialogConfig.cancel}
+                            </Button>
+                            <Button onClick={() => handleSubmit}>
+                                {dialogConfig.confirm}
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+            </div>
             <Button type="submit" disabled={processing}>
                 تسجيل
             </Button>
@@ -326,40 +461,55 @@ const StudentForm = ({
                 <div className="w-full">
                     <Label>اسم الاب</Label>
                     <Input
-                        value={data.fatherName}
-                        onChange={(e) => setData("fatherName", e.target.value)}
+                        value={data.father?.name}
+                        onChange={(e) =>
+                            setData("father", {
+                                ...data.father,
+                                name: e.target.value,
+                            })
+                        }
                         placeholder="اكتب ..."
                         dir="rtl"
                     />
                     <FormErrorMessage
-                        formStateErrors={form.formState.errors.fatherName}
-                        errors={errors.fatherName}
+                        formStateErrors={form.formState.errors.father?.name}
+                        errors={errors["father.name"]}
                     />
                 </div>
                 <div className="w-full">
                     <Label>وظيفة الاب</Label>
                     <Input
-                        value={data.fatherJob}
-                        onChange={(e) => setData("fatherJob", e.target.value)}
+                        value={data.father?.job}
+                        onChange={(e) =>
+                            setData("father", {
+                                ...data.father,
+                                job: e.target.value,
+                            })
+                        }
                         placeholder="اكتب ..."
                         dir="rtl"
                     />
                     <FormErrorMessage
-                        formStateErrors={form.formState.errors.fatherJob}
-                        errors={errors.fatherJob}
+                        formStateErrors={form.formState.errors.father?.job}
+                        errors={errors["father.job"]}
                     />
                 </div>
                 <div className="w-full">
                     <Label>رقم هاتف الاب</Label>
                     <Input
-                        value={data.fatherPhone}
-                        onChange={(e) => setData("fatherPhone", e.target.value)}
+                        value={data.father?.phone}
+                        onChange={(e) =>
+                            setData("father", {
+                                ...data.father,
+                                phone: e.target.value,
+                            })
+                        }
                         placeholder="اكتب ..."
                         dir="rtl"
                     />
                     <FormErrorMessage
-                        formStateErrors={form.formState.errors.fatherPhone}
-                        errors={errors.fatherPhone}
+                        formStateErrors={form.formState.errors.father?.phone}
+                        errors={errors["father.phone"]}
                     />
                 </div>
             </div>
@@ -367,40 +517,55 @@ const StudentForm = ({
                 <div className="w-full">
                     <Label>اسم الام</Label>
                     <Input
-                        value={data.motherName}
-                        onChange={(e) => setData("motherName", e.target.value)}
+                        value={data.mother?.name}
+                        onChange={(e) =>
+                            setData("mother", {
+                                ...data.mother,
+                                name: e.target.value,
+                            })
+                        }
                         placeholder="اكتب ..."
                         dir="rtl"
                     />
                     <FormErrorMessage
-                        formStateErrors={form.formState.errors.motherName}
-                        errors={errors.motherName}
+                        formStateErrors={form.formState.errors.mother?.name}
+                        errors={errors["mother.name"]}
                     />
                 </div>
                 <div className="w-full">
                     <Label>وظيفة الام</Label>
                     <Input
-                        value={data.motherJob}
-                        onChange={(e) => setData("motherJob", e.target.value)}
+                        value={data.mother?.job}
+                        onChange={(e) =>
+                            setData("mother", {
+                                ...data.mother,
+                                job: e.target.value,
+                            })
+                        }
                         placeholder="اكتب ..."
                         dir="rtl"
                     />
                     <FormErrorMessage
-                        formStateErrors={form.formState.errors.motherJob}
-                        errors={errors.motherJob}
+                        formStateErrors={form.formState.errors.mother?.job}
+                        errors={errors["mother.job"]}
                     />
                 </div>
                 <div className="w-full">
                     <Label>رقم هاتف الام</Label>
                     <Input
-                        value={data.motherPhone}
-                        onChange={(e) => setData("motherPhone", e.target.value)}
+                        value={data.mother?.phone}
+                        onChange={(e) =>
+                            setData("mother", {
+                                ...data.mother,
+                                phone: e.target.value,
+                            })
+                        }
                         placeholder="اكتب ..."
                         dir="rtl"
                     />
                     <FormErrorMessage
-                        formStateErrors={form.formState.errors.motherPhone}
-                        errors={errors.motherPhone}
+                        formStateErrors={form.formState.errors.mother?.phone}
+                        errors={errors["mother.phone"]}
                     />
                 </div>
             </div>
@@ -423,7 +588,12 @@ const StudentForm = ({
                                     key={category.id}
                                     value={category.id.toString()}
                                 >
-                                    {category.name} {category.gender == "male" ? "(ذكور)" : category.gender == "female" ? "(اناث)" : ""}
+                                    {category.name}{" "}
+                                    {category.gender == "male"
+                                        ? "(ذكور)"
+                                        : category.gender == "female"
+                                        ? "(اناث)"
+                                        : ""}
                                 </SelectItem>
                             ))}
                         </SelectContent>

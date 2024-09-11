@@ -17,10 +17,16 @@ const initialFormState: TStudentForm = {
     hasCronicDisease: undefined,
     cronicDisease: "",
     familyStatus: "",
-    fatherJob: "",
-    fatherPhone: "",
-    motherJob: "",
-    motherPhone: "",
+    father: {
+        name: "",
+        job: "",
+        phone: "",
+    },
+    mother: {
+        name: "",
+        job: "",
+        phone: "",
+    },
     club: undefined,
     category: undefined,
     subscription: "",
@@ -38,53 +44,10 @@ export default function Dashboard({ auth, clubs, categories }: DashboardProps) {
     const { data, setData, post, processing, errors } =
         useInertiaForm<TStudentForm>(initialFormState);
 
-    const form = useForm({
-        resolver: zodResolver(FormSchema),
-        defaultValues: data,
-    });
-
     function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();
-        form.setValue("firstName", data.firstName);
-        form.setValue("lastName", data.lastName);
-        form.setValue("gender", data.gender);
-        form.setValue("birthdate", data.birthdate);
-        form.setValue("socialStatus", data.socialStatus);
-        form.setValue("hasCronicDisease", data.hasCronicDisease);
-        form.setValue("cronicDisease", data.cronicDisease);
-        form.setValue("familyStatus", data.familyStatus);
-        form.setValue("fatherJob", data.fatherJob);
-        form.setValue("fatherPhone", data.fatherPhone);
-        form.setValue("motherJob", data.motherJob);
-        form.setValue("motherPhone", data.motherPhone);
-        form.setValue("club", data.club);
-        form.setValue("category", data.category);
-        form.setValue("subscription", data.subscription);
-        form.setValue("insurance", data.insurance);
-        form.setValue("picture", data.picture);
-        form.setValue("file", data.file);
 
-        form.trigger().then((isValid) => {
-            if (isValid) {
-                toast.promise(
-                    new Promise(async (resolve, reject) => {
-                        try {
-                            post("/dashboard/students");
-                            resolve("تم التسجيل بنجاح");
-                        } catch (error) {
-                            reject("حدث خطأ اثناء التسجيل");
-                        }
-                    }),
-                    {
-                        loading: "جاري التسجيل ...",
-                        success: "تم التسجيل بنجاح",
-                        error: "حدث خطأ اثناء التسجيل",
-                    }
-                );
-            } else {
-                toast.error("يرجى التحقق من البيانات");
-            }
-        });
+        post("/dashboard/students");
     }
     return (
         <DashboardLayout user={auth.user}>
@@ -101,7 +64,6 @@ export default function Dashboard({ auth, clubs, categories }: DashboardProps) {
                     clubs={clubs}
                     categories={categories}
                     processing={processing}
-                    form={form}
                     mode="create"
                     handleSubmit={handleSubmit}
                 />

@@ -4,19 +4,21 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 
-class Club extends Model
+class Guardian extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory;
 
     protected $fillable = [
         'name',
-        'location',
+        'gender',
+        'job',
+        'phone',
     ];
 
     public function students()
     {
-        return $this->hasMany(Student::class, 'club_id');
+        return $this->belongsToMany(Student::class);
     }
+
 }

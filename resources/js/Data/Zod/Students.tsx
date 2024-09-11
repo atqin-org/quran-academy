@@ -70,24 +70,30 @@ export const FormSchema = z
         }),
         cronicDisease: z.string().optional(),
         familyStatus: z.string().optional(),
-        fatherJob: z.string().optional(),
-        motherJob: z.string().optional(),
-        fatherPhone: z
-            .union([
-                z.string().regex(/^0[567]\d{8}$/, {
-                    message: "يرجى ادخال رقم هاتف صحيح",
-                }),
-                z.literal(""),
-            ])
-            .optional(),
-        motherPhone: z
-            .union([
-                z.string().regex(/^0[567]\d{8}$/, {
-                    message: "يرجى ادخال رقم هاتف صحيح",
-                }),
-                z.literal(""),
-            ])
-            .optional(),
+        father: z.object({
+            name: z.string().optional(),
+            job: z.string().optional(),
+            phone: z
+                .union([
+                    z.string().regex(/^0[567]\d{8}$/, {
+                        message: "يرجى ادخال رقم هاتف صحيح",
+                    }),
+                    z.literal(""),
+                ])
+                .optional(),
+        }).optional(),
+        mother: z.object({
+            name: z.string().optional(),
+            job: z.string().optional(),
+            phone: z
+                .union([
+                    z.string().regex(/^0[567]\d{8}$/, {
+                        message: "يرجى ادخال رقم هاتف صحيح",
+                    }),
+                    z.literal(""),
+                ])
+                .optional(),
+        }).optional(),
         category: z.string({
             required_error: "الفئة مطلوبة",
         }),
@@ -113,7 +119,7 @@ export const FormSchema = z
             path: ["cronicDisease"],
         }
     )
-    .refine((data) => data.fatherPhone || data.motherPhone, {
+    .refine((data) => data.father?.phone || data.mother?.phone, {
         message: "يرجى ادخال رقم هاتف الاب او الام",
-        path: ["fatherPhone"],
+        path: ["father.phone"],
     });

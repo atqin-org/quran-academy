@@ -146,7 +146,6 @@ export function DataTable<TData, TValue>({
             rowSelection,
         },
     });
-    console.log(searchParams);
 
     const handleSearchTermChange = (
         event: React.ChangeEvent<HTMLInputElement>

@@ -1,4 +1,3 @@
-
 export interface TStudentForm {
     firstName: string;
     lastName: string;
@@ -8,12 +7,16 @@ export interface TStudentForm {
     hasCronicDisease: string | undefined;
     cronicDisease?: string;
     familyStatus?: string;
-    fatherName?: string;
-    motherName?: string;
-    fatherJob?: string;
-    motherJob?: string;
-    fatherPhone?: string;
-    motherPhone?: string;
+    father?: {
+        name?: string;
+        job?: string;
+        phone?: string;
+    };
+    mother?: {
+        name?: string;
+        job?: string;
+        phone?: string;
+    };
     club: string | undefined;
     category: string | undefined;
     subscription: string | undefined;
@@ -30,15 +33,21 @@ export interface TStudentFormDB {
     has_cronic_disease: boolean;
     cronic_disease?: string;
     family_status?: string;
-    father_job?: string;
-    mother_job?: string;
-    father_phone?: string;
-    mother_phone?: string;
+    father?: {
+        name?: string;
+        job?: string;
+        phone?: string;
+    };
+    mother?: {
+        name?: string;
+        job?: string;
+        phone?: string;
+    };
     subscription?: string;
     subscription_expire_at?: Date;
     insurance_expire_at?: Date;
     picture?: string;
     file?: string;
-    id_club: number;
-    id_category: number;
+    club_id: number;
+    category_id: number;
 }
