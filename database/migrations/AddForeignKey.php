@@ -14,8 +14,10 @@ class AddForeignKeyToStudentsTable extends Migration
     public function up()
     {
         Schema::table('students', function (Blueprint $table) {
-            $table->foreign('id_club')->references('id')->on('clubs');
-            $table->foreign('id_category')->references('id')->on('categories');
+            $table->foreignId('father_id')->nullable()->constrained('guardians');
+            $table->foreignId('mother_id')->nullable()->constrained('guardians');
+            $table->foreignId('club_id')->constrained('clubs');
+            $table->foreignId('category_id')->constrained('categories');
         });
     }
 
@@ -27,7 +29,7 @@ class AddForeignKeyToStudentsTable extends Migration
     public function down()
     {
         Schema::table('students', function (Blueprint $table) {
-            $table->dropForeign(['id_club']);
+            $table->dropForeign(['club_id']);
         });
     }
 }

@@ -17,8 +17,8 @@ return new class extends Migration
             $table->decimal('value', 8, 2);
             $table->timestamp('start_at')->nullable();
             $table->timestamp('end_at')->nullable();
-            $table->foreignId('id_user')->constrained('users');
-            $table->foreignId('id_student')->constrained('students');
+            $table->foreignId('user_id')->constrained('users');
+            $table->foreignId('student_id')->constrained('students');
             $table->timestamps();
         });
     }

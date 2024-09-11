@@ -60,7 +60,7 @@ export default function Dashboard({
     });
     return (
         <DashboardLayout user={auth.user}>
-            <Head title="⚠️ Under Construction" />
+            <Head title="Students" />
             <div className="flex flex-col items-center justify-start h-full">
                 <div className="flex items-center w-full">
                     <h1 className="text-4xl font-bold text-gray-900">الطالب</h1>

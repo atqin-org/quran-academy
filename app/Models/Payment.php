@@ -14,17 +14,17 @@ class Payment extends Model
         'value',
         'start_at',
         'end_at',
-        'id_user',
-        'id_student',
+        'user_id',
+        'student_id',
     ];
 
     public function user()
     {
-        return $this->belongsTo(User::class, 'id_user');
+        return $this->belongsTo(User::class, 'user_id');
     }
 
     public function student()
     {
-        return $this->belongsTo(Student::class, 'id_student');
+        return $this->belongsTo(Student::class, 'student_id');
     }
 }

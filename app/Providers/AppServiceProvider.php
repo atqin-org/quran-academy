@@ -15,6 +15,9 @@ class AppServiceProvider extends ServiceProvider
         if ($this->app->environment('local')) {
             $this->app->register(\Laravel\Telescope\TelescopeServiceProvider::class);
             $this->app->register(TelescopeServiceProvider::class);
+
+            $loader = \Illuminate\Foundation\AliasLoader::getInstance();
+            $loader->alias('Debugbar', \Barryvdh\Debugbar\Facades\Debugbar::class);
         }
     }
 
@@ -25,7 +28,7 @@ class AppServiceProvider extends ServiceProvider
     {
         if (env('APP_ENV') !== 'local') {
             URL::forceScheme('https');
-            $this->app['request']->server->set('HTTPS','on');
+            $this->app['request']->server->set('HTTPS', 'on');
         }
     }
 }

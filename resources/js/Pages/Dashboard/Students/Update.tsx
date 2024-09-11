@@ -1,9 +1,9 @@
+import { FormSchema } from "@/Data/Zod/Students";
 import DashboardLayout from "@/Layouts/DashboardLayout";
 import { PageProps } from "@/types";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Head, useForm as useInertiaForm } from "@inertiajs/react";
 import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { FormSchema } from "@/Data/Zod/Students";
 import { toast } from "sonner";
 import StudentForm from "./Components/StudentForm";
 import { TStudentForm, TStudentFormDB } from "./Types/Student";
@@ -27,26 +27,25 @@ export default function Update({
             gender: student.gender,
             birthdate: student.birthdate,
             socialStatus: student.social_status,
-            hasCronicDisease: student.has_cronic_disease ? "yes" : "no",
+            hasCronicDisease: student.cronic_disease ? "yes" : "no",
             cronicDisease: student.cronic_disease || "",
             familyStatus: student.family_status || "",
-            fatherName: "",
-            motherName: "",
-            fatherJob: student.father_job || "",
-            motherJob: student.mother_job || "",
-            fatherPhone: student.father_phone || "",
-            motherPhone: student.mother_phone || "",
-            club: student.id_club.toString(),
-            category: student.id_category.toString(),
+            father: {
+                name: student.father?.name || "",
+                job: student.father?.job || "",
+                phone: student.father?.phone || "",
+            },
+            mother: {
+                name: student.mother?.name || "",
+                job: student.mother?.job || "",
+                phone: student.mother?.phone || "",
+            },
+            club: student.club_id.toString(),
+            category: student.category_id.toString(),
             subscription: student.subscription,
             picture: student.picture || undefined,
             file: student.file || undefined,
         });
-
-    const form = useForm({
-        resolver: zodResolver(FormSchema),
-        defaultValues: data,
-    });
 
     const url = window.location.href;
     const from = url.split("/");
@@ -55,44 +54,7 @@ export default function Update({
 
     function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();
-        form.setValue("firstName", data.firstName);
-        form.setValue("lastName", data.lastName);
-        form.setValue("gender", data.gender);
-        form.setValue("birthdate", data.birthdate);
-        form.setValue("socialStatus", data.socialStatus);
-        form.setValue("hasCronicDisease", data.hasCronicDisease);
-        form.setValue("cronicDisease", data.cronicDisease);
-        form.setValue("familyStatus", data.familyStatus);
-        form.setValue("fatherJob", data.fatherJob);
-        form.setValue("fatherPhone", data.fatherPhone);
-        form.setValue("motherJob", data.motherJob);
-        form.setValue("motherPhone", data.motherPhone);
-        form.setValue("club", data.club);
-        form.setValue("category", data.category);
-        form.setValue("subscription", data.subscription);
-        form.setValue("insurance", data.insurance);
-        form.setValue("picture", data.picture);
-        form.setValue("file", data.file);
-
-        form.trigger().then((isValid) => {
-            if (isValid) {
-                toast.promise(
-                    new Promise(async (resolve, reject) => {
-                        try {
-                            post(`/dashboard/students/${id}`);
-                            resolve("تم التحديث بنجاح");
-                        } catch (error) {
-                            reject("حدث خطأ اثناء التحديث");
-                        }
-                    }),
-                    {
-                        loading: "جاري التحديث ...",
-                        success: "تم التحديث بنجاح",
-                        error: "حدث خطأ اثناء التحديث",
-                    }
-                );
-            } else toast.error("يرجى التحقق من البيانات");
-        });
+        post(`/dashboard/students/${id}`);
     }
 
     return (
@@ -110,8 +72,8 @@ export default function Update({
                     clubs={clubs}
                     categories={categories}
                     processing={processing}
-                    form={form}
                     mode="edit"
+                    studentId={id}
                     handleSubmit={handleSubmit}
                 />
             </div>

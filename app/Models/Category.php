@@ -18,6 +18,6 @@ class Category extends Model
 
     public function students()
     {
-        return $this->hasMany(Student::class, 'id_category');
+        return $this->hasMany(Student::class, 'category_id');
     }
 }
