@@ -1,10 +1,6 @@
-import { FormSchema } from "@/Data/Zod/Students";
 import DashboardLayout from "@/Layouts/DashboardLayout";
 import { PageProps } from "@/types";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { Head, useForm as useInertiaForm } from "@inertiajs/react";
-import { useForm } from "react-hook-form";
-import { toast } from "sonner";
 import StudentForm from "./Components/StudentForm";
 import { TStudentForm, TStudentFormDB } from "./Types/Student";
 
@@ -54,7 +50,7 @@ export default function Update({
 
     function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();
-        post(`/dashboard/students/${id}`);
+        post(`/students/${id}`);
     }
 
     return (

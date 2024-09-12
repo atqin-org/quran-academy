@@ -6,9 +6,9 @@ use App\Models\Student;
 use App\Models\Club;
 use App\Models\Category;
 use App\Models\Guardian;
+use App\Models\Payment;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Faker\Factory as FakerFactory;
-use Illuminate\Support\Lottery;
 
 class StudentFactory extends Factory
 {
@@ -47,5 +47,18 @@ class StudentFactory extends Factory
             'subscription_expire_at' => $faker->optional()->dateTimeBetween('-8 months', '+8 months'),
             'insurance_expire_at' => $faker->optional()->dateTimeBetween('-3 months', '+8 months'),
         ];
+    }
+
+    /**
+     * Indicate that the model should have payments.
+     *
+     * @return \Illuminate\Database\Eloquent\Factories\Factory
+     */
+    public function withPayments()
+    {
+        return $this->has(
+            Payment::factory()->count(rand(0, 13)),
+            'payments'
+        );
     }
 }

@@ -1,6 +1,6 @@
-import { Head, Link } from "@inertiajs/react";
-import { PageProps } from "@/types";
 import DashboardLayout from "@/Layouts/DashboardLayout";
+import { PageProps } from "@/types";
+import { Head, Link } from "@inertiajs/react";
 import { StudentDisplay, columns } from "./Components/Columns";
 import { DataTable } from "./Components/DataTable";
 
@@ -67,7 +67,7 @@ export default function Dashboard({
                     <div className="flex-1"></div>
                     <Link
                         className="text-primary-foreground font-bold text-center bg-primary p-4 rounded-xl select-none"
-                        href="/dashboard/students/create"
+                        href="/students/create"
                     >
                         سجل طالب جديد
                     </Link>

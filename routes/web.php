@@ -6,11 +6,16 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use App\Http\Controllers\StudentResourceController;
 use App\Http\Controllers\GuardianController;
+use App\Http\Controllers\PaymentController;
 
-Route::resource('/dashboard/students', StudentResourceController::class);
-Route::post('/dashboard/students/{student}', [StudentResourceController::class, 'update'])->name('students.update');
 
+Route::resource('/students', StudentResourceController::class);
+Route::post('/students/{student}', [StudentResourceController::class, 'update'])->name('students.update');
 Route::post('/guardian', [GuardianController::class, 'check'])->name('guardian.check');
+
+Route::get('/students/{student}/payment', [PaymentController::class, 'show'])->name('students.payment.show');
+Route::post('/students/{student}/payment', [PaymentController::class, 'store'])->name('students.payment.store');
+
 // if (/dashboard/* dont exist) render  /Dashboard/tmp
 Route::get('/dashboard/{any}', function () {
     return Inertia::render('Dashboard/Tmp');

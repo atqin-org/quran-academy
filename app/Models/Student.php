@@ -46,6 +46,10 @@ class Student extends Model
     {
         return $this->belongsTo(Guardian::class, 'mother_id');
     }
+    public function payments()
+    {
+        return $this->hasMany(Payment::class, 'student_id');
+    }
     public function club()
     {
         return $this->belongsTo(Club::class, 'club_id');

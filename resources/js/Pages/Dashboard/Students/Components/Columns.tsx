@@ -1,18 +1,5 @@
-import { ColumnDef } from "@tanstack/react-table";
-import {
-    MoreHorizontal,
-    Trash2,
-    UserPen,
-    Banknote,
-} from "lucide-react";
-import { Checkbox } from "@/Components/ui/checkbox";
 import { Button } from "@/Components/ui/button";
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from "@/Components/ui/dropdown-menu";
+import { Checkbox } from "@/Components/ui/checkbox";
 import {
     Dialog,
     DialogContent,
@@ -22,6 +9,14 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/Components/ui/dialog";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "@/Components/ui/dropdown-menu";
+import { ColumnDef } from "@tanstack/react-table";
+import { Banknote, MoreHorizontal, Trash2, UserPen } from "lucide-react";
 
 import { Link } from "@inertiajs/react";
 
@@ -75,7 +70,7 @@ export const columns: ColumnDef<StudentDisplay>[] = [
             const name = row.getValue("الاسم") as string;
             return (
                 <Link
-                    href={`/dashboard/students/${row.original.id}`}
+                    href={`/students/${row.original.id}`}
                     className="text-nowrap max-w-fit text-start font-medium hover:underline hover:underline-offset-2"
                 >
                     {name}
@@ -260,7 +255,7 @@ export const columns: ColumnDef<StudentDisplay>[] = [
                             <DropdownMenuItem className="p-0 m-0">
                                 <Link
                                     className="w-full px-4 flex items-center gap-2 rounded-md my-0.5"
-                                    href={`/dashboard/students/${student.id}/edit`}
+                                    href={`/students/${student.id}/edit`}
                                     as="button"
                                 >
                                     <UserPen />
@@ -270,7 +265,7 @@ export const columns: ColumnDef<StudentDisplay>[] = [
                             <DropdownMenuItem className="p-0 m-0">
                                 <Link
                                     className="w-full px-4 flex items-center gap-2 rounded-md my-0.5"
-                                    href={`/dashboard/students/`}
+                                    href={`/students/${student.id}/payment`}
                                     as="button"
                                 >
                                     <Banknote />
@@ -301,7 +296,7 @@ export const columns: ColumnDef<StudentDisplay>[] = [
                             <DialogFooter>
                                 <Link
                                     className="px-4 flex items-center gap-2 rounded-md my-0.5 bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                    href={`/dashboard/students/${student.id}`}
+                                    href={`/students/${student.id}`}
                                     method="delete"
                                     preserveState={false}
                                     as="button"

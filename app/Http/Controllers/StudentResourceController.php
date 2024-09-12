@@ -302,4 +302,15 @@ class StudentResourceController extends Controller
 
         return redirect()->route('students.index')->with('success', 'تم حذف الطالب بنجاح');
     }
+    /**
+     * Remove the specified resource from storage.
+     */
+    public function payment(string $id)
+    {
+        $student = Student::findOrFail($id);
+
+        $student->delete();
+
+        return redirect()->route('students.index')->with('success', 'تم حذف الطالب بنجاح');
+    }
 }

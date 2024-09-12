@@ -36,7 +36,7 @@ export const sidebarLinks = [
         label: "الطلاب",
         latin: "Students",
         crud: true,
-        href: "/dashboard/students",
+        href: "/students",
     },
     {
         icon: <Presentation />,

@@ -1,5 +1,5 @@
-import { Link, Head } from "@inertiajs/react";
 import { PageProps } from "@/types";
+import { Head, Link } from "@inertiajs/react";
 
 export default function Welcome({
     auth,
@@ -78,7 +78,9 @@ export default function Welcome({
                                 </p>
                                 <div className="">
                                     <li>
-                                        <Link href="/dashboard/students">لوحة التحكم</Link>
+                                        <Link href="/students">
+                                            لوحة التحكم
+                                        </Link>
                                     </li>
                                 </div>
                             </div>

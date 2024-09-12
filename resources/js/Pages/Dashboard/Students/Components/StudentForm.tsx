@@ -187,9 +187,11 @@ const StudentForm = ({
     return (
         <form onSubmit={handleFormSubmit} className="space-y-6">
             <div>
+                {/*
                 <button type="button" onClick={handleDialogOpen}>
                     Simulate DialogOpen
                 </button>
+                */}
 
                 <Dialog open={isDialogOpen} onOpenChange={handleDialogOpen}>
                     <DialogContent>
