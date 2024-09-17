@@ -1,10 +1,6 @@
 import DashboardLayout from "@/Layouts/DashboardLayout";
 import { PageProps } from "@/types";
 import { Head, useForm as useInertiaForm } from "@inertiajs/react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { FormSchema } from "@/Data/Zod/Students";
-import { toast } from "sonner";
 import StudentForm from "./Components/StudentForm";
 import { TStudentForm } from "./Types/Student";
 
@@ -47,7 +43,7 @@ export default function Dashboard({ auth, clubs, categories }: DashboardProps) {
     function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();
 
-        post("/dashboard/students");
+        post("/students");
     }
     return (
         <DashboardLayout user={auth.user}>

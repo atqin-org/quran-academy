@@ -13,8 +13,10 @@ return new class extends Migration
     {
         Schema::create('payments', function (Blueprint $table) {
             $table->id();
-            $table->enum('type', ['sub', 'insurance']);
+            $table->enum('type', ['sub', 'ins']);
             $table->decimal('value', 8, 2);
+            $table->enum('status', ['in_time', 'late', 'early'])->default('in_time');
+            $table->decimal('discount', 8, 2)->nullable();
             $table->timestamp('start_at')->nullable();
             $table->timestamp('end_at')->nullable();
             $table->foreignId('user_id')->constrained('users');
