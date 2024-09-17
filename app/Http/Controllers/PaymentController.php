@@ -38,12 +38,12 @@ class PaymentController extends Controller
      */
     public function show(Student $student)
     {
-        $payment = Payment::where('student_id', $student->id)->get();
+        $payments = Payment::where('student_id', $student->id)->latest()->get();
         return Inertia::render(
             'Dashboard/Students/Payment',
             [
                 'student' => $student->load('father', 'mother'),
-                'payment' => $payment,
+                'payments' => $payments,
             ]
         );
     }

@@ -25,13 +25,6 @@ export const sidebarLinks = [
         href: "/dashboard/presence",
     },
     {
-        icon: <Banknote />,
-        label: "الدفع",
-        latin: "Payment",
-        crud: false,
-        href: "/dashboard/payment",
-    },
-    {
         icon: <Backpack />,
         label: "الطلاب",
         latin: "Students",
@@ -83,6 +76,10 @@ export const breadcrumbLinks = [
     {
         label: "تعديل",
         action: "edit",
+    },
+    {
+        label: "دفع",
+        action: "payment",
     },
     {
         label: "عرض",

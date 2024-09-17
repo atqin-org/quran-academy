@@ -27,6 +27,8 @@ class PaymentFactory extends Factory
         return [
             'type' => $isInsurance ? 'ins' : 'sub',
             'value' => $value,
+            'status' => $this->faker->randomElement(['in_time', 'late', 'early']),
+            'discount' => $this->faker->optional()->numberBetween(1000, $value - 100),
             'start_at' => $startAt,
             'end_at' => $endAt,
             'user_id' => User::inRandomOrder()->first()->id,

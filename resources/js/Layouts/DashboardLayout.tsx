@@ -12,6 +12,7 @@ import {
     SheetContent,
     SheetDescription,
     SheetHeader,
+    SheetTitle,
     SheetTrigger,
 } from "@/Components/ui/sheet";
 import { Toaster } from "@/Components/ui/sonner";
@@ -50,6 +51,7 @@ export default function DashboardLayout({
                     </SheetTrigger>
                     <SheetContent side="bottom">
                         <SheetHeader>
+                            <SheetTitle></SheetTitle>
                             <SheetDescription className="flex-col justify-center items-center w-full">
                                 <Sidebar
                                     mobile={true}
