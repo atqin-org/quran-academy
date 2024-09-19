@@ -43,7 +43,7 @@ class StudentFactory extends Factory
             'mother_id' => $hasMother ? Guardian::factory()->state(['gender' => 'female']) : null,
             'category_id' => $faker->randomElement(Category::all()->pluck('id')->toArray()),
             'ahzab' => $faker->numberBetween(0, 60),
-            'subscription' => $faker->randomElement([0, $faker->numberBetween(1500, 3000)]),
+            'subscription' => $faker->randomElement([0, 1500, 2000, 2500, 3000]),
             'subscription_expire_at' => $faker->optional()->dateTimeBetween('-8 months', '+8 months'),
             'insurance_expire_at' => $faker->optional()->dateTimeBetween('-3 months', '+8 months'),
         ];

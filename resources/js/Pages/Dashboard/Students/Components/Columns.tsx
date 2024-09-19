@@ -153,11 +153,11 @@ export const columns: ColumnDef<StudentDisplay>[] = [
         },
     },
     {
-        id: "التامين",
+        id: "التأمين",
         accessorKey: "insurance_expire_at",
-        header: () => <div className="text-center">التامين</div>,
+        header: () => <div className="text-center">التأمين</div>,
         cell: ({ row }) => {
-            const insuranceString = row.getValue("التامين") as string | null;
+            const insuranceString = row.getValue("التأمين") as string | null;
             const insurance = insuranceString
                 ? new Date(insuranceString)
                 : null;

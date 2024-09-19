@@ -30,7 +30,46 @@ class PaymentController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        //dd($request->all());
+        $request->validate([
+            'type' => 'required|string',
+            'value' => 'required|numeric',
+            'status' => 'required|string',
+            'discount' => 'required|numeric',
+            'start_at' => 'required|date',
+            'end_at' => 'required|date',
+            'user_id' => 'required|exists:users,id',
+            'student_id' => 'required|exists:students,id',
+            'expect.duration' => 'required|integer',
+            'expect.sessions' => 'required|integer',
+            'expect.change' => 'required|numeric',
+            'expect.start_at' => 'required|date',
+            'expect.end_at' => 'required|date',
+        ]);
+        // re calculate all the expect items
+
+        // check expact values and the calculated values
+
+        // insurt into db
+        $payment = new Payment([
+            'type' => $request->type,
+            'value' => $request->value,
+            'status' => $request->status,
+            'discount' => $request->discount,
+            'start_at' => $request->start_at,
+            'end_at' => $request->end_at,
+            'user_id' => $request->user_id,
+            'student_id' => $request->student_id,
+            'expect' => [
+                'duration' => $request->expect['duration'],
+                'sessions' => $request->expect['sessions'],
+                'change' => $request->expect['change'],
+                'start_at' => $request->expect['start_at'],
+                'end_at' => $request->expect['end_at'],
+            ],
+        ]);
+        $payment->save();
+        return redirect()->route('students.payment.show', $request->student_id);
     }
 
     /**
