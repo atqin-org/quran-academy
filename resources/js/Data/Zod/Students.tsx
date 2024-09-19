@@ -1,29 +1,37 @@
+import { isAfter, isBefore, parseISO, subYears } from "date-fns";
 import { z } from "zod";
-import { parseISO, isBefore, isAfter, subYears, addYears } from 'date-fns';
 
 const MAX_FILE_SIZE = 6 * 1024 * 1024; // 6MB in bytes
 const ALLOWED_FILE_TYPES = ["application/pdf", "image/jpeg", "image/png"];
-const isoDateString = z.string({
-    required_error: "تاريخ الميلاد مطلوب",
-    invalid_type_error: "يرجى ادخال تاريخ الميلاد بصيغة صحيحة",
-}).refine((val) => {
-    const date = new Date(val);
-    return !isNaN(date.getTime());
-}, {
-    message: "Invalid date format",
-    params: {
-        description: "يرجى ادخال تاريخ الميلاد بصيغة صحيحة",
-    },
-});
+const isoDateString = z
+    .string({
+        required_error: "تاريخ الميلاد مطلوب",
+        invalid_type_error: "يرجى ادخال تاريخ الميلاد بصيغة صحيحة",
+    })
+    .refine(
+        (val) => {
+            const date = new Date(val);
+            return !isNaN(date.getTime());
+        },
+        {
+            message: "Invalid date format",
+            params: {
+                description: "يرجى ادخال تاريخ الميلاد بصيغة صحيحة",
+            },
+        }
+    );
 const fileSchema = z.union([
-    z.instanceof(File, {
-        message: "الملف مطلوب",
-    }).refine((file) => ALLOWED_FILE_TYPES.includes(file.type), {
-        message: "Must be a PDF, JPG, JPEG, or PNG file",
-    }).refine((file) => file.size <= MAX_FILE_SIZE, {
-        message: "File size must be less than 6MB",
-    }),
-    z.string()
+    z
+        .instanceof(File, {
+            message: "الملف مطلوب",
+        })
+        .refine((file) => ALLOWED_FILE_TYPES.includes(file.type), {
+            message: "Must be a PDF, JPG, JPEG, or PNG file",
+        })
+        .refine((file) => file.size <= MAX_FILE_SIZE, {
+            message: "File size must be less than 6MB",
+        }),
+    z.string(),
 ]);
 export const FormSchema = z
     .object({
@@ -44,20 +52,29 @@ export const FormSchema = z
             .refine((val) => ["male", "female"].includes(val), {
                 message: "الجنس يجب ان يكون ذكر او انثى",
             }),
-        birthdate:z.union([
-            isoDateString,
-            z.date({
-                required_error: "تاريخ الميلاد مطلوب",
-                invalid_type_error: "يرجى ادخال تاريخ الميلاد بصيغة صحيحة",
-            })
-        ]).refine((date) => {
-            const parsedDate = typeof date === 'string' ? parseISO(date) : date;
-            const minDate = subYears(new Date(), 100);
-            const maxDate = subYears(new Date(), 3);
-            return isAfter(parsedDate, minDate) && isBefore(parsedDate, maxDate);
-        }, {
-            message: "تاريخ الميلاد يجب أن يكون بين 3 سنوات و 100 سنة",
-        }),
+        birthdate: z
+            .union([
+                isoDateString,
+                z.date({
+                    required_error: "تاريخ الميلاد مطلوب",
+                    invalid_type_error: "يرجى ادخال تاريخ الميلاد بصيغة صحيحة",
+                }),
+            ])
+            .refine(
+                (date) => {
+                    const parsedDate =
+                        typeof date === "string" ? parseISO(date) : date;
+                    const minDate = subYears(new Date(), 100);
+                    const maxDate = subYears(new Date(), 3);
+                    return (
+                        isAfter(parsedDate, minDate) &&
+                        isBefore(parsedDate, maxDate)
+                    );
+                },
+                {
+                    message: "تاريخ الميلاد يجب أن يكون بين 3 سنوات و 100 سنة",
+                }
+            ),
         socialStatus: z
             .enum(["good", "mid", "low"], {
                 required_error: "الحالة الاجتماعية مطلوبة",
@@ -70,30 +87,34 @@ export const FormSchema = z
         }),
         cronicDisease: z.string().optional(),
         familyStatus: z.string().optional(),
-        father: z.object({
-            name: z.string().optional(),
-            job: z.string().optional(),
-            phone: z
-                .union([
-                    z.string().regex(/^0[567]\d{8}$/, {
-                        message: "يرجى ادخال رقم هاتف صحيح",
-                    }),
-                    z.literal(""),
-                ])
-                .optional(),
-        }).optional(),
-        mother: z.object({
-            name: z.string().optional(),
-            job: z.string().optional(),
-            phone: z
-                .union([
-                    z.string().regex(/^0[567]\d{8}$/, {
-                        message: "يرجى ادخال رقم هاتف صحيح",
-                    }),
-                    z.literal(""),
-                ])
-                .optional(),
-        }).optional(),
+        father: z
+            .object({
+                name: z.string().optional(),
+                job: z.string().optional(),
+                phone: z
+                    .union([
+                        z.string().regex(/^0[567]\d{8}$/, {
+                            message: "يرجى ادخال رقم هاتف صحيح",
+                        }),
+                        z.literal(""),
+                    ])
+                    .optional(),
+            })
+            .optional(),
+        mother: z
+            .object({
+                name: z.string().optional(),
+                job: z.string().optional(),
+                phone: z
+                    .union([
+                        z.string().regex(/^0[567]\d{8}$/, {
+                            message: "يرجى ادخال رقم هاتف صحيح",
+                        }),
+                        z.literal(""),
+                    ])
+                    .optional(),
+            })
+            .optional(),
         category: z.string({
             required_error: "الفئة مطلوبة",
         }),
@@ -105,9 +126,11 @@ export const FormSchema = z
             .regex(/^\d+$/, {
                 message: "الاشتراك الشهري يجب ان يكون رقم",
             }),
-        insurance: z.boolean({
-            required_error: "التامين مطلوب",
-        }).optional(),
+        insurance: z
+            .boolean({
+                required_error: "التأمين مطلوب",
+            })
+            .optional(),
         picture: fileSchema.optional(),
         file: fileSchema.optional(),
     })

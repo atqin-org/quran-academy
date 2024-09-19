@@ -1,7 +1,16 @@
 import Dropzone from "@/Components/costume-cn/Dropzone";
 import FileUploaded from "@/Components/costume-cn/FileUploaded";
+import FormErrorMessage from "@/Components/costume-cn/FormErrorMessage";
 import { Button } from "@/Components/ui/button";
 import { Calendar } from "@/Components/ui/calendar";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/Components/ui/dialog";
 import { Input } from "@/Components/ui/input";
 import { Label } from "@/Components/ui/label";
 import {
@@ -16,27 +25,17 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/Components/ui/select";
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from "@/Components/ui/dialog";
 import { Switch } from "@/Components/ui/switch";
+import { FormSchema } from "@/Data/Zod/Students";
 import { cn } from "@/lib/utils";
-import { UseFormReturn } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import axios from "axios";
 import { format, parse } from "date-fns";
 import { CalendarIcon } from "lucide-react";
-import { toast } from "sonner";
 import { useState } from "react";
-import FormErrorMessage from "@/Components/costume-cn/FormErrorMessage";
-import { TStudentForm } from "../Types/Student";
-import axios from "axios";
 import { useForm } from "react-hook-form";
-import { FormSchema } from "@/Data/Zod/Students";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { toast } from "sonner";
+import { TStudentForm } from "../Types/Student";
 
 interface StudentFormProps {
     data: TStudentForm;
@@ -627,7 +626,7 @@ const StudentForm = ({
                     }`}
                 >
                     <div className="space-y-0.5 text-nowrap flex flex-col truncate">
-                        <Label className="text-base">التامين</Label>
+                        <Label className="text-base">التأمين</Label>
                         <span dir="rtl">200 دج سنويا</span>
                         <FormErrorMessage
                             formStateErrors={form.formState.errors.insurance}
