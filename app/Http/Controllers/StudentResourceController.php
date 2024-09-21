@@ -98,7 +98,6 @@ class StudentResourceController extends Controller
      */
     public function store(Request $request)
     {
-        dd($request->all());
         $request->validate([
             'firstName' => 'required',
             'lastName' => 'required',
@@ -127,49 +126,18 @@ class StudentResourceController extends Controller
 
         //TODO: check if this student was deleted before from the same club
 
-
-        $father_id = null;
-        $mother_id = null;
-        $guardians = Guardian::where('phone', $request->father["phone"])->orWhere('phone', $request->mother["phone"])->get();
-        if ($guardians->count() > 0) {
-            $guardians->each(function ($guardian) use ($request) {
-                if ($guardian->phone === $request->father["phone"]) {
-                    //TODO popup to ask if the user wants to update the guardian info
-                    $guardian->name = $request->father["name"];
-                    $guardian->job = $request->father["job"];
-                    $guardian->gender = "male";
-                    // if not get the guardian id
-                } else {
-                    //TODO popup to ask if the user wants to update the guardian info
-                    $guardian->name = $request->mother["name"];
-                    $guardian->job = $request->mother["job"];
-                    $guardian->gender = "female";
-                    // if not get the guardian id
-                }
-                $guardian->save();
-            });
-        } else {
-            if ($request->mother["phone"] || $request->mother["name"] || $request->mother["job"]) {
-                $mother = Guardian::create([
-                    'phone' => $request->mother["phone"],
-                    'name' => $request->mother["name"],
-                    'job' => $request->mother["job"],
-                    'gender' => 'female',
-                ]);
-                $mother->save();
-                $mother_id = $mother->id;
-            }
-            if ($request->father["phone"] || $request->father["name"] || $request->father["job"]) {
-                $father = Guardian::create([
-                    'phone' => $request->father["phone"],
-                    'name' => $request->father["name"],
-                    'job' => $request->father["job"],
-                    'gender' => 'male'
-                ]);
-                $father->save();
-                $father_id = $father->id;
-            }
-        }
+        $father_id = Guardian::create([
+            'phone' => $request->father["phone"],
+            'name' => $request->father["name"],
+            'job' => $request->father["job"],
+            'gender' => 'male',
+        ])->id;
+        $mother_id = Guardian::create([
+            'phone' => $request->mother["phone"],
+            'name' => $request->mother["name"],
+            'job' => $request->mother["job"],
+            'gender' => 'female',
+        ])->id;
         //add $father_id and $mother_id to the student
         $request->merge(['father_id' => $father_id, 'mother_id' => $mother_id]);
         Student::create($request->all());
@@ -235,52 +203,22 @@ class StudentResourceController extends Controller
             'file' => ['nullable', new FileOrString],
         ]);
         // Find the student by ID
-        $student = Student::findOrFail($id);
+        $student = Student::findOrFail($id)->load('father', 'mother');
 
-        $father_id = $student->father_id;
-        $mother_id = $student->mother_id;
-        $guardians = Guardian::where('phone', $request->father["phone"])->orWhere('phone', $request->mother["phone"])->get();
-        if ($guardians->count() > 0) {
-            $guardians->each(function ($guardian) use ($request) {
-                if ($guardian->phone === $request->father["phone"]) {
-                    //TODO popup to ask if the user wants to update the guardian info
-                    $guardian->name = $request->father["name"];
-                    $guardian->job = $request->father["job"];
-                    $guardian->gender = "male";
-                    // if not get the guardian id
-                } else {
-                    //TODO popup to ask if the user wants to update the guardian info
-                    $guardian->name = $request->mother["name"];
-                    $guardian->job = $request->mother["job"];
-                    $guardian->gender = "female";
-                    // if not get the guardian id
-                }
-                $guardian->save();
-            });
-        } else {
-            if ($request->mother["phone"] || $request->mother["name"] || $request->mother["job"]) {
-                $mother = Guardian::create([
-                    'phone' => $request->mother["phone"],
-                    'name' => $request->mother["name"],
-                    'job' => $request->mother["job"],
-                    'gender' => 'female',
-                ]);
-                $mother->save();
-                $mother_id = $mother->id;
-            }
-            if ($request->father["phone"] || $request->father["name"] || $request->father["job"]) {
-                $father = Guardian::create([
-                    'phone' => $request->father["phone"],
-                    'name' => $request->father["name"],
-                    'job' => $request->father["job"],
-                    'gender' => 'male'
-                ]);
-                $father->save();
-                $father_id = $father->id;
-            }
-        }
-        //add $father_id and $mother_id to the student
-        $request->merge(['father_id' => $father_id, 'mother_id' => $mother_id]);
+        $father = Guardian::find($student->father_id);
+        $mother = Guardian::find($student->mother_id);
+
+        $father->update([
+            'phone' => $request->father["phone"],
+            'name' => $request->father["name"],
+            'job' => $request->father["job"],
+        ]);
+        $mother->update([
+            'phone' => $request->mother["phone"],
+            'name' => $request->mother["name"],
+            'job' => $request->mother["job"],
+        ]);
+        $request->merge(['father_id' => $father->id, 'mother_id' => $mother->id]);
 
         // Update the student with validated data
         $student->update($request->all());

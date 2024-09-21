@@ -11,7 +11,7 @@ use App\Http\Controllers\PaymentController;
 
 Route::resource('/students', StudentResourceController::class);
 Route::post('/students/{student}', [StudentResourceController::class, 'update'])->name('students.update');
-Route::post('/guardian', [GuardianController::class, 'check'])->name('guardian.check');
+Route::post('/api/guardian', [GuardianController::class, 'checkV2'])->name('guardian.check');
 
 Route::get('/students/{student}/payment', [PaymentController::class, 'show'])->name('students.payment.show');
 Route::post('/students/{student}/payment', [PaymentController::class, 'store'])->name('students.payment.store');

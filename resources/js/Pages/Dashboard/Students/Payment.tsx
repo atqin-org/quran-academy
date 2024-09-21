@@ -39,8 +39,8 @@ export default function Dashboard({ auth, student, payments }: DashboardProps) {
             duration: 0,
             sessions: 0,
             change: 0,
-            start_at: payments[0].end_at || new Date().toISOString(),
-            end_at: new Date().toISOString(),
+            start_at: payments[0]?.end_at || new Date().toISOString(),
+            end_at: formatDate(new Date()),
         },
     });
     useEffect(() => {
@@ -98,7 +98,7 @@ export default function Dashboard({ auth, student, payments }: DashboardProps) {
                             value="sub"
                             className="flex justify-center"
                         >
-                            <div className="flex md:mt-10 mt-0 flex-col gap-4">
+                            <div className="flex flex-col gap-4">
                                 <h2 className="flex gap-1 items-center">
                                     <span className="text-xl font-bold text-gray-900">
                                         الاشتراك الشهري
@@ -125,11 +125,16 @@ export default function Dashboard({ auth, student, payments }: DashboardProps) {
                                         {/**
                                          * prevew how mutch sessions the student will have after the payment
                                          */}
-                                        <div className="flex gap-2 text-sm text-gray-500">
-                                            <p>{data.expect?.sessions} حصة</p>
-                                            <span>|</span>
-                                            <p>{data.expect?.duration} شهر</p>
-                                            <span>|</span>
+                                        <div className="flex flex-col gap-2 text-sm text-gray-500">
+                                            <div className="flex gap-2">
+                                                <p>
+                                                    {data.expect?.sessions} حصة
+                                                </p>
+                                                <span>|</span>
+                                                <p>
+                                                    {data.expect?.duration} شهر
+                                                </p>
+                                            </div>
                                             <p>
                                                 من{" "}
                                                 {new Intl.DateTimeFormat(
@@ -145,7 +150,6 @@ export default function Dashboard({ auth, student, payments }: DashboardProps) {
                                                     )
                                                 )}
                                             </p>
-                                            <span>|</span>
                                             <p>
                                                 إلى{" "}
                                                 {new Intl.DateTimeFormat(
@@ -184,7 +188,7 @@ export default function Dashboard({ auth, student, payments }: DashboardProps) {
                             </div>
                         </TabsContent>
                         <TabsContent value="ins">
-                            <div className="flex md:mt-2 mt-0 flex-col gap-4">
+                            <div className="flex flex-col gap-4">
                                 <h2 className="flex gap-1 items-center">
                                     <span className="text-xl font-bold text-gray-900">
                                         التأمين السنوي
@@ -257,53 +261,61 @@ export default function Dashboard({ auth, student, payments }: DashboardProps) {
                         </TabsContent>
                     </Tabs>
                     <div className="flex flex-col items-center w-[300px]">
-                        <div className="space-y-4 relative ">
-                            {payments.map((payment, index) => (
-                                <div
-                                    key={payment.id}
-                                    className="flex items-center"
+                        {payments.length > 0 ? (
+                            <div className="space-y-4 relative ">
+                                {payments.map((payment, index) => (
+                                    <div
+                                        key={payment.id}
+                                        className="flex items-center"
+                                    >
+                                        <div className="relative z-10 flex items-center justify-center">
+                                            <div
+                                                className={`w-4 h-4 rounded-full border-4 ${getStatusColor(
+                                                    payment.status
+                                                )}`}
+                                            />
+                                            <div className="absolute w-2 h-2 bg-white rounded-full" />
+                                        </div>
+                                        <div className="flex-grow ms-4 rtl:text-right ltr:text-left">
+                                            <p className="text-sm font-medium">
+                                                <span>
+                                                    {payment.type === "sub"
+                                                        ? "تم الدفع"
+                                                        : payment.type === "ins"
+                                                        ? "تأخر الدفع"
+                                                        : "مخيم / عطلة"}{" "}
+                                                </span>
+                                                {new Date(
+                                                    payment.created_at
+                                                ).toLocaleDateString()}
+                                            </p>
+                                            <p className="text-xs text-gray-500">
+                                                {new Intl.NumberFormat(
+                                                    "ar-DZ",
+                                                    {
+                                                        style: "currency",
+                                                        currency: "DZD",
+                                                    }
+                                                ).format(payment.value)}
+                                            </p>
+                                        </div>
+                                    </div>
+                                ))}
+                                {/*
+                                <div className="absolute h-[90%] w-0.5 bg-gray-200 start-[7px] top-0 z-[1]" />
+                                */}
+                                <Button
+                                    variant="outline"
+                                    className="w-fit mt-4"
+                                    onClick={() => console.log("Show more")}
                                 >
-                                    <div className="relative z-10 flex items-center justify-center">
-                                        <div
-                                            className={`w-4 h-4 rounded-full border-4 ${getStatusColor(
-                                                payment.status
-                                            )}`}
-                                        />
-                                        <div className="absolute w-2 h-2 bg-white rounded-full" />
-                                    </div>
-                                    <div className="flex-grow ms-4 rtl:text-right ltr:text-left">
-                                        <p className="text-sm font-medium">
-                                            <span>
-                                                {payment.type === "sub"
-                                                    ? "تم الدفع"
-                                                    : payment.type === "ins"
-                                                    ? "تأخر الدفع"
-                                                    : "مخيم / عطلة"}{" "}
-                                            </span>
-                                            {new Date(
-                                                payment.created_at
-                                            ).toLocaleDateString()}
-                                        </p>
-                                        <p className="text-xs text-gray-500">
-                                            {new Intl.NumberFormat("ar-DZ", {
-                                                style: "currency",
-                                                currency: "DZD",
-                                            }).format(payment.value)}
-                                        </p>
-                                    </div>
-                                </div>
-                            ))}
-                            {/* Add a gray line connecting the dots */}
-                            <div className="absolute h-[90%] w-0.5 bg-gray-200 start-[7px] top-0 z-[1]" />
-                        </div>
-                        <Button
-                            variant="outline"
-                            className="w-fit mt-4"
-                            onClick={() => console.log("Show more")}
-                        >
-                            عرض المزيد{" "}
-                            <ChevronDownIcon className="ms-2 h-4 w-4" />
-                        </Button>
+                                    عرض المزيد{" "}
+                                    <ChevronDownIcon className="ms-2 h-4 w-4" />
+                                </Button>
+                            </div>
+                        ) : (
+                            <p className="text-gray-500">لا توجد مدفوعات</p>
+                        )}
                     </div>
                 </div>
             </div>

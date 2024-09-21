@@ -97,7 +97,6 @@ const StudentForm = ({
     const [isDialogOpen, setIsDialogOpen] = useState(false);
 
     const handleDialogOpen = () => {
-        // Simulate an DialogOpen
         setIsDialogOpen(!isDialogOpen);
     };
     const [dialogConfig, setDialogConfig] = useState({
@@ -139,31 +138,16 @@ const StudentForm = ({
                 toast.promise(
                     new Promise(async (resolve, reject) => {
                         try {
-                            const res = await axios.post("/guardian", {
+                            const res = await axios.post("/api/guardian", {
                                 father: data.father,
                                 mother: data.mother,
                                 id: studentId || null,
                             });
-                            setDialogConfig(
-                                res.data.dialog ?? {
-                                    title: "",
-                                    description: "",
-                                    confirm: "",
-                                    cancel: "",
-                                }
-                            );
-
-                            console.log(res);
-                            if (res.data.status_code === "300") {
-                                //console.log("submit placeholder");
-                                handleSubmit(e);
-                                resolve("تم التسجيل بنجاح");
-                            } else {
-                                handleDialogOpen();
-                                resolve("تم التسجيل بنجاح");
-                            }
+                            handleSubmit(e);
+                            resolve("تم التسجيل بنجاح");
                         } catch (error) {
-                            handleDialogOpen();
+                            //handleDialogOpen();
+                            console.log(error);
                             reject("حدث خطأ اثناء التسجيل");
                         }
                     }),
@@ -186,12 +170,6 @@ const StudentForm = ({
     return (
         <form onSubmit={handleFormSubmit} className="space-y-6">
             <div>
-                {/*
-                <button type="button" onClick={handleDialogOpen}>
-                    Simulate DialogOpen
-                </button>
-                */}
-
                 <Dialog open={isDialogOpen} onOpenChange={handleDialogOpen}>
                     <DialogContent>
                         <DialogHeader>

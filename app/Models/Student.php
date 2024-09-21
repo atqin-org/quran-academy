@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Storage;
+use Carbon\Carbon;
 
 class Student extends Model
 {
@@ -62,7 +63,6 @@ class Student extends Model
     // override the default create method
     public static function create(array $attributes = [])
     {
-        $attributes = self::handleGuardians($attributes);
 
         if (isset($attributes['picture']) && $attributes['picture'] !== null) {
             $originalName = pathinfo($attributes['picture']->getClientOriginalName(), PATHINFO_FILENAME);
@@ -84,6 +84,13 @@ class Student extends Model
             $attributes['file'] = $attributes['file']->storeAs('students/files', $customFileName, 'public');
         }
 
+        $now = Carbon::now();
+        $nextOctober31 = Carbon::create($now->year, 10, 31, 0, 0, 0);
+
+        if ($now->greaterThan($nextOctober31)) {
+            $nextOctober31->addYear();
+        }
+
         $student = new Student();
 
         $student->club_id = $attributes['club'];
@@ -98,8 +105,8 @@ class Student extends Model
         $student->subscription = $attributes['subscription'];
         $student->father_id = $attributes['father_id'];
         $student->mother_id = $attributes['mother_id'];
-        if ($attributes['insurance'] === 'yes') {
-            $student->insurance_expire_at = now()->addYear();
+        if ($attributes['insurance']) {
+            $student->insurance_expire_at = $nextOctober31;
         }
         if (isset($attributes['picture']) && $attributes['picture'] !== null) {
             $student->picture = $attributes['picture'];
@@ -109,15 +116,16 @@ class Student extends Model
         }
 
         $student->save();
-        if ($attributes['insurance'] === 'yes') {
+        if ($attributes['insurance']) {
             $paymentInsurance = new Payment([
-                'type' => 'insurance',
+                'type' => 'ins',
                 'value' => 200,
                 'start_at' => now(),
-                'end_at' => now()->addYear(),
+                'end_at' => $nextOctober31,
                 //TODO: get the user id
                 'user_id' => 1,
                 'student_id' => $student->id,
+                'status' => "in_time",
             ]);
             $paymentInsurance->save();
         }
@@ -126,8 +134,6 @@ class Student extends Model
     // Override the default update method
     public function update(array $attributes = [], array $options = [])
     {
-        $attributes = self::handleGuardians($attributes);
-
         // Handle picture attribute
         $this->handleFileAttribute($attributes, 'picture', 'students/pictures');
 
@@ -150,70 +156,7 @@ class Student extends Model
 
         $this->save();
     }
-    private static function handleGuardians(array $attributes)
-    {
-        $father_id = null;
-        $mother_id = null;
 
-        $fatherPhone = $attributes['fatherPhone'] ?? null;
-        $motherPhone = $attributes['motherPhone'] ?? null;
-
-        $guardians = Guardian::query()
-            ->when($fatherPhone, function ($query, $fatherPhone) {
-                return $query->where('phone', $fatherPhone);
-            })
-            ->when($motherPhone, function ($query, $motherPhone) {
-                return $query->orWhere('phone', $motherPhone);
-            })
-            ->get();
-        if ($guardians->count() > 0) {
-            $guardians->each(function ($guardian) use ($attributes, &$father_id, &$mother_id) {
-                $fatherPhone = $attributes['fatherPhone'] ?? null;
-                $motherPhone = $attributes['motherPhone'] ?? null;
-                if ($guardian->phone === $fatherPhone) {
-                    // TODO: popup to ask if the user wants to update the guardian info
-                    $guardian->name = $attributes['fatherName'] ?? $guardian->name;
-                    $guardian->job = $attributes['fatherJob'] ?? $guardian->job;
-                    $guardian->gender = "male";
-                    $father_id = $guardian->id;
-                } else {
-                    // TODO: popup to ask if the user wants to update the guardian info
-                    $guardian->name = $attributes['motherName'] ?? $guardian->name;
-                    $guardian->job = $attributes['motherJob'] ?? $guardian->job;
-                    $guardian->gender = "female";
-                    $mother_id = $guardian->id;
-                }
-                $guardian->save();
-            });
-        } else {
-            if ($attributes['motherPhone'] || $attributes['motherName'] || $attributes['motherJob']) {
-                $mother = Guardian::create([
-                    'phone' => $attributes['motherPhone'] ?? null,
-                    'name' => $attributes['motherName'] ?? null,
-                    'job' => $attributes['motherJob'] ?? null,
-                    'gender' => 'female',
-                ]);
-                $mother->save();
-                $mother_id = $mother->id;
-            }
-            if ($attributes['fatherPhone'] || $attributes['fatherName'] || $attributes['fatherJob']) {
-                $father = Guardian::create([
-                    'phone' => $attributes['fatherPhone'] ?? null,
-                    'name' => $attributes['fatherName'] ?? null,
-                    'job' => $attributes['fatherJob'] ?? null,
-                    'gender' => 'male'
-                ]);
-                $father->save();
-                $father_id = $father->id;
-            }
-        }
-
-        // Merge guardian IDs into attributes
-        $attributes['father_id'] = $father_id;
-        $attributes['mother_id'] = $mother_id;
-
-        return $attributes;
-    }
     private function handleFileAttribute(array &$attributes, string $attributeName, string $storagePath)
     {
         if (!isset($attributes[$attributeName]) || $attributes[$attributeName] === null) {

@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('name')->nullable();
             $table->string('job')->nullable();
             $table->enum('gender', ['male', 'female']);
-            $table->string('phone')->unique()->nullable();
+            $table->string('phone')->nullable();
             $table->timestamps();
         });
     }
