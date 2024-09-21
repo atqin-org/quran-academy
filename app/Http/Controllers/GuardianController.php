@@ -60,8 +60,7 @@ class GuardianController extends Controller
      * 1YZ: not correct
      * 2YZ: has conflicts
      * 3YZ: no conflicts
-     * 4YZ: logical error (a sibling has a number as father and another sibling has the same number as mother)
-     * 5YZ: warning ( trying to edit a guardian that's being used by a sibling (create a new guardian / edit))
+     * 4YZ: warning ( trying to edit a guardian that's being used by a sibling (create a new guardian / edit))
      *
      * X1Z: father
      * X2Z: mother
@@ -71,11 +70,95 @@ class GuardianController extends Controller
      * XY2: job
      * XY3: name and job
      * XY4: phone
+     * XY5: gender
      *
      */
+    public function checkV2(Request $request)
+    {
+        /**INFO:
+         * $oldParent is the guardian that was registered with the same phone number
+         * $student->parent is the parent of the student in the db before the request
+         */
+        //TODO: B0 validate the request
+
+        // default code no conflicts
+        $statusCode = '300';
+        // get the student
+        $student = $request->id ? Student::find($request->id)->load('father', 'mother') : null;
+        $studentFather = $student ? $student["father"] : null;
+        $studentMother = $student ? $student["mother"] : null;
+
+        // get the new guardians
+        $newFather = $request->father;
+        if ($newFather["name"] === null && $newFather["job"] === null && $newFather["phone"] === null)
+            $newFather = null;
+        $newMother = $request->mother;
+        if ($newMother["name"] === null && $newMother["job"] === null && $newMother["phone"] === null)
+            $newMother = null;
+
+        // get the guardians associated with the phone numbers
+        $oldFather = $request->father["phone"] ? Guardian::where('phone', $request->father["phone"])->first() : null;
+        $oldMother = $request->mother["phone"] ? Guardian::where('phone', $request->mother["phone"])->first() : null;
+
+        // get the siblings
+        $siblingsQuery = Student::query();
+        if ($oldFather)
+            $siblingsQuery->orWhere('father_id', $oldFather->id);
+        if ($oldMother)
+            $siblingsQuery->orWhere('mother_id', $oldMother->id);
+
+        $siblings = $student ? $siblingsQuery->where('id', '!=', $student->id)->get() : null;
+        return response()->json([
+            'status_code' => $statusCode,
+            'dialog' => $this->getDialogText($statusCode),
+            'father_old' => $oldFather,
+            'mother_old' => $oldMother,
+            'father_new' => $newFather,
+            'mother_new' => $newMother,
+            'father' => $studentFather,
+            'mother' => $studentMother,
+            'siblings' => $siblings,
+        ]);
+        // Check if new father number been used by a male
+        if ($newFather && $newFather->phone) {
+            $conflict = Guardian::where('phone', $newFather->phone)->first();
+            if ($conflict && $conflict->gender === "female") {
+                $statusCode = '215'; // Father phone conflict
+            }
+        }
+        // Check if new mother number been used by a female
+        if ($newMother && $newMother->phone) {
+            $conflict = Guardian::where('phone', $newMother->phone)->first();
+            if ($conflict && $conflict->gender === "male") {
+                if ($statusCode == '215')
+                    $statusCode = '235'; // Father and mother phone conflict
+                else
+                    $statusCode = '225'; // Mother phone conflict
+            }
+        }
+        if ($siblings->count() > 0 && $statusCode === '300') {
+            // Check for conflicts with the father's data
+            if ($oldFather || $newFather) {
+                /**
+                 * Check for name conflict
+                 *     New Old
+                 *     -------
+                 *  0   0   0  -> {} : no conflict
+                 *  1   0   1  -> delete : no conflict
+                 *  2   1   0  -> add : can get conflict
+                 *  3   1   1  -> update : can get conflict
+                 */
+                $case = 0;
+                if ($newFather) $case = 2;
+                if ($oldFather) $case += 1;
+            }
+        }
+    }
     public function check(Request $request)
     {
-        $statusCode = '300'; // Default to no conflicts
+        // default code no conflicts
+        $statusCode = '300';
+        // get the guardians associated with the phone numbers
         $guardianF = $request->father["phone"] ? Guardian::where('phone', $request->father["phone"])->first() : null;
         $guardianM = $request->mother["phone"] ? Guardian::where('phone', $request->mother["phone"])->first() : null;
         $student = $request->id ? Student::find($request->id)->load('father', 'mother') : null;
