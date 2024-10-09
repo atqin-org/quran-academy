@@ -3,13 +3,14 @@ import { Input } from "@/Components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/Components/ui/tabs";
 import DashboardLayout from "@/Layouts/DashboardLayout";
 import { PageProps } from "@/types";
-import { Head, Link, useForm } from "@inertiajs/react";
+import { Head, useForm } from "@inertiajs/react";
 import { Banknote, ChevronDownIcon } from "lucide-react";
-import { useEffect, useState } from "react";
+
 interface DashboardProps extends PageProps {
     student: any;
     payments: Payment[];
 }
+
 interface Payment {
     id: number;
     type: string;
@@ -21,6 +22,7 @@ interface Payment {
     student_id: number;
     created_at: string;
 }
+
 export default function Dashboard({ auth, student, payments }: DashboardProps) {
     const formatDate = (date: Date) => {
         const pad = (num: number) => (num < 10 ? "0" + num : num);
@@ -30,48 +32,64 @@ export default function Dashboard({ auth, student, payments }: DashboardProps) {
             date.getSeconds()
         )}`;
     };
-    const { data, setData, errors } = useForm({
+
+    const calculateExpect = (value: number, startAt: string) => {
+        if (isNaN(value) || value < 0 || !student.subscription) return null;
+
+        const duration = Math.floor(value / student.subscription);
+        const sessions = Math.floor((value * 16) / student.subscription);
+        const endDate = new Date(startAt);
+        endDate.setMonth(endDate.getMonth() + duration);
+
+        return {
+            duration,
+            sessions,
+            change: 0,
+            start_at: startAt,
+            end_at: formatDate(endDate),
+        };
+    };
+
+    const { data, setData, post, errors } = useForm({
         student_id: student.id,
-        user_id: auth.user?.id || 0,
+        user_id: auth.user?.id || 1,
         value: 0,
         type: student.subscription === 0 ? "ins" : "sub",
-        expect: {
-            duration: 0,
-            sessions: 0,
-            change: 0,
-            start_at: payments[0]?.end_at || new Date().toISOString(),
-            end_at: formatDate(new Date()),
-        },
+        status: "in_time",
+        expect: calculateExpect(
+            0,
+            payments[0]?.end_at ?? new Date().toISOString()
+        ),
     });
-    useEffect(() => {
-        if (isNaN(data.value) || data.value < 0) setData("value", 0);
-        if (data.value && student.subscription) {
-            setData("expect", {
-                ...data.expect,
-                duration: Math.floor(data.value / student.subscription),
-                sessions: Math.floor((data.value * 16) / student.subscription),
-                end_at: formatDate(
-                    new Date(
-                        new Date(data.expect.start_at).getFullYear(),
-                        new Date(data.expect.start_at).getMonth() +
-                            Math.floor(data.value / student.subscription),
-                        new Date(data.expect.start_at).getDate()
-                    )
-                ),
-            });
-        }
-    }, [data]);
-    const [isDisabled, setIsDisabled] = useState(false);
 
-    const handleClick = () => {
-        setIsDisabled(true);
+    const handleValueChange = (newValue: number) => {
+        const validValue = isNaN(newValue) || newValue < 0 ? 0 : newValue;
+        const newExpect = calculateExpect(
+            validValue,
+            data.expect?.start_at ?? new Date().toISOString()
+        );
+        setData({
+            ...data,
+            value: validValue,
+            expect: newExpect,
+        });
+    };
+
+    const handleTypeChange = (newType: string) => {
+        setData("type", newType);
     };
     return (
         <DashboardLayout user={auth.user}>
             <Head title="Dashboard" />
 
-            <div className=" flex flex-col gap-10">
+            <div className="flex flex-col gap-10">
                 <h1 className="text-4xl font-bold text-gray-900">دفع الطالب</h1>
+                <h3 className="">
+                    <span>الطالب: </span>
+                    <span className="">
+                        {student.first_name} {student.last_name}
+                    </span>
+                </h3>
                 <div className="flex md:items-start items-center justify-center flex-col md:flex-row gap-24">
                     <Tabs
                         defaultValue={student.subscription == 0 ? "ins" : "sub"}
@@ -81,13 +99,13 @@ export default function Dashboard({ auth, student, payments }: DashboardProps) {
                         <TabsList className="w-fit">
                             <TabsTrigger
                                 disabled={student.subscription == 0}
-                                onClick={() => setData("type", "sub")}
+                                onClick={() => handleTypeChange("sub")}
                                 value="sub"
                             >
                                 الاشتراك
                             </TabsTrigger>
                             <TabsTrigger
-                                onClick={() => setData("type", "ins")}
+                                onClick={() => handleTypeChange("ins")}
                                 value="ins"
                             >
                                 التأمين
@@ -118,13 +136,10 @@ export default function Dashboard({ auth, student, payments }: DashboardProps) {
                                         placeholder="المبلغ..."
                                         value={data.value}
                                         onChange={(e) =>
-                                            setData("value", +e.target.value)
+                                            handleValueChange(+e.target.value)
                                         }
                                     />
                                     <div className="ps-3 mt-2">
-                                        {/**
-                                         * prevew how mutch sessions the student will have after the payment
-                                         */}
                                         <div className="flex flex-col gap-2 text-sm text-gray-500">
                                             <div className="flex gap-2">
                                                 <p>
@@ -146,7 +161,8 @@ export default function Dashboard({ auth, student, payments }: DashboardProps) {
                                                     }
                                                 ).format(
                                                     new Date(
-                                                        data.expect?.start_at
+                                                        data.expect?.start_at ??
+                                                            ""
                                                     )
                                                 )}
                                             </p>
@@ -161,30 +177,27 @@ export default function Dashboard({ auth, student, payments }: DashboardProps) {
                                                     }
                                                 ).format(
                                                     new Date(
-                                                        data.expect?.end_at
+                                                        data.expect?.end_at ??
+                                                            ""
                                                     )
                                                 )}
                                             </p>
                                         </div>
                                     </div>
                                 </div>
-                                <Link
-                                    href={`/students/${student.id}/payment`}
-                                    className={
-                                        `w-40 flex gap-2 items-center justify-center py-2 text-center text-white rounded-lg ` +
-                                        (isDisabled
-                                            ? "bg-primary/90"
-                                            : "bg-primary hover:bg-primary/90")
-                                    }
-                                    as="button"
-                                    onClick={handleClick}
-                                    disabled={isDisabled}
-                                    method="post"
-                                    data={data}
+                                <Button
+                                    className="w-fit px-8 flex gap-2"
+                                    onClick={() => {
+                                        post(`/students/${student.id}/payment`);
+                                        console.log(data);
+                                    }}
                                 >
                                     <Banknote className="inline-block h-5 w-5" />
                                     دفع
-                                </Link>
+                                </Button>
+                                <span className="text-red-500">
+                                    {errors.value}
+                                </span>
                             </div>
                         </TabsContent>
                         <TabsContent value="ins">
@@ -225,38 +238,19 @@ export default function Dashboard({ auth, student, payments }: DashboardProps) {
                                         </div>
                                     </div>
                                 </div>
-                                <Link
-                                    href={`/students/${student.id}/payment`}
-                                    className={
-                                        `w-40 flex gap-2 items-center justify-center py-2 text-center text-white rounded-lg ` +
-                                        (isDisabled
-                                            ? "bg-primary/90"
-                                            : "bg-primary hover:bg-primary/90")
-                                    }
-                                    as="button"
-                                    onClick={handleClick}
-                                    disabled={isDisabled}
-                                    method="post"
-                                    data={{
-                                        ...data,
-                                        value: 200,
-                                        expect: {
-                                            ...data.expect,
-                                            duration: 0,
-                                            sessions: 0,
-                                            end_at: formatDate(
-                                                new Date(
-                                                    new Date().getFullYear(),
-                                                    9,
-                                                    31
-                                                )
-                                            ),
-                                        },
+                                <Button
+                                    className="w-fit px-8 flex gap-2"
+                                    onClick={() => {
+                                        post(`/students/${student.id}/payment`);
+                                        console.log(data);
                                     }}
                                 >
                                     <Banknote className="inline-block h-5 w-5" />
                                     دفع
-                                </Link>
+                                </Button>
+                                <span className="text-red-500">
+                                    {errors.value}
+                                </span>
                             </div>
                         </TabsContent>
                     </Tabs>
@@ -280,24 +274,35 @@ export default function Dashboard({ auth, student, payments }: DashboardProps) {
                                             <p className="text-sm font-medium">
                                                 <span>
                                                     {payment.type === "sub"
-                                                        ? "تم الدفع"
+                                                        ? "اشتراك"
                                                         : payment.type === "ins"
-                                                        ? "تأخر الدفع"
+                                                        ? "تأمين"
                                                         : "مخيم / عطلة"}{" "}
                                                 </span>
                                                 {new Date(
                                                     payment.created_at
                                                 ).toLocaleDateString()}
                                             </p>
-                                            <p className="text-xs text-gray-500">
-                                                {new Intl.NumberFormat(
-                                                    "ar-DZ",
-                                                    {
-                                                        style: "currency",
-                                                        currency: "DZD",
-                                                    }
-                                                ).format(payment.value)}
-                                            </p>
+                                            <div className="flex gap-2 text-xs">
+                                                <p className=" text-gray-500">
+                                                    {new Intl.NumberFormat(
+                                                        "ar-DZ",
+                                                        {
+                                                            style: "currency",
+                                                            currency: "DZD",
+                                                        }
+                                                    ).format(payment.value)}
+                                                </p>
+                                                <span className="font-bold">
+                                                    |
+                                                </span>
+                                                <span>
+                                                    الى{" "}
+                                                    {new Date(
+                                                        payment.end_at
+                                                    ).toLocaleDateString()}
+                                                </span>
+                                            </div>
                                         </div>
                                     </div>
                                 ))}

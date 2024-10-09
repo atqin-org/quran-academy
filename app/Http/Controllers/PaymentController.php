@@ -6,6 +6,8 @@ use App\Models\Payment;
 use App\Models\Student;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\Validator;
 
 class PaymentController extends Controller
 {
@@ -31,13 +33,11 @@ class PaymentController extends Controller
     public function store(Request $request)
     {
         //dd($request->all());
-        $request->validate([
+        $validator = Validator::make($request->all(), [
             'type' => 'required|string',
             'value' => 'required|numeric',
             'status' => 'required|string',
-            'discount' => 'required|numeric',
-            'start_at' => 'required|date',
-            'end_at' => 'required|date',
+            'discount' => 'nullable|numeric',
             'user_id' => 'required|exists:users,id',
             'student_id' => 'required|exists:students,id',
             'expect.duration' => 'required|integer',
@@ -46,29 +46,49 @@ class PaymentController extends Controller
             'expect.start_at' => 'required|date',
             'expect.end_at' => 'required|date',
         ]);
+        if ($validator->fails()) {
+            dd($validator->errors());
+        }
         // re calculate all the expect items
 
         // check expact values and the calculated values
 
+        $expect = $request->input('expect', []);
+        if ($request->type == 'ins') {
+            $expect['duration'] = 33;
+            $expect['change'] = 0;
+
+            // Set end_at to the next 31st of October
+            $now = Carbon::now();
+            $nextOctober31 = Carbon::create($now->year, 10, 31, 0, 0, 0);
+
+            if ($now->greaterThan($nextOctober31)) {
+                $nextOctober31->addYear();
+            }
+
+            $expect['end_at'] = $nextOctober31->format('Y-m-d H:i:s');
+
+            $request->merge(['expect' => $expect]);
+        }
         // insurt into db
         $payment = new Payment([
             'type' => $request->type,
-            'value' => $request->value,
+            'value' => $request->type == 'ins' ? 200 : $request->value,
             'status' => $request->status,
             'discount' => $request->discount,
-            'start_at' => $request->start_at,
-            'end_at' => $request->end_at,
+            'start_at' => $expect['start_at'],
+            'end_at' => $expect['end_at'],
             'user_id' => $request->user_id,
             'student_id' => $request->student_id,
-            'expect' => [
-                'duration' => $request->expect['duration'],
-                'sessions' => $request->expect['sessions'],
-                'change' => $request->expect['change'],
-                'start_at' => $request->expect['start_at'],
-                'end_at' => $request->expect['end_at'],
-            ],
         ]);
         $payment->save();
+        $student = Student::find($request->student_id);
+        if ($request->type == 'ins') {
+            $student->insurance_expire_at = $expect['end_at'];
+        }else{
+            $student->subscription_expire_at = $expect['end_at'];
+        }
+        $student->save();
         return redirect()->route('students.payment.show', $request->student_id);
     }
 
