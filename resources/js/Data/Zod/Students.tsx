@@ -45,6 +45,14 @@ export const FormSchema = z
                 required_error: "اللقب مطلوب",
             })
             .min(1, "اللقب مطلوب"),
+        mail: z
+            .string({
+              required_error: "البريد الإلكتروني مطلوب",
+            })
+            .email("البريد الإلكتروني غير صالح") // Built-in email validation
+            .refine((email) => email.includes("@"), {
+              message: "البريد الإلكتروني يجب أن يحتوي على @",
+            }),
         gender: z
             .enum(["male", "female"], {
                 required_error: "الجنس مطلوب",

@@ -65,7 +65,7 @@ class StudentResourceController extends Controller
             return $student;
         });
         return Inertia::render(
-            'Dashboard/Students/Index',
+            'Dashboard/Personnels/Index',
             [
                 'students' => $students,
                 'dataDependencies' => [
@@ -85,7 +85,7 @@ class StudentResourceController extends Controller
     {
         // get all clubs from the database and pass them to the view
         return Inertia::render(
-            'Dashboard/Students/Create',
+            'Dashboard/Personnels/Create',
             [
                 'clubs' => Club::all(),
                 'categories' => Category::all()
