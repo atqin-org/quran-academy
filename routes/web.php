@@ -7,8 +7,9 @@ use Inertia\Inertia;
 use App\Http\Controllers\StudentResourceController;
 use App\Http\Controllers\GuardianController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\PersonnelController;
 
-
+Route::resource('/personnels', PersonnelController::class)->only(['index', 'create', 'store']); //, 'edit', 'update', 'destroy'
 Route::resource('/students', StudentResourceController::class);
 Route::post('/students/{student}', [StudentResourceController::class, 'update'])->name('students.update');
 Route::post('/api/guardian', [GuardianController::class, 'checkV2'])->name('guardian.check');

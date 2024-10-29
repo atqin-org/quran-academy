@@ -14,6 +14,9 @@ return new class extends Migration
         Schema::create('users', function (Blueprint $table) {
             $table->id();
             $table->string('name');
+            $table->string('last_name')->nullable();
+            $table->string('phone')->nullable();
+            $table->foreignId('club_id')->nullable();
             $table->enum('role', ['admin', 'moderator', 'staff', 'teacher']);
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
@@ -21,6 +24,8 @@ return new class extends Migration
             $table->rememberToken();
             $table->timestamps();
             $table->softDeletes();
+
+            $table->string('national_id')->nullable(); // National ID picture path
         });
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {

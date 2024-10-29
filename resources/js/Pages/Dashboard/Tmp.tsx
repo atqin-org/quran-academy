@@ -1,4 +1,4 @@
-import { Head } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 import { PageProps } from '@/types';
 import DashboardLayout from '@/Layouts/DashboardLayout';
 
@@ -13,6 +13,12 @@ export default function Dashboard({ auth }: PageProps) {
                     هذه الصفحة قيد الإنشاء
                     ⚠️🏗️🚧
                 </div>
+                <Link
+                    href="/personnels/create"
+                    className="mt-4 text-blue-500 underline"
+                >
+                    personnels
+                </Link>
             </div>
         </DashboardLayout>
     );
