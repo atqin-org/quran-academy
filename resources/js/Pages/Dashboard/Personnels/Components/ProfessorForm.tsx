@@ -19,7 +19,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/Components/ui/select";
-import { FormSchema } from "@/Data/Zod/Students";
+import { FormSchemaP } from "@/Data/Zod/Personnels";
 import { zodResolver } from "@hookform/resolvers/zod";
 import axios from "axios";
 import { useState } from "react";
@@ -30,25 +30,29 @@ import { TPersonnelForm } from "../Types/Personnel";
 interface PersonnelFormProps {
     data: TPersonnelForm;
     setData: (key: string, value: any) => void;
-    errors: any; //Partial<Record<keyof TStudentForm, string>>;
+    errors: any;
     clubs: { id: number; name: string }[];
+    categories?: { id: number; name: string }[]; // Added categories as optional
     processing: boolean;
     mode: "create" | "edit";
-    studentId?: string;
+    personnelId?: string;
     handleSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
 }
+
 const roles = [
     { id: 1, name: "معلم", value: "teacher" },
     { id: 2, name: "مساعد", value: "staff" },
     { id: 3, name: "مشرف", value: "moderator" },
-]
+];
+
 const PersonnelForm = ({
     data,
     setData,
     errors,
     clubs,
+    categories, // Accept categories as a prop
     processing,
-    studentId,
+    personnelId,
     handleSubmit,
 }: PersonnelFormProps) => {
     const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -56,14 +60,16 @@ const PersonnelForm = ({
     const handleDialogOpen = () => {
         setIsDialogOpen(!isDialogOpen);
     };
+
     const [dialogConfig, setDialogConfig] = useState({
         title: "",
         description: "",
         confirm: "",
         cancel: "",
     });
+
     const form = useForm({
-        resolver: zodResolver(FormSchema),
+        resolver: zodResolver(FormSchemaP),
         defaultValues: data,
     });
 
@@ -84,12 +90,11 @@ const PersonnelForm = ({
                     new Promise(async (resolve, reject) => {
                         try {
                             const res = await axios.post("/api/guardian", {
-                                id: studentId || null,
+                                id: personnelId || null,
                             });
                             handleSubmit(e);
                             resolve("تم التسجيل بنجاح");
                         } catch (error) {
-                            //handleDialogOpen();
                             console.log(error);
                             reject("حدث خطأ اثناء التسجيل");
                         }
@@ -106,10 +111,9 @@ const PersonnelForm = ({
         });
         if (isDialogOpen) {
             handleDialogOpen();
-        } else {
-            //handleSubmit(e);
         }
     };
+
     return (
         <form onSubmit={handleFormSubmit} className="space-y-6">
             <div>
@@ -122,10 +126,7 @@ const PersonnelForm = ({
                             </DialogDescription>
                         </DialogHeader>
                         <DialogFooter className="flex gap-2">
-                            <Button
-                                onClick={handleDialogOpen}
-                                variant="secondary"
-                            >
+                            <Button onClick={handleDialogOpen} variant="secondary">
                                 {dialogConfig.cancel}
                             </Button>
                             <Button onClick={() => handleSubmit}>
@@ -135,7 +136,8 @@ const PersonnelForm = ({
                     </DialogContent>
                 </Dialog>
             </div>
-            
+
+            {/* Form Fields */}
             <div className="flex sm:flex-row flex-col gap-6 w-full">
                 <div className="w-full">
                     <Label>الاسم</Label>
@@ -178,6 +180,7 @@ const PersonnelForm = ({
                 </div>
             </div>
 
+            {/* Remaining Fields */}
             <div className="flex sm:flex-row flex-col gap-6 w-full">
                 <div className="w-full">
                     <Label>رقم الهاتف</Label>
@@ -233,10 +236,10 @@ const PersonnelForm = ({
                             <SelectValue placeholder="اختر الدور" />
                         </SelectTrigger>
                         <SelectContent>
-                            {roles.map((role: any) => (
+                            {roles.map((role) => (
                                 <SelectItem
                                     key={role.id}
-                                    value={role.id.toString()}
+                                    value={role.value}
                                 >
                                     {role.name}
                                 </SelectItem>
@@ -249,7 +252,8 @@ const PersonnelForm = ({
                     />
                 </div>
             </div>
-            
+
+            {/* Card Field */}
             <div className="w-full">
                 <Label>بطاقة التعريف</Label>
                 {data.card === undefined || data.card == null ? (

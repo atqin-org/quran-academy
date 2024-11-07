@@ -1,46 +1,30 @@
 import DashboardLayout from "@/Layouts/DashboardLayout";
 import { PageProps } from "@/types";
 import { Head, useForm as useInertiaForm } from "@inertiajs/react";
-import StudentForm from "../Students/Components/StudentForm";
-import { TStudentForm, TStudentFormDB } from "../Students/Types/Student";
+import ProfessorForm from "./Components/ProfessorForm";
+import { TPersonnelForm, TPersonnelFormDB } from "./Types/Personnel";
 
 interface DashboardProps extends PageProps {
-    student: TStudentFormDB;
+    personnel: TPersonnelFormDB;
     clubs: { id: number; name: string }[];
     categories: { id: number; name: string }[];
 }
 
-export default function Update({
+export default function UpdatePersonnel({
     auth,
-    student,
+    personnel,
     clubs,
     categories,
 }: DashboardProps) {
     const { data, setData, post, processing, errors } =
-        useInertiaForm<TStudentForm>({
-            firstName: student.first_name,
-            lastName: student.last_name,
-            gender: student.gender,
-            birthdate: student.birthdate,
-            socialStatus: student.social_status,
-            hasCronicDisease: student.cronic_disease ? "yes" : "no",
-            cronicDisease: student.cronic_disease || "",
-            familyStatus: student.family_status || "",
-            father: {
-                name: student.father?.name || "",
-                job: student.father?.job || "",
-                phone: student.father?.phone || "",
-            },
-            mother: {
-                name: student.mother?.name || "",
-                job: student.mother?.job || "",
-                phone: student.mother?.phone || "",
-            },
-            club: student.club_id.toString(),
-            category: student.category_id.toString(),
-            subscription: student.subscription,
-            picture: student.picture || undefined,
-            file: student.file || undefined,
+        useInertiaForm<TPersonnelForm>({
+            firstName: personnel.first_name,
+            lastName: personnel.last_name,
+            mail: personnel.mail,
+            phone: personnel.phone,
+            club: personnel.club_id?.toString() || "",
+            role: personnel.role_id?.toString() || "", // Convert role_id to a string for role
+            card: personnel.card || undefined,
         });
 
     const url = window.location.href;
@@ -50,18 +34,18 @@ export default function Update({
 
     function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();
-        post(`/students/${id}`);
+        post(`/personnels/${id}`);
     }
 
     return (
         <DashboardLayout user={auth.user}>
-            <Head title="Update Student" />
+            <Head title="Update Personnel" />
 
             <div className="flex flex-col gap-10">
                 <h1 className="text-4xl font-bold text-gray-900">
-                    تحديث بيانات الطالب
+                    تحديث بيانات المعلم-مساعد-مشرف
                 </h1>
-                <StudentForm
+                <ProfessorForm
                     data={data}
                     setData={setData}
                     errors={errors}
@@ -69,7 +53,7 @@ export default function Update({
                     categories={categories}
                     processing={processing}
                     mode="edit"
-                    studentId={id}
+                    personnelId={id}
                     handleSubmit={handleSubmit}
                 />
             </div>
