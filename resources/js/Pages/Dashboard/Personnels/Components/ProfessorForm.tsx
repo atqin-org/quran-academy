@@ -31,6 +31,7 @@ import { TPersonnelForm } from "../Types/Personnel";
 import { Badge } from '@/Components/ui/badge';
 import { Command, CommandGroup, CommandItem, CommandList } from '@/Components/ui/command';
 import { X } from 'lucide-react';
+import { cn } from "@/lib/utils";
 
 interface PersonnelFormProps {
     data: TPersonnelForm;
@@ -62,17 +63,16 @@ const PersonnelForm = ({
 }: PersonnelFormProps) => {
     const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-    const [selectedRoles, setSelectedRoles] = useState<string[]>(
-        Array.isArray(data.role) ? data.role : []
-    );
-    // Handle selecting and deselecting roles
-    const handleRoleToggle = (value: string) => {
-        setSelectedRoles((prev) => {
-            const newRoles = prev.includes(value)
-                ? prev.filter((role) => role !== value)
-                : [...prev, value];
-            setData("role", newRoles); // Update parent data
-            return newRoles;
+    const [selectedClubs, setSelectedClubs] = useState<number[]>(
+        Array.isArray(data.club) ? data.club : (data.club ? [parseInt(data.club)] : [])
+    );    
+    const handleClubToggle = (id: number) => {
+        setSelectedClubs((prev) => {
+            const newClubs = prev.includes(id)
+                ? prev.filter((clubId) => clubId !== id)
+                : [...prev, id];
+            setData("club", newClubs); // Update parent data
+            return newClubs;
         });
     };
 
@@ -215,47 +215,19 @@ const PersonnelForm = ({
                     />
                 </div>
                 <div className="w-full">
-                    <Label>النادي</Label>
-                    <Select
-                        onValueChange={(value) => setData("club", value)}
-                        defaultValue={data.club}
-                        dir="rtl"
-                    >
-                        <SelectTrigger
-                            className={data.club ? "" : "text-neutral-500"}
-                        >
-                            <SelectValue placeholder="اختر نادي" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {clubs.map((club: any) => (
-                                <SelectItem
-                                    key={club.id}
-                                    value={club.id.toString()}
-                                >
-                                    {club.name}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                    <FormErrorMessage
-                        formStateErrors={form.formState.errors.club}
-                        errors={errors.club}
-                    />
-                </div>
-                <div className="w-full">
-                    <label className="block mb-2 text-sm font-medium text-gray-700">الدور</label>
+                    <label className="block mb-2 text-sm font-medium text-gray-700">النادي</label>
 
                     <div className="relative">
                         <Command className="w-full border rounded-md">
                             <CommandList>
                                 <CommandGroup>
-                                    {roles.map((role) => (
+                                    {clubs.map((club) => (
                                         <CommandItem
-                                            key={role.id}
-                                            onSelect={() => handleRoleToggle(role.value)}
-                                            className={selectedRoles.includes(role.value) ? "bg-gray-100" : ""}
+                                            key={club.id}
+                                            onSelect={() => handleClubToggle(club.id)}
+                                            className={selectedClubs.includes(club.id) ? "bg-gray-100" : ""}
                                         >
-                                            {role.name}
+                                            {club.name}
                                         </CommandItem>
                                     ))}
                                 </CommandGroup>
@@ -263,18 +235,46 @@ const PersonnelForm = ({
                         </Command>
                     </div>
 
-                    {/* Selected roles badges */}
+                    {/* Selected clubs badges */}
                     <div className="flex flex-wrap mt-2 gap-2">
-                        {selectedRoles.map((role) => (
-                            <Badge key={role} className="flex items-center gap-1">
-                                {roles.find((r) => r.value === role)?.name}
+                        {selectedClubs.map((clubId) => (
+                            <Badge key={clubId} className="flex items-center gap-1">
+                                {clubs.find((club) => club.id === clubId)?.name}
                                 <X
                                     className="cursor-pointer w-4 h-4"
-                                    onClick={() => handleRoleToggle(role)}
+                                    onClick={() => handleClubToggle(clubId)}
                                 />
                             </Badge>
                         ))}
                     </div>
+                </div>
+                <div className="w-full">
+                    <Label>الدور</Label>
+                    <Select
+                        onValueChange={(value) => setData("role", value)}
+                        defaultValue={data.role}
+                        dir="rtl"
+                    >
+                        <SelectTrigger
+                            className={data.role ? "" : "text-neutral-500"}
+                        >
+                            <SelectValue placeholder="اختر الدور" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {roles.map((role) => (
+                                <SelectItem
+                                    key={role.id}
+                                    value={role.value}
+                                >
+                                    {role.name}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                    <FormErrorMessage
+                        formStateErrors={form.formState.errors.role}
+                        errors={errors.role}
+                    />
                 </div>
             </div>
 
