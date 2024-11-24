@@ -1,3 +1,5 @@
+'use client';
+
 import Dropzone from "@/Components/costume-cn/Dropzone";
 import FileUploaded from "@/Components/costume-cn/FileUploaded";
 import FormErrorMessage from "@/Components/costume-cn/FormErrorMessage";
@@ -26,6 +28,9 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { TPersonnelForm } from "../Types/Personnel";
+import { Badge } from '@/Components/ui/badge';
+import { Command, CommandGroup, CommandItem, CommandList } from '@/Components/ui/command';
+import { X } from 'lucide-react';
 
 interface PersonnelFormProps {
     data: TPersonnelForm;
@@ -56,6 +61,20 @@ const PersonnelForm = ({
     handleSubmit,
 }: PersonnelFormProps) => {
     const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+    const [selectedRoles, setSelectedRoles] = useState<string[]>(
+        Array.isArray(data.role) ? data.role : []
+    );
+    // Handle selecting and deselecting roles
+    const handleRoleToggle = (value: string) => {
+        setSelectedRoles((prev) => {
+            const newRoles = prev.includes(value)
+                ? prev.filter((role) => role !== value)
+                : [...prev, value];
+            setData("role", newRoles); // Update parent data
+            return newRoles;
+        });
+    };
 
     const handleDialogOpen = () => {
         setIsDialogOpen(!isDialogOpen);
@@ -224,32 +243,38 @@ const PersonnelForm = ({
                     />
                 </div>
                 <div className="w-full">
-                    <Label>الدور</Label>
-                    <Select
-                        onValueChange={(value) => setData("role", value)}
-                        defaultValue={data.role}
-                        dir="rtl"
-                    >
-                        <SelectTrigger
-                            className={data.role ? "" : "text-neutral-500"}
-                        >
-                            <SelectValue placeholder="اختر الدور" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {roles.map((role) => (
-                                <SelectItem
-                                    key={role.id}
-                                    value={role.value}
-                                >
-                                    {role.name}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                    <FormErrorMessage
-                        formStateErrors={form.formState.errors.role}
-                        errors={errors.role}
-                    />
+                    <label className="block mb-2 text-sm font-medium text-gray-700">الدور</label>
+
+                    <div className="relative">
+                        <Command className="w-full border rounded-md">
+                            <CommandList>
+                                <CommandGroup>
+                                    {roles.map((role) => (
+                                        <CommandItem
+                                            key={role.id}
+                                            onSelect={() => handleRoleToggle(role.value)}
+                                            className={selectedRoles.includes(role.value) ? "bg-gray-100" : ""}
+                                        >
+                                            {role.name}
+                                        </CommandItem>
+                                    ))}
+                                </CommandGroup>
+                            </CommandList>
+                        </Command>
+                    </div>
+
+                    {/* Selected roles badges */}
+                    <div className="flex flex-wrap mt-2 gap-2">
+                        {selectedRoles.map((role) => (
+                            <Badge key={role} className="flex items-center gap-1">
+                                {roles.find((r) => r.value === role)?.name}
+                                <X
+                                    className="cursor-pointer w-4 h-4"
+                                    onClick={() => handleRoleToggle(role)}
+                                />
+                            </Badge>
+                        ))}
+                    </div>
                 </div>
             </div>
 
