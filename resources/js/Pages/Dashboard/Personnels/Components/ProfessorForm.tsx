@@ -1,5 +1,3 @@
-"use client";
-
 import Dropzone from "@/Components/costume-cn/Dropzone";
 import FileUploaded from "@/Components/costume-cn/FileUploaded";
 import FormErrorMessage from "@/Components/costume-cn/FormErrorMessage";
@@ -28,6 +26,7 @@ import {
 } from "@/Components/ui/command";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useState } from "react";
 
 interface PersonnelFormProps {
     data: TPersonnelForm;
@@ -57,6 +56,13 @@ const PersonnelForm = ({
     personnelId,
     handleSubmit,
 }: PersonnelFormProps) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const [searchTerm, setSearchTerm] = useState('');
+
+    const filteredClubs = clubs.filter((club) =>
+        club.name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
     const form = useForm({
         resolver: zodResolver(FormSchemaP),
         defaultValues: data,
