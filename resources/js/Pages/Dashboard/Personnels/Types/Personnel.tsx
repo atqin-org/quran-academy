@@ -3,7 +3,7 @@ export interface TPersonnelForm {
     lastName: string;
     mail: string
     phone?: string;
-    club: string | undefined;
+    club: string [];
     role: string | undefined;
     card?: File | string;
 }

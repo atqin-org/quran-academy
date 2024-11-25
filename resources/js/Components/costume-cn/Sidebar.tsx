@@ -5,6 +5,8 @@ import { ChevronsLeft, ChevronsRight, LogOut, User } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { TooltipProvider } from "../ui/tooltip";
 import SidebarLink from "./SidebarLink ";
+import { Link } from "@inertiajs/react";
+
 interface SidebarProps {
     isCollapsed: boolean;
     toggleSidebar: () => void;
@@ -80,15 +82,15 @@ const Sidebar: React.FC<SidebarProps> = ({
                     </TooltipProvider>
                 </div>
                 <div className="flex flex-col items-center gap-4 w-full">
-                    <Button
-                        className="flex gap-2 rounded-md w-full"
-                        onClick={() => {
-                            console.log(currentUrl);
-                        }}
+                    <Link
+                        href={route("logout")}
+                        method="post"
+                        as="button"
+                        className="bg-primary hover:bg-primary/90 py-3 text-white flex justify-center gap-2 rounded-md w-full"
                     >
                         <LogOut />
                         {!effectiveIsCollapsed && "تسجيل الخروج"}
-                    </Button>
+                    </Link>
                 </div>
             </nav>
         </aside>

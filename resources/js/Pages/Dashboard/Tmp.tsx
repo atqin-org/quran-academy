@@ -13,12 +13,6 @@ export default function Dashboard({ auth }: PageProps) {
                     هذه الصفحة قيد الإنشاء
                     ⚠️🏗️🚧
                 </div>
-                <Link
-                    href="/personnels/create"
-                    className="mt-4 text-blue-500 underline"
-                >
-                    personnels
-                </Link>
             </div>
         </DashboardLayout>
     );

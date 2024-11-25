@@ -2,14 +2,6 @@ import Dropzone from "@/Components/costume-cn/Dropzone";
 import FileUploaded from "@/Components/costume-cn/FileUploaded";
 import FormErrorMessage from "@/Components/costume-cn/FormErrorMessage";
 import { Button } from "@/Components/ui/button";
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from "@/Components/ui/dialog";
 import { Input } from "@/Components/ui/input";
 import { Label } from "@/Components/ui/label";
 import {
@@ -21,8 +13,6 @@ import {
 } from "@/Components/ui/select";
 import { FormSchemaP } from "@/Data/Zod/Personnels";
 import { zodResolver } from "@hookform/resolvers/zod";
-import axios from "axios";
-import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { TPersonnelForm } from "../Types/Personnel";
@@ -55,19 +45,6 @@ const PersonnelForm = ({
     personnelId,
     handleSubmit,
 }: PersonnelFormProps) => {
-    const [isDialogOpen, setIsDialogOpen] = useState(false);
-
-    const handleDialogOpen = () => {
-        setIsDialogOpen(!isDialogOpen);
-    };
-
-    const [dialogConfig, setDialogConfig] = useState({
-        title: "",
-        description: "",
-        confirm: "",
-        cancel: "",
-    });
-
     const form = useForm({
         resolver: zodResolver(FormSchemaP),
         defaultValues: data,
@@ -89,9 +66,6 @@ const PersonnelForm = ({
                 toast.promise(
                     new Promise(async (resolve, reject) => {
                         try {
-                            const res = await axios.post("/api/guardian", {
-                                id: personnelId || null,
-                            });
                             handleSubmit(e);
                             resolve("تم التسجيل بنجاح");
                         } catch (error) {
@@ -109,33 +83,10 @@ const PersonnelForm = ({
                 toast.error("يرجى التحقق من البيانات");
             }
         });
-        if (isDialogOpen) {
-            handleDialogOpen();
-        }
     };
 
     return (
         <form onSubmit={handleFormSubmit} className="space-y-6">
-            <div>
-                <Dialog open={isDialogOpen} onOpenChange={handleDialogOpen}>
-                    <DialogContent>
-                        <DialogHeader>
-                            <DialogTitle>{dialogConfig.title}</DialogTitle>
-                            <DialogDescription>
-                                {dialogConfig.description}
-                            </DialogDescription>
-                        </DialogHeader>
-                        <DialogFooter className="flex gap-2">
-                            <Button onClick={handleDialogOpen} variant="secondary">
-                                {dialogConfig.cancel}
-                            </Button>
-                            <Button onClick={() => handleSubmit}>
-                                {dialogConfig.confirm}
-                            </Button>
-                        </DialogFooter>
-                    </DialogContent>
-                </Dialog>
-            </div>
 
             {/* Form Fields */}
             <div className="flex sm:flex-row flex-col gap-6 w-full">

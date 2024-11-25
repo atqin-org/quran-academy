@@ -9,7 +9,7 @@ const initialFormState: TPersonnelForm = {
     lastName: "",
     mail: "",
     phone: "",
-    club: undefined,
+    club: [],
     role: undefined,
     card: undefined,
 };
@@ -26,7 +26,7 @@ export default function Dashboard({ auth, clubs, categories }: DashboardProps) {
     function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();
 
-        post("/students");
+        post("/personnels");
     }
     return (
         <DashboardLayout user={auth.user}>
@@ -34,7 +34,7 @@ export default function Dashboard({ auth, clubs, categories }: DashboardProps) {
 
             <div className=" flex flex-col gap-10">
                 <h1 className="text-4xl font-bold text-gray-900">
-                تسجيل معلم-مساعد-مشرف
+                    تسجيل الموارد البشرية{" "}
                 </h1>
                 <ProfessorForm
                     data={data}

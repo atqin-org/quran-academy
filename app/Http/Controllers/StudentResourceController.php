@@ -23,6 +23,7 @@ class StudentResourceController extends Controller
         $query = Student::query();
 
         if ($search = $request->input('search')) {
+            //TODO: refactor: use raw sql query instead of driver based query
             $connectionType = DB::getDriverName();
             if ($connectionType === 'sqlite') {
                 $query->whereRaw("(first_name || ' ' || last_name) like ?", ["%{$search}%"])

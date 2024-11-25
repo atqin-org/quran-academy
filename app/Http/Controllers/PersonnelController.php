@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Models\Club;
@@ -41,7 +42,7 @@ class PersonnelController extends Controller
      */
     public function store(Request $request)
     {
-        dd($request->all());
+        //dd($request->all());
         $request->validate([
             'name' => 'required',
             'last_name' => 'required',
@@ -50,6 +51,18 @@ class PersonnelController extends Controller
             'phone' => 'required',
             'email' => 'required',
         ]);
+        User::create(
+            [
+                'name' => $request->name,
+                'last_name' => $request->last_name,
+                'club_id' => $request->club_id,
+                'role' => $request->role,
+                'phone' => $request->phone,
+                'email' => $request->email,
+                'password' => bcrypt('password'),
+            ]
+        );
+        return redirect()->route('personnels.index');
     }
 
     /**

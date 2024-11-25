@@ -2,6 +2,7 @@ import {
     Backpack,
     Banknote,
     ChartPie,
+    DatabaseBackup,
     House,
     LibraryBig,
     NotebookPen,
@@ -29,6 +30,7 @@ export const sidebarLinks = [
         label: "الطلاب",
         latin: "Students",
         crud: true,
+        visibleFor: ["admin", "staff"],
         href: "/students",
     },
     {
@@ -54,10 +56,10 @@ export const sidebarLinks = [
     },
     {
         icon: <Users />,
-        label: "المشرفين",
-        latin: "Supervisors",
+        label: "الموارد البشرية",
+        latin: "HR",
         crud: true,
-        href: "/dashboard/supervisors",
+        href: "/personnels/create",
     },
     {
         icon: <Settings />,
@@ -65,6 +67,14 @@ export const sidebarLinks = [
         latin: "Settings",
         crud: false,
         href: "/dashboard/settings",
+    },
+    {
+        icon: <DatabaseBackup />,
+        label: "نسخ احتياطي",
+        latin: "Backups",
+        crud: false,
+        visibleFor: ["admin"],
+        href: "/system",
     },
 ];
 
