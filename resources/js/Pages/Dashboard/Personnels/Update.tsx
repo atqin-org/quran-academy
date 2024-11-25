@@ -43,7 +43,7 @@ export default function UpdatePersonnel({
 
             <div className="flex flex-col gap-10">
                 <h1 className="text-4xl font-bold text-gray-900">
-                    تحديث بيانات المعلم-مساعد-مشرف
+                    تسجيل المواقف البشرية
                 </h1>
                 <ProfessorForm
                     data={data}

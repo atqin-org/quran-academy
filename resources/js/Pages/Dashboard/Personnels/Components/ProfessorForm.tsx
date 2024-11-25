@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import Dropzone from "@/Components/costume-cn/Dropzone";
 import FileUploaded from "@/Components/costume-cn/FileUploaded";
@@ -18,9 +18,15 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { TPersonnelForm } from "../Types/Personnel";
-import { Badge } from '@/Components/ui/badge';
-import { Command, CommandGroup, CommandItem, CommandList } from '@/Components/ui/command';
-import { X } from 'lucide-react';
+import { Badge } from "@/Components/ui/badge";
+import {
+    Command,
+    CommandGroup,
+    CommandItem,
+    CommandList,
+    CommandInput,
+} from "@/Components/ui/command";
+import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface PersonnelFormProps {
@@ -93,7 +99,6 @@ const PersonnelForm = ({
 
     return (
         <form onSubmit={handleFormSubmit} className="space-y-6">
-
             {/* Form Fields */}
             <div className="flex sm:flex-row flex-col gap-6 w-full">
                 <div className="w-full">
@@ -153,37 +158,77 @@ const PersonnelForm = ({
                     />
                 </div>
                 <div className="w-full">
-                    <label className="block mb-2 text-sm font-medium text-gray-700">النادي</label>
+                    <Label>النادي</Label>
 
                     <div className="relative">
-                        <Command className="w-full border rounded-md">
-                            <CommandList>
-                                <CommandGroup>
-                                    {clubs.map((club) => (
-                                        <CommandItem
-                                            key={club.id}
-                                            onSelect={() => handleClubToggle(club.id)}
-                                            className={selectedClubs.includes(club.id) ? "bg-gray-100" : ""}
+                        <button
+                            type="button"
+                            className="w-full border rounded-md px-3 py-2 text-start bg-white"
+                            onClick={() => setIsOpen(!isOpen)}
+                        >
+                            {selectedClubs.length > 0 ? (
+                                <div className="flex flex-wrap mt-1 gap-2">
+                                    {selectedClubs.map((clubId) => (
+                                        <Badge
+                                            key={clubId}
+                                            className="flex items-center gap-1"
                                         >
-                                            {club.name}
-                                        </CommandItem>
+                                            {
+                                                clubs.find(
+                                                    (club) => club.id === clubId
+                                                )?.name
+                                            }
+                                            <X
+                                                className="cursor-pointer w-4 h-4"
+                                                onClick={() =>
+                                                    handleClubToggle(clubId)
+                                                }
+                                            />
+                                        </Badge>
                                     ))}
-                                </CommandGroup>
-                            </CommandList>
-                        </Command>
-                    </div>
-
-                    {/* Selected clubs badges */}
-                    <div className="flex flex-wrap mt-2 gap-2">
-                        {selectedClubs.map((clubId) => (
-                            <Badge key={clubId} className="flex items-center gap-1">
-                                {clubs.find((club) => club.id === clubId)?.name}
-                                <X
-                                    className="cursor-pointer w-4 h-4"
-                                    onClick={() => handleClubToggle(clubId)}
-                                />
-                            </Badge>
-                        ))}
+                                </div>
+                            ) : (
+                                <span className="text-muted-foreground">
+                                    اختر النادي...
+                                </span>
+                            )}
+                        </button>
+                        {isOpen && (
+                            <div className="absolute z-10 w-full mt-1 bg-white border rounded-md shadow-lg">
+                                <Command>
+                                    <CommandInput
+                                        dir="rtl"
+                                        placeholder="ابحث عن النادي ..."
+                                        value={searchTerm}
+                                        onValueChange={setSearchTerm}
+                                    />
+                                    <CommandList>
+                                        <CommandGroup>
+                                            {filteredClubs.map((club) => (
+                                                <CommandItem
+                                                    key={club.id}
+                                                    onSelect={() => {
+                                                        handleClubToggle(
+                                                            club.id
+                                                        );
+                                                        setIsOpen(false);
+                                                    }}
+                                                    className={
+                                                        selectedClubs.includes(
+                                                            club.id
+                                                        )
+                                                            ? "bg-gray-100"
+                                                            : ""
+                                                    }
+                                                >
+                                                    {club.name}
+                                                </CommandItem>
+                                            ))}
+                                        </CommandGroup>
+                                    </CommandList>
+                                </Command>
+                            </div>
+                        )}
                     </div>
                 </div>
                 <div className="w-full">
@@ -200,10 +245,7 @@ const PersonnelForm = ({
                         </SelectTrigger>
                         <SelectContent>
                             {roles.map((role) => (
-                                <SelectItem
-                                    key={role.id}
-                                    value={role.value}
-                                >
+                                <SelectItem key={role.id} value={role.value}>
                                     {role.name}
                                 </SelectItem>
                             ))}
