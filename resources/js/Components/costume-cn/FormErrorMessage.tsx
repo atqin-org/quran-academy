@@ -1,23 +1,27 @@
 import React from 'react';
-import { FieldError } from 'react-hook-form';
+import { FieldError, Merge } from 'react-hook-form';
 
 interface FormErrorMessageProps {
-    formStateErrors?: FieldError;
+    formStateErrors?: FieldError | Merge<FieldError, (FieldError | undefined)[]> | undefined;
     errors?: string;
 }
 
 const FormErrorMessage: React.FC<FormErrorMessageProps> = ({ formStateErrors, errors }) => {
+    if (!formStateErrors && !errors) {
+        return null;
+    }
+
+    const errorMessages = Array.isArray(formStateErrors)
+        ? formStateErrors.filter(Boolean).map((error) => error?.message)
+        : [formStateErrors?.message];
+
     return (
-        <>
-            {formStateErrors && (
-                <span className="text-red-500">
-                    {formStateErrors.message}
-                </span>
-            )}
-            {!formStateErrors && errors && (
-                <span className="text-red-500">{errors}</span>
-            )}
-        </>
+        <div className="text-red-600 text-sm mt-1">
+            {errorMessages.map((message, index) => (
+                <p key={index}>{message}</p>
+            ))}
+            {errors && <p>{errors}</p>}
+        </div>
     );
 };
 
