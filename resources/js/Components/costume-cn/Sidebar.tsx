@@ -6,20 +6,36 @@ import React, { useEffect, useState } from "react";
 import { TooltipProvider } from "../ui/tooltip";
 import SidebarLink from "./SidebarLink ";
 import { Link } from "@inertiajs/react";
+import { TUser } from "@/types";
 
 interface SidebarProps {
+    auth: TUser;
     isCollapsed: boolean;
     toggleSidebar: () => void;
     mobile?: boolean;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
+    auth,
     isCollapsed,
     toggleSidebar,
     mobile,
 }) => {
     const [tooltipKey, setTooltipKey] = useState(0);
-
+    const translateRole = (role: string) => {
+        switch (role) {
+            case "admin":
+                return "مدير";
+            case "moderator":
+                return "مشرف";
+            case "staff":
+                return "موظف";
+            case "teacher":
+                return "معلم";
+            default:
+                return role;
+        }
+    };
     useEffect(() => {
         setTooltipKey((prevKey) => prevKey + 1);
     }, [isCollapsed]);
@@ -49,8 +65,17 @@ const Sidebar: React.FC<SidebarProps> = ({
                 )}
             >
                 <div className="border-2 border-primary w-full px-0.5 py-2 text-center rounded-md flex gap-2 items-center justify-center text-nowrap">
-                    {!effectiveIsCollapsed && <User />}
-                    {!effectiveIsCollapsed && "المشرف العام"}
+                    {!effectiveIsCollapsed && <User className="flex-shrink-0" />}
+                    {!effectiveIsCollapsed && (
+                        <div className="flex flex-col items-start text-sm">
+                            <span className={`truncate font-semibold ${mobile ? "" : "w-24"}`}>
+                                {auth.name} {auth.last_name}
+                            </span>
+                            <span className="truncate ">
+                                {translateRole(auth.role)}
+                            </span>
+                        </div>
+                    )}
                     {!mobile && (
                         <Button
                             variant="ghost"
@@ -68,17 +93,23 @@ const Sidebar: React.FC<SidebarProps> = ({
 
                 <div className="flex flex-col items-start gap-3 flex-1 w-full px-4 py-1 overflow-y-scroll overflow-x-hidden scrollbar-wraper">
                     <TooltipProvider key={tooltipKey}>
-                        {sidebarLinks.map((link, index) => (
-                            <SidebarLink
-                                className={mobile ? `justify-center` : ``}
-                                key={index}
-                                href={link.href}
-                                icon={link.icon}
-                                label={link.label}
-                                isCollapsed={effectiveIsCollapsed}
-                                isSelected={currentUrl.includes(link.href)}
-                            />
-                        ))}
+                        {sidebarLinks
+                            .filter(
+                                (link) =>
+                                    !link.visibleFor ||
+                                    link.visibleFor.includes(auth.role)
+                            )
+                            .map((link, index) => (
+                                <SidebarLink
+                                    className={mobile ? `justify-center` : ``}
+                                    key={index}
+                                    href={link.href}
+                                    icon={link.icon}
+                                    label={link.label}
+                                    isCollapsed={effectiveIsCollapsed}
+                                    isSelected={currentUrl.includes(link.href)}
+                                />
+                            ))}
                     </TooltipProvider>
                 </div>
                 <div className="flex flex-col items-center gap-4 w-full">

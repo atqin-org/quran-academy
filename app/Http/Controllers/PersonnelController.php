@@ -16,7 +16,7 @@ class PersonnelController extends Controller
     public function index()
     {
         return Inertia::render(
-            'Dashboard/Personnels/Index',
+            'Dashboard/Personnels/IndexTmp',
             [
                 'clubs' => Club::all(),
             ]
@@ -42,27 +42,28 @@ class PersonnelController extends Controller
      */
     public function store(Request $request)
     {
-        //dd($request->all());
         $request->validate([
-            'name' => 'required',
-            'last_name' => 'required',
-            'club_id' => 'required',
+            'firstName' => 'required',
+            'lastName' => 'required',
+            'club' => 'required|array',
             'role' => 'required',
             'phone' => 'required',
-            'email' => 'required',
+            'mail' => 'required|email',
         ]);
-        User::create(
-            [
-                'name' => $request->name,
-                'last_name' => $request->last_name,
-                'club_id' => $request->club_id,
-                'role' => $request->role,
-                'phone' => $request->phone,
-                'email' => $request->email,
-                'password' => bcrypt('password'),
-            ]
-        );
-        return redirect()->route('personnels.index');
+
+        $user = User::create([
+            'name' => $request->firstName,
+            'last_name' => $request->lastName,
+            'role' => $request->role,
+            'phone' => $request->phone,
+            'email' => $request->mail,
+            'password' => bcrypt('password'),
+        ]);
+
+        // Attach the clubs to the user
+        $user->clubs()->attach($request->club);
+
+        return redirect()->route('personnels.create');
     }
 
     /**

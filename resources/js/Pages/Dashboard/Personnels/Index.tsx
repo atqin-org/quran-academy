@@ -4,6 +4,7 @@ import { Head, Link } from "@inertiajs/react";
 import { StudentDisplay, columns } from "./Components/Columns";
 import { DataTable } from "./Components/DataTable";
 
+
 interface DashboardProps extends PageProps {
     students: { data: StudentDisplay[]; links: any[] };
     dataDependencies: {

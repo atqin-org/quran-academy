@@ -12,6 +12,7 @@ use App\Rules\AtLeastOnePhone;
 use App\Rules\FileOrString;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 
 class StudentResourceController extends Controller
 {
@@ -21,6 +22,7 @@ class StudentResourceController extends Controller
     public function index(Request $request)
     {
         $query = Student::query();
+        $user = Auth::user();
 
         if ($search = $request->input('search')) {
             //TODO: refactor: use raw sql query instead of driver based query
@@ -42,15 +44,26 @@ class StudentResourceController extends Controller
         } else {
             $query->orderBy($sortBy, $sortType);
         }
+
         if ($genders = $request->input('gender')) {
             $query->whereIn('gender', $genders);
         }
-        if ($clubs = $request->input('clubs')) {
-            $query->whereIn('club_id', $clubs);
-        }
+
         if ($categories = $request->input('categories')) {
             $query->whereIn('category_id', $categories);
         }
+
+        // Filter clubs based on user access
+        $accessibleClubs = [];
+        if ($user->role !== 'admin') {
+            $accessibleClubs = $user->clubs->pluck('id')->toArray();
+            $query->whereIn('club_id', $accessibleClubs);
+        }
+
+        if ($clubs = $request->input('clubs')) {
+            $query->whereIn('club_id', $clubs);
+        }
+
         $students = $query->paginate(10, ['id', 'first_name', 'last_name', 'birthdate', 'ahzab', 'gender', 'insurance_expire_at', 'subscription', 'subscription_expire_at', 'club_id', 'category_id'])->withQueryString();
 
         $students->getCollection()->transform(function ($student) {
@@ -65,15 +78,39 @@ class StudentResourceController extends Controller
             $student->subscription_expire_at = $student->subscription_expire_at ? Carbon::parse($student->subscription_expire_at)->format('Y-m-d') : null;
             return $student;
         });
+
+        // Adjust the counts for gender and categories based on accessible clubs
+        $genderCounts = Student::select('gender', DB::raw('count(*) as total'))
+            ->when($user->role !== 'admin', function ($query) use ($accessibleClubs) {
+                $query->whereIn('club_id', $accessibleClubs);
+            })
+            ->groupBy('gender')->get();
+
+        $categoryCounts = Category::withCount(['students' => function ($query) use ($user, $accessibleClubs) {
+            if ($user->role !== 'admin') {
+                $query->whereIn('club_id', $accessibleClubs);
+            }
+        }])->get();
+
+        // Filter clubs based on user access before counting
+        $clubCountsQuery = Club::query();
+        if ($user->role !== 'admin') {
+            $clubCountsQuery->whereIn('id', $accessibleClubs);
+        }
+        $clubCounts = $clubCountsQuery->withCount(['students' => function ($query) use ($user, $accessibleClubs) {
+            if ($user->role !== 'admin') {
+                $query->whereIn('club_id', $accessibleClubs);
+            }
+        }])->get();
+
         return Inertia::render(
             'Dashboard/Students/Index',
             [
                 'students' => $students,
                 'dataDependencies' => [
-                    'clubs' => Club::withCount('students')->get(),
-                    'categories' => Category::withCount('students')->get(),
-                    'genders' => Student::select('gender', DB::raw('count(*) as total'))
-                        ->groupBy('gender')->get()
+                    'clubs' => $clubCounts,
+                    'categories' => $categoryCounts,
+                    'genders' => $genderCounts,
                 ]
             ]
         );

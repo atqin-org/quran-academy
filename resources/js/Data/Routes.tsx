@@ -30,7 +30,7 @@ export const sidebarLinks = [
         label: "الطلاب",
         latin: "Students",
         crud: true,
-        visibleFor: ["admin", "staff"],
+        visibleFor: ["admin", "moderator", "staff", "teacher" ],
         href: "/students",
     },
     {
@@ -59,6 +59,7 @@ export const sidebarLinks = [
         label: "الموارد البشرية",
         latin: "HR",
         crud: true,
+        visibleFor: ["admin"],
         href: "/personnels/create",
     },
     {

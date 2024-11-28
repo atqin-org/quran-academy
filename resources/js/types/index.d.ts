@@ -1,8 +1,10 @@
 export interface TUser {
     id: number;
     name: string;
+    last_name: string;
     email: string;
     email_verified_at: string;
+    role: string;
 }
 
 export interface DatabaseBackup {

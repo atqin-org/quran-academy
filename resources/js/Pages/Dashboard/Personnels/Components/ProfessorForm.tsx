@@ -58,10 +58,21 @@ const PersonnelForm = ({
 }: PersonnelFormProps) => {
     const [isOpen, setIsOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
+    const [selectedClubs, setSelectedClubs] = useState<number[]>([]);
 
     const filteredClubs = clubs.filter((club) =>
         club.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
+
+    const handleClubToggle = (clubId: number) => {
+        if (selectedClubs.includes(clubId)) {
+            setSelectedClubs(selectedClubs.filter((id) => id !== clubId));
+            setData("club", selectedClubs.filter((id) => id !== clubId));
+        } else {
+            setSelectedClubs([...selectedClubs, clubId]);
+            setData("club", [...selectedClubs, clubId]);
+        }
+    }
 
     const form = useForm({
         resolver: zodResolver(FormSchemaP),
@@ -71,6 +82,7 @@ const PersonnelForm = ({
     const handleFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
 
+        console.log(data);
         form.setValue("firstName", data.firstName);
         form.setValue("lastName", data.lastName);
         form.setValue("mail", data.mail);
@@ -99,6 +111,7 @@ const PersonnelForm = ({
                 );
             } else {
                 toast.error("يرجى التحقق من البيانات");
+                console.log(form.formState.errors);
             }
         });
     };
@@ -237,6 +250,10 @@ const PersonnelForm = ({
                             </div>
                         )}
                     </div>
+                    <FormErrorMessage
+                        formStateErrors={form.formState.errors.club}
+                        errors={errors.club}
+                    />
                 </div>
                 <div className="w-full">
                     <Label>الدور</Label>

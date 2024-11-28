@@ -19,9 +19,6 @@ class AddForeignKeyToStudentsTable extends Migration
             $table->foreignId('club_id')->constrained('clubs');
             $table->foreignId('category_id')->constrained('categories');
         });
-        Schema::table('users', function (Blueprint $table) {
-            $table->foreignId('club_id')->constrained('clubs');
-        });
     }
 
     /**

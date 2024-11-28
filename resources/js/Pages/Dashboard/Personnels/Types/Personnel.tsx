@@ -13,6 +13,6 @@ export interface TPersonnelFormDB {
     mail: string;
     phone?: string;
     card?: string;
-    club_id: number;
+    club_id: number[];
     role_id: number;
 }

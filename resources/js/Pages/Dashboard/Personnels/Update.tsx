@@ -22,7 +22,7 @@ export default function UpdatePersonnel({
             lastName: personnel.last_name,
             mail: personnel.mail,
             phone: personnel.phone,
-            club: personnel.club_id?.toString() || "",
+            club: personnel.club_id,
             role: personnel.role_id?.toString() || "", // Convert role_id to a string for role
             card: personnel.card || undefined,
         });
