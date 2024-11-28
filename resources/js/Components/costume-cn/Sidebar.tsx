@@ -25,11 +25,11 @@ const Sidebar: React.FC<SidebarProps> = ({
     const translateRole = (role: string) => {
         switch (role) {
             case "admin":
-                return "مدير";
+                return "مشرف عام";
             case "moderator":
-                return "مشرف";
+                return "مدير";
             case "staff":
-                return "موظف";
+                return "مشرف";
             case "teacher":
                 return "معلم";
             default:
@@ -65,10 +65,16 @@ const Sidebar: React.FC<SidebarProps> = ({
                 )}
             >
                 <div className="border-2 border-primary w-full px-0.5 py-2 text-center rounded-md flex gap-2 items-center justify-center text-nowrap">
-                    {!effectiveIsCollapsed && <User className="flex-shrink-0" />}
+                    {!effectiveIsCollapsed && (
+                        <User className="flex-shrink-0" />
+                    )}
                     {!effectiveIsCollapsed && (
                         <div className="flex flex-col items-start text-sm">
-                            <span className={`truncate font-semibold ${mobile ? "" : "w-24"}`}>
+                            <span
+                                className={`truncate font-semibold ${
+                                    mobile ? "" : "w-24"
+                                }`}
+                            >
                                 {auth.name} {auth.last_name}
                             </span>
                             <span className="truncate ">
