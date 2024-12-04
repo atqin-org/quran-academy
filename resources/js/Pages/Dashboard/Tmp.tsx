@@ -1,4 +1,4 @@
-import { Head } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 import { PageProps } from '@/types';
 import DashboardLayout from '@/Layouts/DashboardLayout';
 

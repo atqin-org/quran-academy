@@ -19,6 +19,8 @@ class User extends Authenticatable
      */
     protected $fillable = [
         'name',
+        'last_name',
+        'phone',
         'role',
         'email',
         'password',
@@ -45,5 +47,12 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+    /**
+     * The clubs that belong to the user.
+     */
+    public function clubs()
+    {
+        return $this->belongsToMany(Club::class, 'club_user', 'user_id', 'club_id');
     }
 }

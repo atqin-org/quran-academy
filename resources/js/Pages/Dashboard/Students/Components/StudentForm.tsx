@@ -94,17 +94,6 @@ const StudentForm = ({
         }
         setTmpDate(data.birthdate?.toString() || "");
     };
-    const [isDialogOpen, setIsDialogOpen] = useState(false);
-
-    const handleDialogOpen = () => {
-        setIsDialogOpen(!isDialogOpen);
-    };
-    const [dialogConfig, setDialogConfig] = useState({
-        title: "",
-        description: "",
-        confirm: "",
-        cancel: "",
-    });
     const form = useForm({
         resolver: zodResolver(FormSchema),
         defaultValues: data,
@@ -138,15 +127,9 @@ const StudentForm = ({
                 toast.promise(
                     new Promise(async (resolve, reject) => {
                         try {
-                            const res = await axios.post("/api/guardian", {
-                                father: data.father,
-                                mother: data.mother,
-                                id: studentId || null,
-                            });
                             handleSubmit(e);
                             resolve("تم التسجيل بنجاح");
                         } catch (error) {
-                            //handleDialogOpen();
                             console.log(error);
                             reject("حدث خطأ اثناء التسجيل");
                         }
@@ -161,37 +144,9 @@ const StudentForm = ({
                 toast.error("يرجى التحقق من البيانات");
             }
         });
-        if (isDialogOpen) {
-            handleDialogOpen();
-        } else {
-            //handleSubmit(e);
-        }
     };
     return (
         <form onSubmit={handleFormSubmit} className="space-y-6">
-            <div>
-                <Dialog open={isDialogOpen} onOpenChange={handleDialogOpen}>
-                    <DialogContent>
-                        <DialogHeader>
-                            <DialogTitle>{dialogConfig.title}</DialogTitle>
-                            <DialogDescription>
-                                {dialogConfig.description}
-                            </DialogDescription>
-                        </DialogHeader>
-                        <DialogFooter className="flex gap-2">
-                            <Button
-                                onClick={handleDialogOpen}
-                                variant="secondary"
-                            >
-                                {dialogConfig.cancel}
-                            </Button>
-                            <Button onClick={() => handleSubmit}>
-                                {dialogConfig.confirm}
-                            </Button>
-                        </DialogFooter>
-                    </DialogContent>
-                </Dialog>
-            </div>
             <Button type="submit" disabled={processing}>
                 تسجيل
             </Button>

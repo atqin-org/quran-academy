@@ -5,18 +5,47 @@ use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use App\Http\Controllers\StudentResourceController;
-use App\Http\Controllers\GuardianController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\PersonnelController;
+use App\Http\Controllers\BackupController;
+use App\Models\DatabaseBackup;
+use Illuminate\Support\Facades\Artisan;
 
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::resource('/students', StudentResourceController::class);
+    Route::post('/students/{student}', [StudentResourceController::class, 'update'])->name('students.update');
 
-Route::resource('/students', StudentResourceController::class);
-Route::post('/students/{student}', [StudentResourceController::class, 'update'])->name('students.update');
-Route::post('/api/guardian', [GuardianController::class, 'checkV2'])->name('guardian.check');
+    Route::get('/students/{student}/payment', [PaymentController::class, 'show'])->name('students.payment.show');
+    Route::post('/students/{student}/payment', [PaymentController::class, 'store'])->name('students.payment.store');
 
-Route::get('/students/{student}/payment', [PaymentController::class, 'show'])->name('students.payment.show');
-Route::post('/students/{student}/payment', [PaymentController::class, 'store'])->name('students.payment.store');
+    Route::resource('/personnels', PersonnelController::class)->only(['index', 'create', 'store'])
+        ->middleware(\App\Http\Middleware\AdminMiddleware::class);
 
-// if (/dashboard/* dont exist) render  /Dashboard/tmp
+    Route::get('/system', function () {
+        return Inertia::render('Dashboard/System/BackupDatabase');
+    })->middleware(\App\Http\Middleware\AdminMiddleware::class);
+
+    Route::post('/backup', [BackupController::class, 'backup']);
+
+    Route::get('/download-backup/{path}', function ($path) {
+        return response()->download(storage_path("app/$path"));
+    });
+
+    Route::get('/get-backups', function () {
+        return DatabaseBackup::all();
+    });
+    Route::get('/bup', function () {
+        Artisan::call('backup:run');
+        return Artisan::output();
+    });
+
+    Route::post('/delete-backup', [BackupController::class, 'deleteBackup']);
+
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+});
+
 Route::get('/dashboard/{any}', function () {
     return Inertia::render('Dashboard/Tmp');
 })->where('any', '.*');
@@ -33,11 +62,5 @@ Route::get('/', function () {
 Route::get('/dashboard', function () {
     return Inertia::render('Dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
-
-Route::middleware('auth')->group(function () {
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
-});
 
 require __DIR__ . '/auth.php';
