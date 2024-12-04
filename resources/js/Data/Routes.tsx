@@ -60,7 +60,7 @@ export const sidebarLinks = [
         latin: "HR",
         crud: true,
         visibleFor: ["admin"],
-        href: "/personnels/create",
+        href: "/personnels",
     },
     {
         icon: <Settings />,

@@ -8,11 +8,11 @@ export interface TPersonnelForm {
     card?: File | string;
 }
 export interface TPersonnelFormDB {
-    first_name: string;
+    name: string;
     last_name: string;
-    mail: string;
+    email: string;
     phone?: string;
     card?: string;
-    club_id: number[];
-    role_id: number;
+    club: number[];
+    role: number;
 }

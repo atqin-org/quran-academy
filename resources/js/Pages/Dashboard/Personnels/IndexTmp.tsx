@@ -1,12 +1,12 @@
 import DashboardLayout from "@/Layouts/DashboardLayout";
 import { PageProps } from "@/types";
 import { Head, Link } from "@inertiajs/react";
-import { StudentDisplay, columns } from "./Components/Columns";
+import { TPersonnelFormDB } from "./Types/Personnel";
 import { DataTable } from "./Components/DataTable";
 
 
 interface DashboardProps extends PageProps {
-    personnels: { data: StudentDisplay[]; links: any[] };
+    personnels: TPersonnelFormDB[];
     dataDependencies: {
         categories: {
             id: number;
@@ -64,13 +64,11 @@ export default function Dashboard({
                         سجل جديد
                     </Link>
                 </div>
-                <div className="w-full mt-10">
+                <div className="w-full mt-10 grid grid-flow-col grid-cols-subgrid grid-rows-subgrid gap-2">
                     {/* card for users */}
-                    (personnels.data.length {">"} 0 ? (
-                        foreach (personnels.data as personnel) {
-                            <div className="flex flex-col gap-4">
+                    {personnels.map((personnel, index) => (
+                            <div key={index} className="flex flex-col gap-2 bg-cyan-200 w-56 rounded-xl ring-primary ring-2">
                                 <div className="flex items-center gap-4">
-                                    <div className="w-20 h-20 rounded-full bg-gray-200"></div>
                                     <div>
                                         <h1 className="text-2xl font-bold text-gray-900">
                                             {personnel.name} {personnel.last_name}
@@ -78,20 +76,18 @@ export default function Dashboard({
                                         <p className="text-lg text-gray-600">{personnel.club}</p>
                                     </div>
                                 </div>
-                                <div className="flex items-center gap-4">
+                                <div className="flex flex-col gap-0.5 items-center gap-4">
                                     <p className="text-lg text-gray-600">الهاتف: {personnel.phone}</p>
-                                    <p className="text-lg text-gray-600">البريد: {personnel.mail}</p>
+                                    <p className="text-lg text-gray-600">البريد: {personnel.email}</p>
                                 </div>
-                                <div className="flex items-center gap-4">
+                                <div className="flex flex-col gap-0.5 items-center gap-4">
                                     <p className="text-lg text-gray-600">الدور: {personnel.role}</p>
                                     <p className="text-lg text-gray-600">البطاقة: {personnel.card}</p>
                                 </div>
                             </div>
-                        }
-                    )
-
+                        )
+                    )}
                 </div>
-
             </div>
         </DashboardLayout>
     );

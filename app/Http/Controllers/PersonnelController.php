@@ -19,6 +19,7 @@ class PersonnelController extends Controller
             'Dashboard/Personnels/IndexTmp',
             [
                 'clubs' => Club::all(),
+                'personnels' => User::all()
             ]
         );
     }
