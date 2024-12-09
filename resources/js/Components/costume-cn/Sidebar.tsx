@@ -71,7 +71,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                     {!effectiveIsCollapsed && (
                         <div className="flex flex-col items-start text-sm">
                             <span
-                                className={`truncate font-semibold ${
+                                className={`truncate font-semibold text-start ${
                                     mobile ? "" : "w-24"
                                 }`}
                             >
@@ -102,8 +102,9 @@ const Sidebar: React.FC<SidebarProps> = ({
                         {sidebarLinks
                             .filter(
                                 (link) =>
-                                    !link.visibleFor ||
-                                    link.visibleFor.includes(auth.role)
+                                    !link.display &&
+                                    (!link.visibleFor ||
+                                        link.visibleFor.includes(auth.role))
                             )
                             .map((link, index) => (
                                 <SidebarLink

@@ -20,8 +20,8 @@ class DatabaseSeeder extends Seeder
             'name' => 'محمد',
             'last_name' => 'المشرف',
             'role' => 'admin',
-            'email' => 'admin@oulamamaghnia.com',
-            'password' => Hash::make('8$Lp1mC2gmYhhWtL'),
+            'email' => env('ADMIN_EMAIL', 'admin@example.com'),
+            'password' => Hash::make(env('ADMIN_PASSWORD', 'password')),
         ]);
 
         $this->call([
