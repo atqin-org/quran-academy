@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable,SoftDeletes;
+    use HasFactory, Notifiable, SoftDeletes;
 
     /**
      * The attributes that are mass assignable.
@@ -37,22 +37,44 @@ class User extends Authenticatable
     ];
 
     /**
-     * Get the attributes that should be cast.
+     * The attributes that should be cast.
      *
-     * @return array<string, string>
+     * @var array<string, string>
      */
-    protected function casts(): array
-    {
-        return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-        ];
-    }
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+        'password' => 'hashed',
+    ];
+
     /**
      * The clubs that belong to the user.
      */
     public function clubs()
     {
         return $this->belongsToMany(Club::class, 'club_user', 'user_id', 'club_id');
+    }
+
+    /**
+     * Get all accessible clubs for the user.
+     */
+    public function accessibleClubs()
+    {
+        if ($this->role === 'admin') {
+            return Club::all();
+        }
+
+        return $this->clubs;
+    }
+
+    /**
+     * Get all accessible categories for the user.
+     */
+    public function accessibleCategories()
+    {
+        if ($this->role === 'admin') {
+            return Category::all();
+        }
+
+        return Category::all();
     }
 }

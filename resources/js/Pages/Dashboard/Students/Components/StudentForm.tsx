@@ -148,7 +148,7 @@ const StudentForm = ({
     return (
         <form onSubmit={handleFormSubmit} className="space-y-6">
             <Button type="submit" disabled={processing}>
-                تسجيل
+                {mode === "edit" ? "تعديل" : "تسجيل"}
             </Button>
             <div>
                 <Label>النادي</Label>
@@ -619,7 +619,7 @@ const StudentForm = ({
                 </div>
             </div>
             <Button type="submit" disabled={processing}>
-                تسجيل
+                {mode === "edit" ? "تعديل" : "تسجيل"}
             </Button>
         </form>
     );

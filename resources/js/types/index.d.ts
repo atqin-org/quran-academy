@@ -2,6 +2,7 @@ export interface TUser {
     id: number;
     name: string;
     last_name: string;
+    phone: string;
     email: string;
     email_verified_at: string;
     role: string;
