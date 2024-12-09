@@ -3,7 +3,14 @@ import { PageProps } from "@/types";
 import { Head, Link } from "@inertiajs/react";
 import { TPersonnelFormDB } from "./Types/Personnel";
 import { DataTable } from "./Components/DataTable";
-
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from "@/Components/ui/card";
+import { Badge } from "@/Components/ui/badge";
 
 interface DashboardProps extends PageProps {
     personnels: TPersonnelFormDB[];
@@ -26,7 +33,7 @@ export default function Dashboard({
     //onload check &search= query param
     // Extract search query parameter
     const urlParams = new URLSearchParams(location.search);
-
+    console.log(personnels);
     const searchQuery = urlParams.get("search");
     const sortByQuery = urlParams.get("sortBy");
     const sortTypeQuery = urlParams.get("sortType");
@@ -64,29 +71,40 @@ export default function Dashboard({
                         سجل جديد
                     </Link>
                 </div>
-                <div className="w-full mt-10 grid grid-flow-col grid-cols-subgrid grid-rows-subgrid gap-2">
-                    {/* card for users */}
+                <div className="w-full mt-10 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                     {personnels.map((personnel, index) => (
-                            <div key={index} className="flex flex-col gap-2 bg-cyan-200 w-56 rounded-xl ring-primary ring-2">
-                                <div className="flex items-center gap-4">
-                                    <div>
-                                        <h1 className="text-2xl font-bold text-gray-900">
-                                            {personnel.name} {personnel.last_name}
-                                        </h1>
-                                        <p className="text-lg text-gray-600">{personnel.club}</p>
-                                    </div>
+                        <Card
+                            key={index}
+                            className="bg-white shadow-lg rounded-lg"
+                        >
+                            <CardHeader>
+                                <CardTitle className="text-2xl font-bold text-gray-900">
+                                    {personnel.name} {personnel.last_name}
+                                </CardTitle>
+                                <CardDescription className="text-lg text-gray-600">
+                                    {personnel.email}
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent className="flex flex-col gap-2">
+                                <p className="text-lg text-gray-600">
+                                    الهاتف: {personnel.phone}
+                                </p>
+                                <p className="text-lg text-gray-600">
+                                    البريد: {personnel.email}
+                                </p>
+                                <p className="text-lg text-gray-600">
+                                    الدور: {personnel.role}
+                                </p>
+                                <div className="flex gap-1 flex-wrap">
+                                    {personnel.clubs.map((club, clubIndex) => (
+                                        <Badge key={clubIndex} className="text-nowrap">
+                                            {club.name}
+                                        </Badge>
+                                    ))}
                                 </div>
-                                <div className="flex flex-col gap-0.5 items-center gap-4">
-                                    <p className="text-lg text-gray-600">الهاتف: {personnel.phone}</p>
-                                    <p className="text-lg text-gray-600">البريد: {personnel.email}</p>
-                                </div>
-                                <div className="flex flex-col gap-0.5 items-center gap-4">
-                                    <p className="text-lg text-gray-600">الدور: {personnel.role}</p>
-                                    <p className="text-lg text-gray-600">البطاقة: {personnel.card}</p>
-                                </div>
-                            </div>
-                        )
-                    )}
+                            </CardContent>
+                        </Card>
+                    ))}
                 </div>
             </div>
         </DashboardLayout>

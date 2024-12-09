@@ -19,7 +19,7 @@ class PersonnelController extends Controller
             'Dashboard/Personnels/IndexTmp',
             [
                 'clubs' => Club::all(),
-                'personnels' => User::all()
+                'personnels' => User::with('clubs')->latest()->get()
             ]
         );
     }
@@ -46,7 +46,7 @@ class PersonnelController extends Controller
         $request->validate([
             'firstName' => 'required',
             'lastName' => 'required',
-            'club' => 'required|array',
+            'clubs' => 'required|array',
             'role' => 'required',
             'phone' => 'required',
             'mail' => 'required|email',
@@ -62,9 +62,9 @@ class PersonnelController extends Controller
         ]);
 
         // Attach the clubs to the user
-        $user->clubs()->attach($request->club);
+        $user->clubs()->attach($request->clubs);
 
-        return redirect()->route('personnels.create');
+        return redirect()->route('personnels.index');
     }
 
     /**
