@@ -67,10 +67,10 @@ const PersonnelForm = ({
     const handleClubToggle = (clubId: number) => {
         if (selectedClubs.includes(clubId)) {
             setSelectedClubs(selectedClubs.filter((id) => id !== clubId));
-            setData("club", selectedClubs.filter((id) => id !== clubId));
+            setData("clubs", selectedClubs.filter((id) => id !== clubId));
         } else {
             setSelectedClubs([...selectedClubs, clubId]);
-            setData("club", [...selectedClubs, clubId]);
+            setData("clubs", [...selectedClubs, clubId]);
         }
     }
 
@@ -87,10 +87,10 @@ const PersonnelForm = ({
         form.setValue("lastName", data.lastName);
         form.setValue("mail", data.mail);
         form.setValue("phone", data.phone);
-        form.setValue("club", data.club);
+        form.setValue("clubs", data.clubs);
         form.setValue("role", data.role);
         form.setValue("card", data.card);
-
+        
         form.trigger().then((isValid) => {
             if (isValid) {
                 toast.promise(
@@ -251,8 +251,8 @@ const PersonnelForm = ({
                         )}
                     </div>
                     <FormErrorMessage
-                        formStateErrors={form.formState.errors.club}
-                        errors={errors.club}
+                        formStateErrors={form.formState.errors.clubs}
+                        errors={errors.clubs}
                     />
                 </div>
                 <div className="w-full">

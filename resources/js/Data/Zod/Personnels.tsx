@@ -41,7 +41,7 @@ export const FormSchemaP = z.object({
         }),
         z.literal(""),
     ]),
-    club: z.array(z.number()).nonempty({
+    clubs: z.array(z.number()).nonempty({
         message: "النادي مطلوب",
     }),
     role: z.string({

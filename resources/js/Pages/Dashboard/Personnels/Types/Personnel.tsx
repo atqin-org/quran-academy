@@ -3,16 +3,19 @@ export interface TPersonnelForm {
     lastName: string;
     mail: string
     phone?: string;
-    club: string [];
+    clubs: number[];
     role: string | undefined;
     card?: File | string;
 }
 export interface TPersonnelFormDB {
-    first_name: string;
+    name: string;
     last_name: string;
-    mail: string;
+    email: string;
     phone?: string;
     card?: string;
-    club_id: number[];
-    role_id: number;
+    clubs: {
+        id: number;
+        name: string;
+    }[];
+    role: number;
 }
