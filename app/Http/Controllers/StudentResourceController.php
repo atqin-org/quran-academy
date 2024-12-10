@@ -184,11 +184,15 @@ class StudentResourceController extends Controller
      */
     public function edit(string $id)
     {
+        $student = Student::find($id)->load('father', 'mother');
+        $siblings = $student->getSiblings();
+        
         return Inertia::render(
             'Dashboard/Students/Update',
             [
-                'student' => Student::find($id)->load('father', 'mother'),
-                'clubs' => Club::all(),
+                'student' => $student,
+                'siblings' => $siblings,
+                'clubs' => Auth::user()->accessibleClubs(),
                 'categories' => Category::all()
             ]
         );
@@ -230,17 +234,36 @@ class StudentResourceController extends Controller
 
         $father = Guardian::find($student->father_id);
         $mother = Guardian::find($student->mother_id);
-
-        $father->update([
-            'phone' => $request->father["phone"],
-            'name' => $request->father["name"],
-            'job' => $request->father["job"],
-        ]);
-        $mother->update([
-            'phone' => $request->mother["phone"],
-            'name' => $request->mother["name"],
-            'job' => $request->mother["job"],
-        ]);
+        if ($father) {
+            $father->update([
+                'phone' => $request->father["phone"],
+                'name' => $request->father["name"],
+                'job' => $request->father["job"],
+            ]);
+        } else {
+            $father = Guardian::create([
+                'phone' => $request->father["phone"],
+                'name' => $request->father["name"],
+                'job' => $request->father["job"],
+                'gender' => 'male',
+            ]);
+            $student->father_id = $father->id;
+        }
+        if ($mother) {
+            $mother->update([
+                'phone' => $request->mother["phone"],
+                'name' => $request->mother["name"],
+                'job' => $request->mother["job"],
+            ]);
+        } else {
+            $mother = Guardian::create([
+                'phone' => $request->mother["phone"],
+                'name' => $request->mother["name"],
+                'job' => $request->mother["job"],
+                'gender' => 'female',
+            ]);
+            $student->mother_id = $mother->id;
+        }
         $request->merge(['father_id' => $father->id, 'mother_id' => $mother->id]);
 
         // Update the student with validated data

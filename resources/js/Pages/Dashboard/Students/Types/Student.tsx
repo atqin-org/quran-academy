@@ -51,3 +51,31 @@ export interface TStudentFormDB {
     club_id: number;
     category_id: number;
 }
+export interface TSiblings {
+    id: number;
+    first_name: string;
+    last_name: string;
+    gender: "male" | "female";
+    birthdate: Date;
+    father?: {
+        name?: string;
+        job?: string;
+        phone?: string;
+    };
+    mother?: {
+        name?: string;
+        job?: string;
+        phone?: string;
+    };
+    ahzab?: string;
+    subscription?: string;
+    subscription_expire_at?: string;
+    insurance_expire_at?: string;
+    shared_guardian: string;
+    club_id: number;
+    category: {
+        id: number;
+        name: string;
+        gender?: string;
+    };
+}
