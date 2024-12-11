@@ -9,7 +9,7 @@ const initialFormState: TPersonnelForm = {
     lastName: "",
     mail: "",
     phone: "",
-    club: [],
+    clubs: [],
     role: undefined,
     card: undefined,
 };

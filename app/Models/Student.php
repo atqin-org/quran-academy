@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Storage;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Auth;
 
 class Student extends Model
 {
@@ -58,6 +59,49 @@ class Student extends Model
     public function category()
     {
         return $this->belongsTo(Category::class, 'category_id');
+    }
+
+    public function getSiblings()
+    {
+        // Get the father's and mother's phone numbers
+        $fatherPhone = $this->father ? $this->father->phone : null;
+        $motherPhone = $this->mother ? $this->mother->phone : null;
+
+        $siblings = Student::select('id', 'father_id', 'mother_id', 'first_name', 'last_name', 'gender', 'birthdate', 'subscription', 'ahzab', 'subscription_expire_at', 'category_id')
+            ->where('id', '!=', $this->id)
+            ->where('club_id', $this->club_id)
+            ->where(function ($query) use ($fatherPhone, $motherPhone) {
+                if ($fatherPhone) {
+                    $query->whereHas('father', function ($query) use ($fatherPhone) {
+                        $query->where('phone', $fatherPhone);
+                    });
+                }
+                if ($motherPhone) {
+                    $query->orWhereHas('mother', function ($query) use ($motherPhone) {
+                        $query->where('phone', $motherPhone);
+                    });
+                }
+            })
+            ->with(['category','father', 'mother'])
+            ->get();
+
+        // Add shared_guardian attribute
+        foreach ($siblings as $sibling) {
+            $sharedGuardian = '';
+            if ($sibling->father && $sibling->father->phone === $fatherPhone) {
+                $sharedGuardian = 'father';
+            }
+            if ($sibling->mother && $sibling->mother->phone === $motherPhone) {
+                if ($sharedGuardian === '') {
+                    $sharedGuardian = 'mother';
+                } else {
+                    $sharedGuardian = 'both';
+                }
+            }
+            $sibling->shared_guardian =  $sharedGuardian;
+        }
+
+        return $siblings;
     }
 
     // override the default create method
@@ -122,8 +166,7 @@ class Student extends Model
                 'value' => 200,
                 'start_at' => now(),
                 'end_at' => $nextOctober31,
-                //TODO: get the user id
-                'user_id' => 1,
+                'user_id' => Auth::id(),
                 'student_id' => $student->id,
                 'status' => "in_time",
             ]);

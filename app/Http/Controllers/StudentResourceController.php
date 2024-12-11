@@ -25,7 +25,6 @@ class StudentResourceController extends Controller
         $user = Auth::user();
 
         if ($search = $request->input('search')) {
-            //TODO: refactor: use raw sql query instead of driver based query
             $connectionType = DB::getDriverName();
             if ($connectionType === 'sqlite') {
                 $query->whereRaw("(first_name || ' ' || last_name) like ?", ["%{$search}%"])
@@ -36,8 +35,8 @@ class StudentResourceController extends Controller
             }
         }
 
-        $sortBy = $request->input('sortBy', 'created_at'); // Default to 'created_at'
-        $sortType = $request->input('sortType', 'desc'); // Default to 'desc'
+        $sortBy = $request->input('sortBy', 'created_at');
+        $sortType = $request->input('sortType', 'desc');
 
         if ($sortBy === 'name') {
             $query->orderBy('first_name', $sortType)->orderBy('last_name', $sortType);
@@ -54,11 +53,8 @@ class StudentResourceController extends Controller
         }
 
         // Filter clubs based on user access
-        $accessibleClubs = [];
-        if ($user->role !== 'admin') {
-            $accessibleClubs = $user->clubs->pluck('id')->toArray();
-            $query->whereIn('club_id', $accessibleClubs);
-        }
+        $accessibleClubs = $user->accessibleClubs()->pluck('id')->toArray();
+        $query->whereIn('club_id', $accessibleClubs);
 
         if ($clubs = $request->input('clubs')) {
             $query->whereIn('club_id', $clubs);
@@ -81,27 +77,16 @@ class StudentResourceController extends Controller
 
         // Adjust the counts for gender and categories based on accessible clubs
         $genderCounts = Student::select('gender', DB::raw('count(*) as total'))
-            ->when($user->role !== 'admin', function ($query) use ($accessibleClubs) {
-                $query->whereIn('club_id', $accessibleClubs);
-            })
+            ->whereIn('club_id', $accessibleClubs)
             ->groupBy('gender')->get();
 
-        $categoryCounts = Category::withCount(['students' => function ($query) use ($user, $accessibleClubs) {
-            if ($user->role !== 'admin') {
-                $query->whereIn('club_id', $accessibleClubs);
-            }
+        $categoryCounts = Category::withCount(['students' => function ($query) use ($accessibleClubs) {
+            $query->whereIn('club_id', $accessibleClubs);
         }])->get();
 
-        // Filter clubs based on user access before counting
-        $clubCountsQuery = Club::query();
-        if ($user->role !== 'admin') {
-            $clubCountsQuery->whereIn('id', $accessibleClubs);
-        }
-        $clubCounts = $clubCountsQuery->withCount(['students' => function ($query) use ($user, $accessibleClubs) {
-            if ($user->role !== 'admin') {
-                $query->whereIn('club_id', $accessibleClubs);
-            }
-        }])->get();
+        $clubCounts = Club::withCount(['students' => function ($query) use ($accessibleClubs) {
+            $query->whereIn('club_id', $accessibleClubs);
+        }])->whereIn('id', $accessibleClubs)->get();
 
         return Inertia::render(
             'Dashboard/Students/Index',
@@ -125,7 +110,7 @@ class StudentResourceController extends Controller
         return Inertia::render(
             'Dashboard/Students/Create',
             [
-                'clubs' => Club::all(),
+                'clubs' => Auth::user()->accessibleClubs(),
                 'categories' => Category::all()
             ]
         );
@@ -199,11 +184,15 @@ class StudentResourceController extends Controller
      */
     public function edit(string $id)
     {
+        $student = Student::find($id)->load('father', 'mother');
+        $siblings = $student->getSiblings();
+        
         return Inertia::render(
             'Dashboard/Students/Update',
             [
-                'student' => Student::find($id)->load('father', 'mother'),
-                'clubs' => Club::all(),
+                'student' => $student,
+                'siblings' => $siblings,
+                'clubs' => Auth::user()->accessibleClubs(),
                 'categories' => Category::all()
             ]
         );
@@ -245,17 +234,36 @@ class StudentResourceController extends Controller
 
         $father = Guardian::find($student->father_id);
         $mother = Guardian::find($student->mother_id);
-
-        $father->update([
-            'phone' => $request->father["phone"],
-            'name' => $request->father["name"],
-            'job' => $request->father["job"],
-        ]);
-        $mother->update([
-            'phone' => $request->mother["phone"],
-            'name' => $request->mother["name"],
-            'job' => $request->mother["job"],
-        ]);
+        if ($father) {
+            $father->update([
+                'phone' => $request->father["phone"],
+                'name' => $request->father["name"],
+                'job' => $request->father["job"],
+            ]);
+        } else {
+            $father = Guardian::create([
+                'phone' => $request->father["phone"],
+                'name' => $request->father["name"],
+                'job' => $request->father["job"],
+                'gender' => 'male',
+            ]);
+            $student->father_id = $father->id;
+        }
+        if ($mother) {
+            $mother->update([
+                'phone' => $request->mother["phone"],
+                'name' => $request->mother["name"],
+                'job' => $request->mother["job"],
+            ]);
+        } else {
+            $mother = Guardian::create([
+                'phone' => $request->mother["phone"],
+                'name' => $request->mother["name"],
+                'job' => $request->mother["job"],
+                'gender' => 'female',
+            ]);
+            $student->mother_id = $mother->id;
+        }
         $request->merge(['father_id' => $father->id, 'mother_id' => $mother->id]);
 
         // Update the student with validated data
