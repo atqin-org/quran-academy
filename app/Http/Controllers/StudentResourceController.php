@@ -24,14 +24,23 @@ class StudentResourceController extends Controller
         $query = Student::query();
         $user = Auth::user();
 
+        // Apply club restriction first
+        $accessibleClubs = $user->accessibleClubs()->pluck('id')->toArray();
+        $query->whereIn('club_id', $accessibleClubs);
+
+        // Then apply search filter
         if ($search = $request->input('search')) {
             $connectionType = DB::getDriverName();
             if ($connectionType === 'sqlite') {
-                $query->whereRaw("(first_name || ' ' || last_name) like ?", ["%{$search}%"])
-                    ->orWhereRaw("(last_name || ' ' || first_name) like ?", ["%{$search}%"]);
+                $query->where(function($q) use ($search) {
+                    $q->whereRaw("(first_name || ' ' || last_name) like ?", ["%{$search}%"])
+                      ->orWhereRaw("(last_name || ' ' || first_name) like ?", ["%{$search}%"]);
+                });
             } elseif ($connectionType === 'mysql') {
-                $query->whereRaw("CONCAT(first_name, ' ', last_name) like ?", ["%{$search}%"])
-                    ->orWhereRaw("CONCAT(last_name, ' ', first_name) like ?", ["%{$search}%"]);
+                $query->where(function($q) use ($search) {
+                    $q->whereRaw("CONCAT(first_name, ' ', last_name) like ?", ["%{$search}%"])
+                      ->orWhereRaw("CONCAT(last_name, ' ', first_name) like ?", ["%{$search}%"]);
+                });
             }
         }
 
@@ -51,10 +60,6 @@ class StudentResourceController extends Controller
         if ($categories = $request->input('categories')) {
             $query->whereIn('category_id', $categories);
         }
-
-        // Filter clubs based on user access
-        $accessibleClubs = $user->accessibleClubs()->pluck('id')->toArray();
-        $query->whereIn('club_id', $accessibleClubs);
 
         if ($clubs = $request->input('clubs')) {
             $query->whereIn('club_id', $clubs);
@@ -186,7 +191,7 @@ class StudentResourceController extends Controller
     {
         $student = Student::find($id)->load('father', 'mother');
         $siblings = $student->getSiblings();
-        
+
         return Inertia::render(
             'Dashboard/Students/Update',
             [
