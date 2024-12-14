@@ -126,6 +126,7 @@ class StudentResourceController extends Controller
      */
     public function store(Request $request)
     {
+        $request->merge(['birthdate' => Carbon::parse($request->birthdate)->setTimezone('Africa/Algiers')]);
         $request->validate([
             'firstName' => 'required',
             'lastName' => 'required',
@@ -208,6 +209,7 @@ class StudentResourceController extends Controller
      */
     public function update(Request $request, string $id)
     {
+        $request->merge(['birthdate' => Carbon::parse($request->birthdate)->setTimezone('Africa/Algiers')]);
         // Validate the request
         $request->validate([
             'firstName' => 'required',
