@@ -18,11 +18,13 @@ class LogController extends Controller
         if ($type !== 'all') {
             $query->where('log_name', $type);
         }
-        $logs = $query->paginate(10);
+        $logs = $query->paginate(15);
+        //dd($logs);
         //dd(Inertia::merge(ActivityLogResource::collection($logs)->collection->toArray()));
         return Inertia::render('Dashboard/System/Logs/Index', [
             'logs' => Inertia::merge(ActivityLogResource::collection($logs)->collection->toArray()),
             'page' => $logs->currentPage(),
+            'lastPage' => $logs->lastPage(),
             'filters' => [
                 'type' => $type,
                 'sort' => $sort
