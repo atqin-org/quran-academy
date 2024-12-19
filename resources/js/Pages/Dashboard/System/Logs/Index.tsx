@@ -40,6 +40,7 @@ interface Props {
         sort: "asc" | "desc";
     };
     page: number;
+    lastPage: number;
 }
 
 const getTypeStyle = (type: TActivityLog["data"]["type"]) => {
@@ -78,7 +79,7 @@ function CollapsibleProperties({ properties }: { properties: any }) {
     );
 }
 
-export default function Index({ auth, logs, filters, page }: Props) {
+export default function Index({ auth, logs, filters, page, lastPage }: Props) {
     const handleFilterChange = (newFilters: Partial<typeof filters>) => {
         router.get(
             route("admin.logs.index"),
@@ -136,70 +137,89 @@ export default function Index({ auth, logs, filters, page }: Props) {
                 </div>
 
                 <div className="border rounded-lg">
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead className="text-start">
-                                    التاريخ
-                                </TableHead>
-                                <TableHead className="text-start">
-                                    النوع
-                                </TableHead>
-                                <TableHead className="text-start">
-                                    الوصف
-                                </TableHead>
-                                <TableHead className="text-start">
-                                    المستخدم
-                                </TableHead>
-                                <TableHead className="text-start">
-                                    التغييرات
-                                </TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {logs.map((log, index) => (
-                                <TableRow
-                                    key={`${log.data.id}-${log.data.type}-${index}`}
-                                >
-                                    <TableCell>{log.data.created_at}</TableCell>
-                                    <TableCell>
-                                        <span
-                                            className={`px-2 py-1 rounded-full text-xs ${getTypeStyle(
-                                                log.data.type
-                                            )}`}
+                    {logs.length !== 0 ? (
+                        (
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead className="text-start">
+                                            التاريخ
+                                        </TableHead>
+                                        <TableHead className="text-start">
+                                            النوع
+                                        </TableHead>
+                                        <TableHead className="text-start">
+                                            الوصف
+                                        </TableHead>
+                                        <TableHead className="text-start">
+                                            المستخدم
+                                        </TableHead>
+                                        <TableHead className="text-start">
+                                            التغييرات
+                                        </TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {logs.map((log, index) => (
+                                        <TableRow
+                                            key={`${log.data.id}-${log.data.type}-${index}`}
                                         >
-                                            {getTypeLabel(log.data.type)}
-                                        </span>
-                                    </TableCell>
-                                    <TableCell>
-                                        {log.data.description}
-                                    </TableCell>
-                                    <TableCell>
-                                        {log.data.causer?.name || "النظام"}
-                                    </TableCell>
-                                    <TableCell className="w-1/3">
-                                        <CollapsibleProperties
-                                            properties={log.data.properties}
-                                        />
-                                    </TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                    <WhenVisible
-                        always
-                        fallback={<div>loading ... </div>}
-                        params={{
-                            data: { page: page + 1 },
-                            only: ["logs", "page"],
-                            preserveUrl: true,
-                        }}
-                        data={["logs", "page"]}
-                    >
-                        <div className="flex items-center justify-center my-2">
-                            <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+                                            <TableCell>
+                                                {log.data.created_at}
+                                            </TableCell>
+                                            <TableCell>
+                                                <span
+                                                    className={`px-2 py-1 rounded-full text-xs ${getTypeStyle(
+                                                        log.data.type
+                                                    )}`}
+                                                >
+                                                    {getTypeLabel(
+                                                        log.data.type
+                                                    )}
+                                                </span>
+                                            </TableCell>
+                                            <TableCell>
+                                                {log.data.description}
+                                            </TableCell>
+                                            <TableCell>
+                                                {log.data.causer?.name ||
+                                                    "النظام"}
+                                            </TableCell>
+                                            <TableCell className="w-1/3">
+                                                <CollapsibleProperties
+                                                    properties={
+                                                        log.data.properties
+                                                    }
+                                                />
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        )!
+                    ) : (
+                        <div className="p-4 text-center text-gray-500">
+                            لا توجد سجلات
                         </div>
-                    </WhenVisible>
+                    )}
+                    {page < lastPage && (
+                        <WhenVisible
+                            always
+                            fallback={<div className="flex items-center justify-center my-2">
+                                <div className="size-6 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+                            </div>}
+                            params={{
+                                data: { page: page + 1 },
+                                only: ["logs", "page"],
+                                preserveUrl: true,
+                            }}
+                            data={["logs", "page"]}
+                        >
+                            <div className="flex items-center justify-center my-2">
+                                <div className="size-6 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+                            </div>
+                        </WhenVisible>
+                    )}
                 </div>
             </div>
         </DashboardLayout>
