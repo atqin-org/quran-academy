@@ -7,10 +7,13 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Models\Activity;
 
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable, SoftDeletes;
+    use HasFactory, Notifiable, SoftDeletes, LogsActivity;
 
     /**
      * The attributes that are mass assignable.
@@ -47,11 +50,11 @@ class User extends Authenticatable
     ];
 
     /**
-     * The clubs that belong to the user.
+     * The clubs that associated with the user.
      */
     public function clubs()
     {
-        return $this->belongsToMany(Club::class, 'club_user', 'user_id', 'club_id');
+        return $this->belongsToMany(Club::class);
     }
 
     /**
@@ -76,5 +79,23 @@ class User extends Authenticatable
         }
 
         return Category::all();
+    }
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly(['name', 'last_name', 'phone', 'role', 'email'])
+            ->logOnlyDirty()
+            ->setDescriptionForEvent(fn(string $eventName) => "User has been {$eventName}")
+            ->useLogName('user');
+    }
+
+    public function getLogs()
+    {
+        return $this->activities()->orderBy('created_at', 'desc')->get();
+    }
+    public static function getActivityLogs()
+    {
+        return ActivityLog::getLogsByType('user');
     }
 }

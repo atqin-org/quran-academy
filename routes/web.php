@@ -8,6 +8,7 @@ use App\Http\Controllers\StudentResourceController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PersonnelController;
 use App\Http\Controllers\BackupController;
+use App\Http\Controllers\LogController;
 use App\Models\DatabaseBackup;
 use Illuminate\Support\Facades\Artisan;
 
@@ -44,6 +45,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+    Route::get('/system/logs', [LogController::class, 'index'])->name('admin.logs.index')->middleware(\App\Http\Middleware\AdminMiddleware::class);
 });
 
 Route::get('/dashboard/{any}', function () {
@@ -62,5 +65,7 @@ Route::get('/', function () {
 Route::get('/dashboard', function () {
     return redirect()->route('students.index');
 })->middleware(['auth', 'verified'])->name('dashboard');
+
+Route::middleware(['auth', 'verified'])->group(function () {})->middleware(\App\Http\Middleware\AdminMiddleware::class);
 
 require __DIR__ . '/auth.php';
