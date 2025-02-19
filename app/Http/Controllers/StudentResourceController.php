@@ -131,7 +131,14 @@ class StudentResourceController extends Controller
                 });
             }
         }
+        $sortBy = $request->input('sortBy', 'created_at');
+        $sortType = $request->input('sortType', 'desc');
 
+        if ($sortBy === 'name') {
+            $query->orderBy('first_name', $sortType)->orderBy('last_name', $sortType);
+        } else {
+            $query->orderBy($sortBy, $sortType);
+        }
         if ($genders = $request->input('gender')) {
             $query->whereIn('gender', $genders);
         }
