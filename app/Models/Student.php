@@ -27,6 +27,8 @@ class Student extends Model
         'mother_id',
         'category_id',
         'ahzab',
+        'ahzab_up',
+        'ahzab_down',
         'subscription',
         'subscription_expire_at',
         'insurance_expire_at',

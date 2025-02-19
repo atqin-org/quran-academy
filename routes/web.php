@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Artisan;
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('/students', StudentResourceController::class);
     Route::post('/students/{student}', [StudentResourceController::class, 'update'])->name('students.update');
+    Route::put('/students/ahzab/{student}', [StudentResourceController::class, 'ahzab'])->name('students.ahzab');
     Route::get('/studentsExport', [StudentResourceController::class, 'export'])->name('students.export');
 
     Route::get('/students/{student}/payment', [PaymentController::class, 'show'])->name('students.payment.show');
