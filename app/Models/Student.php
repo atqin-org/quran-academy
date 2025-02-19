@@ -27,6 +27,8 @@ class Student extends Model
         'mother_id',
         'category_id',
         'ahzab',
+        'ahzab_up',
+        'ahzab_down',
         'subscription',
         'subscription_expire_at',
         'insurance_expire_at',
@@ -59,6 +61,12 @@ class Student extends Model
     public function category()
     {
         return $this->belongsTo(Category::class, 'category_id');
+    }
+    protected static function booted()
+    {
+        static::saving(function ($student) {
+            $student->ahzab = $student->ahzab_up + $student->ahzab_down;
+        });
     }
 
     public function getSiblings()

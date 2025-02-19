@@ -17,8 +17,9 @@ import {
 } from "@/Components/ui/dropdown-menu";
 import { ColumnDef } from "@tanstack/react-table";
 import { Banknote, MoreHorizontal, Trash2, UserPen } from "lucide-react";
-
-import { Link } from "@inertiajs/react";
+import { useState } from "react";
+import { Link, useForm } from "@inertiajs/react";
+import { toast } from "sonner";
 
 export type StudentDisplay = {
     id: string;
@@ -26,6 +27,8 @@ export type StudentDisplay = {
     age: number;
     club: string;
     ahzab: number;
+    ahzab_up: number;
+    ahzab_down: number;
     category: string;
     category_gender?: "male" | "female";
     gender: "male" | "female";
@@ -92,12 +95,124 @@ export const columns: ColumnDef<StudentDisplay>[] = [
     {
         id: "الحزب",
         accessorKey: "ahzab",
-        header: () => {
-            return <div className="flex justify-center">الاحزاب</div>;
-        },
+        header: () => (
+            <div className="flex justify-center cursor-pointer">الأحزاب</div>
+        ),
         cell: ({ row }) => {
-            const ahzab = row.getValue("الحزب") as number;
-            return <div className="text-center font-medium">{ahzab}</div>;
+            const student = row.original;
+            const { put, setData, errors } = useForm(student);
+            console.log(errors);
+            if (errors.ahzab_up || errors.ahzab_down) {
+                toast.error("حدث خطأ أثناء تعديل الأحزاب", {
+                    description: errors.ahzab_up || errors.ahzab_down,
+                });
+                errors.ahzab_up = "";
+                errors.ahzab_down = "";
+            }
+            const [open, setOpen] = useState(false);
+            const [ahzabUp, setAhzabUp] = useState<number>(
+                student.ahzab_up || 0
+            );
+            const [ahzabDown, setAhzabDown] = useState<number>(
+                student.ahzab_down || 0
+            );
+
+            // Compute the sum automatically.
+            const computedAhzab = Number(ahzabUp) + Number(ahzabDown);
+
+            const handleConfirm = () => {
+                put(`/students/ahzab/${student.id}`, {
+                });
+                setOpen(false);
+            };
+
+            return (
+                <>
+                    <div
+                        onClick={() => setOpen(true)}
+                        className="text-center font-medium cursor-pointer"
+                    >
+                        {student.ahzab}
+                    </div>
+                    <Dialog open={open} onOpenChange={setOpen}>
+                        <DialogContent dir="rtl">
+                            <DialogHeader>
+                                <DialogTitle>تعديل الأحزاب</DialogTitle>
+                                <DialogDescription>
+                                    قم بتعديل الأحزاب مع الأعلى والأسفل، وسيتم
+                                    حساب المجموع تلقائيًا.
+                                </DialogDescription>
+                                <div className="flex flex-col gap-4 mt-4">
+                                    <div>
+                                        <label className="block text-sm font-medium">
+                                            الأحزاب مع الأعلى
+                                        </label>
+                                        <input
+                                            type="number"
+                                            value={ahzabUp}
+                                            onChange={(e) => {
+                                                setData(
+                                                    "ahzab_up",
+                                                    Number(e.target.value)
+                                                );
+                                                setAhzabUp(
+                                                    Number(e.target.value)
+                                                );
+                                            }}
+                                            className="mt-1 block w-full border rounded p-1"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium">
+                                            الأحزاب مع الأسفل
+                                        </label>
+                                        <input
+                                            type="number"
+                                            value={ahzabDown}
+                                            onChange={(e) => {
+                                                setData(
+                                                    "ahzab_down",
+                                                    Number(e.target.value)
+                                                );
+                                                setAhzabDown(
+                                                    Number(e.target.value)
+                                                );
+                                            }}
+                                            className="mt-1 block w-full border rounded p-1"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium">
+                                            الأحزاب (المجموع)
+                                        </label>
+                                        <input
+                                            type="number"
+                                            value={computedAhzab}
+                                            disabled
+                                            className="mt-1 block w-full border rounded p-1 bg-gray-100"
+                                        />
+                                    </div>
+                                </div>
+                            </DialogHeader>
+                            <DialogFooter className="flex justify-start gap-2">
+                                <Button
+                                    onClick={handleConfirm}
+                                    variant="default"
+                                >
+                                    تأكيد
+                                </Button>
+                                <Button
+                                    onClick={() => setOpen(false)}
+                                    variant="secondary"
+                                    className="ml-2"
+                                >
+                                    إلغاء
+                                </Button>
+                            </DialogFooter>
+                        </DialogContent>
+                    </Dialog>
+                </>
+            );
         },
     },
     {
