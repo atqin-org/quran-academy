@@ -28,7 +28,7 @@ import {
 } from "@/Components/ui/table";
 import { Button } from "@/Components/ui/button";
 import { Input } from "@/Components/ui/input";
-import { useForm } from "@inertiajs/react";
+import { useForm, router } from "@inertiajs/react";
 import { FileSpreadsheet, Search } from "lucide-react";
 import { Separator } from "@/Components/ui/separator";
 import { Badge } from "@/Components/ui/badge";
@@ -217,6 +217,22 @@ export function DataTable<TData, TValue>({
         });
         //handleSearchRequest((new Event('submit') as unknown) as React.FormEvent<HTMLFormElement>);
     };
+    const handleExport = () => {
+        // amit the _blank target to open the link in a new tab
+        console.log(formData);
+        window.open(
+            route("students.export", {
+                search: formData.search,
+                sortBy: formData.sortBy,
+                sortType: formData.sortType,
+                categories: formData.categories,
+                clubs: formData.clubs,
+                gender: formData.gender
+            }),
+            "_new"
+        );
+    };
+
     return (
         <div className="w-full">
             <div className="flex items-center py-4 gap-2 w-full">
@@ -420,7 +436,11 @@ export function DataTable<TData, TValue>({
                         />
                     </div>
                     <div className="flex items-center gap-2">
-                        <Button variant="outline" className="flex gap-1">
+                        <Button
+                            variant="outline"
+                            className="flex gap-1"
+                            onClick={handleExport}
+                        >
                             <span>تصدير</span>
                             <FileSpreadsheet />
                         </Button>
@@ -626,7 +646,7 @@ export function DataTable<TData, TValue>({
                     className="h-8 w-0.5 bg-neutral-300 rounded-3xl lg:inline-block hidden"
                 />
                 <div className="flex items-center gap-2">
-                    <Button variant="outline" className="flex gap-1">
+                    <Button variant="outline" className="flex gap-1" onClick={handleExport}>
                         <span>تصدير</span>
                         <FileSpreadsheet />
                     </Button>

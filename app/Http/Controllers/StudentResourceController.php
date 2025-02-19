@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\StudentsExport;
+use Maatwebsite\Excel\Facades\Excel;
 use App\Models\Category;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -32,14 +34,14 @@ class StudentResourceController extends Controller
         if ($search = $request->input('search')) {
             $connectionType = DB::getDriverName();
             if ($connectionType === 'sqlite') {
-                $query->where(function($q) use ($search) {
+                $query->where(function ($q) use ($search) {
                     $q->whereRaw("(first_name || ' ' || last_name) like ?", ["%{$search}%"])
-                      ->orWhereRaw("(last_name || ' ' || first_name) like ?", ["%{$search}%"]);
+                        ->orWhereRaw("(last_name || ' ' || first_name) like ?", ["%{$search}%"]);
                 });
             } elseif ($connectionType === 'mysql') {
-                $query->where(function($q) use ($search) {
+                $query->where(function ($q) use ($search) {
                     $q->whereRaw("CONCAT(first_name, ' ', last_name) like ?", ["%{$search}%"])
-                      ->orWhereRaw("CONCAT(last_name, ' ', first_name) like ?", ["%{$search}%"]);
+                        ->orWhereRaw("CONCAT(last_name, ' ', first_name) like ?", ["%{$search}%"]);
                 });
             }
         }
@@ -104,6 +106,48 @@ class StudentResourceController extends Controller
                 ]
             ]
         );
+    }
+    public function export(Request $request)
+    {
+        $query = Student::query();
+        $user = Auth::user();
+
+        // Apply club restriction
+        $accessibleClubs = $user->accessibleClubs()->pluck('id')->toArray();
+        $query->whereIn('club_id', $accessibleClubs);
+
+        // Apply search filter
+        if ($search = $request->input('search')) {
+            $connectionType = DB::getDriverName();
+            if ($connectionType === 'sqlite') {
+                $query->where(function ($q) use ($search) {
+                    $q->whereRaw("(first_name || ' ' || last_name) like ?", ["%{$search}%"])
+                        ->orWhereRaw("(last_name || ' ' || first_name) like ?", ["%{$search}%"]);
+                });
+            } else {
+                $query->where(function ($q) use ($search) {
+                    $q->whereRaw("CONCAT(first_name, ' ', last_name) like ?", ["%{$search}%"])
+                        ->orWhereRaw("CONCAT(last_name, ' ', first_name) like ?", ["%{$search}%"]);
+                });
+            }
+        }
+
+        if ($genders = $request->input('gender')) {
+            $query->whereIn('gender', $genders);
+        }
+
+        if ($categories = $request->input('categories')) {
+            $query->whereIn('category_id', $categories);
+        }
+
+        if ($clubs = $request->input('clubs')) {
+            $query->whereIn('club_id', $clubs);
+        }
+
+        // Get the filtered students collection
+        $students = $query->get();
+
+        return Excel::download(new StudentsExport($students), 'students-' . now()->format('Y-m-d') . '.xlsx');
     }
 
     /**
