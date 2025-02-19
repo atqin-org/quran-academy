@@ -60,6 +60,12 @@ class Student extends Model
     {
         return $this->belongsTo(Category::class, 'category_id');
     }
+    protected static function booted()
+    {
+        static::saving(function ($student) {
+            $student->ahzab = $student->ahzab_up + $student->ahzab_down;
+        });
+    }
 
     public function getSiblings()
     {
