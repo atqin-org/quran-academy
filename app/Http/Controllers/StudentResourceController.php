@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\StudentsExport;
+use Maatwebsite\Excel\Facades\Excel;
 use App\Models\Category;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -32,14 +34,14 @@ class StudentResourceController extends Controller
         if ($search = $request->input('search')) {
             $connectionType = DB::getDriverName();
             if ($connectionType === 'sqlite') {
-                $query->where(function($q) use ($search) {
+                $query->where(function ($q) use ($search) {
                     $q->whereRaw("(first_name || ' ' || last_name) like ?", ["%{$search}%"])
-                      ->orWhereRaw("(last_name || ' ' || first_name) like ?", ["%{$search}%"]);
+                        ->orWhereRaw("(last_name || ' ' || first_name) like ?", ["%{$search}%"]);
                 });
             } elseif ($connectionType === 'mysql') {
-                $query->where(function($q) use ($search) {
+                $query->where(function ($q) use ($search) {
                     $q->whereRaw("CONCAT(first_name, ' ', last_name) like ?", ["%{$search}%"])
-                      ->orWhereRaw("CONCAT(last_name, ' ', first_name) like ?", ["%{$search}%"]);
+                        ->orWhereRaw("CONCAT(last_name, ' ', first_name) like ?", ["%{$search}%"]);
                 });
             }
         }
@@ -65,7 +67,7 @@ class StudentResourceController extends Controller
             $query->whereIn('club_id', $clubs);
         }
 
-        $students = $query->paginate(10, ['id', 'first_name', 'last_name', 'birthdate', 'ahzab', 'gender', 'insurance_expire_at', 'subscription', 'subscription_expire_at', 'club_id', 'category_id'])->withQueryString();
+        $students = $query->paginate(10, ['id', 'first_name', 'last_name', 'birthdate', 'ahzab','ahzab_up','ahzab_down', 'gender', 'insurance_expire_at', 'subscription', 'subscription_expire_at', 'club_id', 'category_id'])->withQueryString();
 
         $students->getCollection()->transform(function ($student) {
             $student->name = $student->first_name . ' ' . $student->last_name;
@@ -104,6 +106,57 @@ class StudentResourceController extends Controller
                 ]
             ]
         );
+    }
+    public function export(Request $request)
+    {
+        $query = Student::query();
+        $user = Auth::user();
+
+        // Apply club restriction
+        $accessibleClubs = $user->accessibleClubs()->pluck('id')->toArray();
+        $query->whereIn('club_id', $accessibleClubs);
+
+        // Apply search filter
+        if ($search = $request->input('search')) {
+            $connectionType = DB::getDriverName();
+            if ($connectionType === 'sqlite') {
+                $query->where(function ($q) use ($search) {
+                    $q->whereRaw("(first_name || ' ' || last_name) like ?", ["%{$search}%"])
+                        ->orWhereRaw("(last_name || ' ' || first_name) like ?", ["%{$search}%"]);
+                });
+            } else {
+                $query->where(function ($q) use ($search) {
+                    $q->whereRaw("CONCAT(first_name, ' ', last_name) like ?", ["%{$search}%"])
+                        ->orWhereRaw("CONCAT(last_name, ' ', first_name) like ?", ["%{$search}%"]);
+                });
+            }
+        }
+        $sortBy = $request->input('sortBy', 'created_at');
+        $sortType = $request->input('sortType', 'desc');
+
+        if ($sortBy === 'name') {
+            $query->orderBy('first_name', $sortType)->orderBy('last_name', $sortType);
+        } else {
+            $query->orderBy($sortBy, $sortType);
+        }
+        if ($genders = $request->input('gender')) {
+            $query->whereIn('gender', $genders);
+        }
+
+        if ($categories = $request->input('categories')) {
+            $query->whereIn('category_id', $categories);
+        }
+
+        if ($clubs = $request->input('clubs')) {
+            $query->whereIn('club_id', $clubs);
+        }
+
+        // Get the filtered students collection
+        $students = $query->get();
+        $export = new StudentsExport($students);
+        $export->onExport();
+
+        return Excel::download($export, 'students-' . now()->format('Y-m-d') . '.xlsx');
     }
 
     /**
@@ -204,6 +257,25 @@ class StudentResourceController extends Controller
         );
     }
 
+    /**
+     * Update ahzab the specified resource in storage.
+     */
+    public function ahzab(Request $request, string $id){
+        $request->validate([
+            'ahzab_up' => 'required|numeric|max:60',
+            'ahzab_down' => 'required|numeric|max:60',
+        ]);
+        // ahzab_up and ahzab_down should be less than 30
+        if ($request->ahzab_up + $request->ahzab_down > 60) {
+            return redirect()->back()->withInput()->withErrors(['ahzab_up' => 'مجموع الأحزاب يجب أن يكون أقل من 60']);
+        }
+        // Find the student by ID
+        $student = Student::findOrFail($id);
+        $student->ahzab_up = $request->ahzab_up;
+        $student->ahzab_down = $request->ahzab_down;
+        $student->save();
+        return redirect()->route('students.index')->with('success', 'تم تحديث الأحزاب بنجاح');
+    }
     /**
      * Update the specified resource in storage.
      */

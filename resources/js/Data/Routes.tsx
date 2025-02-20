@@ -68,7 +68,7 @@ export const sidebarLinks = [
     },
     {
         icon: <Users />,
-        label: "الموارد البشرية",
+        label: "موارد بشرية",
         latin: "HR",
         display: false,
         crud: true,
