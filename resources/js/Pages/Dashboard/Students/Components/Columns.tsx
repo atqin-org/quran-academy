@@ -121,8 +121,7 @@ export const columns: ColumnDef<StudentDisplay>[] = [
             const computedAhzab = Number(ahzabUp) + Number(ahzabDown);
 
             const handleConfirm = () => {
-                put(`/students/ahzab/${student.id}`, {
-                });
+                put(`/students/ahzab/${student.id}`, {});
                 setOpen(false);
             };
 
@@ -130,9 +129,11 @@ export const columns: ColumnDef<StudentDisplay>[] = [
                 <>
                     <div
                         onClick={() => setOpen(true)}
-                        className="text-center font-medium cursor-pointer"
+                        className="text-center font-medium cursor-pointer transition-colors hover:font-bold"
                     >
-                        {student.ahzab}
+                        <span className="w-8 inline-block text-center p-1 rounded-lg bg-gray-100 ring-neutral-900 ring-1 font-mono">
+                            {student.ahzab}
+                        </span>
                     </div>
                     <Dialog open={open} onOpenChange={setOpen}>
                         <DialogContent dir="rtl">
