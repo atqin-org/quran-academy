@@ -7,6 +7,7 @@ import {
     LibraryBig,
     NotebookPen,
     Presentation,
+    ScrollText,
     Settings,
     Users,
 } from "lucide-react";
@@ -82,6 +83,15 @@ export const sidebarLinks = [
         crud: false,
         visibleFor: ["admin", "moderator", "staff", "teacher" ],
         href: "/profile",
+    },
+    {
+        icon: <ScrollText />,
+        label: "السجلّات",
+        latin: "Logs",
+        display: false,
+        crud: true,
+        visibleFor: ["admin"],
+        href: "/system/logs",
     },
     {
         icon: <DatabaseBackup />,

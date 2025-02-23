@@ -5,13 +5,16 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Support\Facades\Storage;
+use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Models\Activity;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class Student extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, LogsActivity;
 
     // Define the fillable properties
     protected $fillable = [
@@ -90,7 +93,7 @@ class Student extends Model
                     });
                 }
             })
-            ->with(['category','father', 'mother'])
+            ->with(['category', 'father', 'mother'])
             ->get();
 
         // Add shared_guardian attribute
@@ -228,5 +231,40 @@ class Student extends Model
             $attributes[$attributeName] = $attributes[$attributeName]->storeAs($storagePath, $customFileName, 'public');
             $this->$attributeName = $attributes[$attributeName];
         }
+    }
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly([
+                'first_name',
+                'last_name',
+                'gender',
+                'birthdate',
+                'social_status',
+                'cronic_disease',
+                'family_status',
+                'ahzab',
+                'subscription',
+                'club_id',
+                'category_id',
+                'father_id',
+                'mother_id'
+            ])
+            ->logOnlyDirty()
+            ->setDescriptionForEvent(function (string $eventName) {
+                return "Student has been {$eventName}";
+            })
+            ->useLogName('student');
+    }
+
+    public function getLogs()
+    {
+        return $this->activities()->orderBy('created_at', 'desc')->get();
+    }
+
+    public static function getActivityLogs()
+    {
+        return ActivityLog::getLogsByType('student');
     }
 }

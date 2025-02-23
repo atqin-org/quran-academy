@@ -153,8 +153,10 @@ class StudentResourceController extends Controller
 
         // Get the filtered students collection
         $students = $query->get();
+        $export = new StudentsExport($students);
+        $export->onExport();
 
-        return Excel::download(new StudentsExport($students), 'students-' . now()->format('Y-m-d') . '.xlsx');
+        return Excel::download($export, 'students-' . now()->format('Y-m-d') . '.xlsx');
     }
 
     /**

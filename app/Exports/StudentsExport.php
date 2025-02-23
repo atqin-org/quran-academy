@@ -16,12 +16,12 @@ use PhpOffice\PhpSpreadsheet\Cell\Cell;
 use Maatwebsite\Excel\DefaultValueBinder;
 use PhpOffice\PhpSpreadsheet\Worksheet\Drawing;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use Spatie\Activitylog\Models\Activity;
 
 class StudentsExport extends DefaultValueBinder implements FromCollection, WithMapping, ShouldAutoSize, WithHeadings, WithCustomStartCell, WithCustomValueBinder, WithEvents
 {
     protected Collection $students;
     private int $rowIndex = 0;  // for index column
-
 
     public function __construct(Collection $students)
     {
@@ -137,5 +137,16 @@ class StudentsExport extends DefaultValueBinder implements FromCollection, WithM
                 */
             }
         ];
+    }
+    // Add a method to log the export activity
+    public function onExport(): void
+    {
+        activity('student')
+            ->performedOn(new \App\Models\Student)
+            ->withProperties([
+                'exported_at'   => now(),
+                'students_count' => $this->students->count()
+            ])
+            ->log('Students data exported.');
     }
 }

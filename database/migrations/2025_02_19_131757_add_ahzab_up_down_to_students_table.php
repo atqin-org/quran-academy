@@ -16,6 +16,8 @@ return new class extends Migration
 
             $table->integer('ahzab_up')->default(0)->after('ahzab');
             $table->integer('ahzab_down')->default(0)->after('ahzab_up');
+            // add an is_active column
+            $table->boolean('is_active')->default(1)->after('ahzab_down');
         });
     }
 
@@ -27,6 +29,7 @@ return new class extends Migration
         Schema::table('students', function (Blueprint $table) {
             $table->string('ahzab')->default(0)->change();
             $table->dropColumn(['ahzab_up', 'ahzab_down']);
+            $table->dropColumn('is_active');
         });
     }
 };
