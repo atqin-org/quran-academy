@@ -138,7 +138,6 @@ class StudentsExport extends DefaultValueBinder implements FromCollection, WithM
             }
         ];
     }
-
     // Add a method to log the export activity
     public function onExport(): void
     {
