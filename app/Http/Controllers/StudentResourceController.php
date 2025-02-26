@@ -67,7 +67,7 @@ class StudentResourceController extends Controller
             $query->whereIn('club_id', $clubs);
         }
 
-        $students = $query->paginate(10, ['id', 'first_name', 'last_name', 'birthdate', 'ahzab','ahzab_up','ahzab_down', 'gender', 'insurance_expire_at', 'subscription', 'subscription_expire_at', 'club_id', 'category_id'])->withQueryString();
+        $students = $query->paginate(10, ['id', 'first_name', 'last_name', 'birthdate', 'ahzab', 'ahzab_up', 'ahzab_down', 'gender', 'insurance_expire_at', 'subscription', 'subscription_expire_at', 'club_id', 'category_id'])->withQueryString();
 
         $students->getCollection()->transform(function ($student) {
             $student->name = $student->first_name . ' ' . $student->last_name;
@@ -260,7 +260,8 @@ class StudentResourceController extends Controller
     /**
      * Update ahzab the specified resource in storage.
      */
-    public function ahzab(Request $request, string $id){
+    public function ahzab(Request $request, string $id)
+    {
         $request->validate([
             'ahzab_up' => 'required|numeric|max:60',
             'ahzab_down' => 'required|numeric|max:60',
@@ -274,7 +275,7 @@ class StudentResourceController extends Controller
         $student->ahzab_up = $request->ahzab_up;
         $student->ahzab_down = $request->ahzab_down;
         $student->save();
-        return redirect()->route('students.index')->with('success', 'تم تحديث الأحزاب بنجاح');
+        return back()->with('success', 'تم تحديث الأحزاب بنجاح');
     }
     /**
      * Update the specified resource in storage.
