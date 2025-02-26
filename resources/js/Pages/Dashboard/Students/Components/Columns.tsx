@@ -15,10 +15,10 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from "@/Components/ui/dropdown-menu";
+import { Link, useForm } from "@inertiajs/react";
 import { ColumnDef } from "@tanstack/react-table";
 import { Banknote, MoreHorizontal, Trash2, UserPen } from "lucide-react";
-import { useState } from "react";
-import { Link, useForm } from "@inertiajs/react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 export type StudentDisplay = {
@@ -110,12 +110,21 @@ export const columns: ColumnDef<StudentDisplay>[] = [
                 errors.ahzab_down = "";
             }
             const [open, setOpen] = useState(false);
-            const [ahzabUp, setAhzabUp] = useState<number>(
-                student.ahzab_up || 0
+
+            // Use student.id in a key to force reset of state when ID changes
+            const [ahzabUp, setAhzabUp] = useState(() => student.ahzab_up || 0);
+            const [ahzabDown, setAhzabDown] = useState(
+                () => student.ahzab_down || 0
             );
-            const [ahzabDown, setAhzabDown] = useState<number>(
-                student.ahzab_down || 0
-            );
+
+            // Reset form values when student ID changes
+            useEffect(() => {
+                setAhzabUp(student.ahzab_up || 0);
+                setAhzabDown(student.ahzab_down || 0);
+                // Also update the form data to match
+                setData("ahzab_up", student.ahzab_up || 0);
+                setData("ahzab_down", student.ahzab_down || 0);
+            }, [student.id]); // This dependency ensures reset when student changes
 
             // Compute the sum automatically.
             const computedAhzab = Number(ahzabUp) + Number(ahzabDown);
