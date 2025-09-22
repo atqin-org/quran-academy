@@ -27,7 +27,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             ClubSeeder::class,
             CategorySeeder::class,
-            //StudentSeeder::class,
+            StudentSeeder::class,
         ]);
     }
 }
