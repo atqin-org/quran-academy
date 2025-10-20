@@ -5,6 +5,7 @@ import {
     DatabaseBackup,
     House,
     LibraryBig,
+    Network,
     NotebookPen,
     Presentation,
     ScrollText,
@@ -16,11 +17,12 @@ export const sidebarLinks = [
         icon: <ChartPie />,
         label: "الاحصائيات",
         latin: "Statistics",
-        display: true,
+        display: false,
         crud: false,
         visibleFor: ["admin", "moderator", "staff", "teacher" ],
         href: "/dashboard/statistic",
     },
+    
     {
         icon: <LibraryBig />,
         label: "المداومة",
@@ -38,6 +40,16 @@ export const sidebarLinks = [
         crud: true,
         visibleFor: ["admin", "moderator", "staff", "teacher" ],
         href: "/students",
+    },
+       {
+       
+         icon: <Network />,
+        label: "برنامج",
+        latin: "Program",
+        display: false,
+        crud: true,
+        visibleFor: ["admin", "moderator", "staff", "teacher" ],
+        href: "/programs",
     },
     {
         icon: <Presentation />,

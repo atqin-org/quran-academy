@@ -66,7 +66,10 @@ class StudentResourceController extends Controller
         if ($clubs = $request->input('clubs')) {
             $query->whereIn('club_id', $clubs);
         }
-
+        $query->with([
+            'lastHizbAttendance.hizb',
+            'lastThomanAttendance.thoman',
+        ]);
         $students = $query->paginate(10, ['id', 'first_name', 'last_name', 'birthdate', 'ahzab', 'ahzab_up', 'ahzab_down', 'gender', 'insurance_expire_at', 'subscription', 'subscription_expire_at', 'club_id', 'category_id'])->withQueryString();
 
         $students->getCollection()->transform(function ($student) {
@@ -94,7 +97,7 @@ class StudentResourceController extends Controller
         $clubCounts = Club::withCount(['students' => function ($query) use ($accessibleClubs) {
             $query->whereIn('club_id', $accessibleClubs);
         }])->whereIn('id', $accessibleClubs)->get();
-
+       
         return Inertia::render(
             'Dashboard/Students/Index',
             [
@@ -233,10 +236,48 @@ class StudentResourceController extends Controller
      */
     public function show(string $id)
     {
-        $student = Student::find($id)->load('club', 'category', 'father', 'mother');
+        $student = Student::with([
+            'club',
+            'category',
+            'father',
+            'mother',
+            'attendances.session'
+        ])->findOrFail($id);
 
-        return $student;
+        $totalHizb = 60;
+
+        // إحصائيات عامة
+        $attendanceStats = [
+            'present' => $student->attendances()->where('status', 'present')->count(),
+            'absent'  => $student->attendances()->where('status', 'absent')->count(),
+            'excused' => $student->attendances()->where('status', 'excused')->count(),
+        ];
+
+        // آخر مستوى تقدّم
+        $lastHizb = $student->attendances()->whereNotNull('hizb_id')->latest()->first();
+        $progress = $lastHizb ? round(($lastHizb->hizb_id / $totalHizb) * 100, 2) : 0;
+
+        // التقدّم بمرور الوقت
+        $progressTimeline = $student->attendances()
+            ->whereNotNull('hizb_id')
+            ->orderBy('created_at')
+            ->get()
+            ->map(function ($attendance) use ($totalHizb) {
+                return [
+                    'date' => $attendance->created_at->format('Y-m-d'),
+                    'progress' => round(($attendance->hizb_id / $totalHizb) * 100, 2),
+                ];
+            })
+            ->values();
+
+        return inertia('Dashboard/Students/Show', [
+            'student' => $student,
+            'progress' => $progress,
+            'attendanceStats' => $attendanceStats,
+            'progressTimeline' => $progressTimeline,
+        ]);
     }
+
 
     /**
      * Show the form for editing the specified resource.

@@ -33,7 +33,7 @@ class StudentFactory extends Factory
         $ahzab_up = $faker->numberBetween(0, 30);
         $ahzab_down = $faker->numberBetween(0, 30);
         return [
-            'club_id' => $faker->randomElement(Club::all()->pluck('id')->toArray()),
+            'club_id' => Club::factory(),
             'first_name' => $faker->firstName,
             'last_name' => $faker->lastName,
             'gender' => $faker->randomElement(['male', 'female']),
@@ -43,7 +43,7 @@ class StudentFactory extends Factory
             'family_status' => $faker->optional()->word,
             'father_id' => $hasFather ? Guardian::factory()->state(['gender' => 'male']) : null,
             'mother_id' => $hasMother ? Guardian::factory()->state(['gender' => 'female']) : null,
-            'category_id' => $faker->randomElement(Category::all()->pluck('id')->toArray()),
+            'category_id' => Category::factory(),
             'ahzab_up' => $ahzab_up,
             'ahzab_down' => $ahzab_down,
             'ahzab' => $ahzab_up + $ahzab_down,

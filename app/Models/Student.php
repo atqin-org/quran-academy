@@ -267,4 +267,30 @@ class Student extends Model
     {
         return ActivityLog::getLogsByType('student');
     }
+
+    public function attendances()
+    {
+        return $this->hasMany(Attendance::class, 'student_id');
+    }
+
+    public function lastAttendance()
+    {
+        return $this->hasOne(Attendance::class)->latestOfMany();
+    }
+
+    public function lastHizbAttendance()
+    {
+        return $this->hasOne(Attendance::class)
+            ->where('status', 'present')
+            ->whereNotNull('hizb_id')
+            ->latest() ;// يأخذ آخر واحد فقط
+    }
+
+    public function lastThomanAttendance()
+    {
+        return $this->hasOne(Attendance::class)
+            ->where('status', 'present')
+            ->whereNotNull('thoman_id')
+            ->latest();
+    }
 }
