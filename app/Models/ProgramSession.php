@@ -9,7 +9,7 @@ class ProgramSession extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['program_id', 'session_date', 'start_time', 'end_time'];
+    protected $fillable = ['program_id', 'session_date', 'start_time', 'end_time','status'];
 
     protected $casts = [
         'session_date' => 'date',

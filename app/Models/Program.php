@@ -10,14 +10,22 @@ class Program extends Model
     use HasFactory;
 
     protected $fillable = [
-        'subject_id', 'club_id', 'category_id', 'section_id',
-        'start_date', 'end_date', 'days_of_week'
+        'name',
+        'subject_id',
+        'club_id',
+        'category_id',
+        'section_id',
+        'start_date',
+        'end_date',
+        'days_of_week'
     ];
 
     protected $casts = [
         'days_of_week' => 'array',
-        'start_date' => 'date',
-        'end_date' => 'date',
+        'start_date' => 'date:d/m/Y',
+        'end_date' => 'date:d/m/Y',
+        'created_at' => 'datetime:d/m/Y H:i',
+        'updated_at' => 'datetime:d/m/Y H:i',
     ];
 
     public function subject()

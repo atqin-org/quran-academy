@@ -36,6 +36,8 @@ export type StudentDisplay = {
     subscription: number;
     insurance_expire_at: Date | null;
     subscription_expire_at: Date | null;
+    last_hizb_attendance: any;
+    last_thoman_attendance: any;
 };
 
 export const columns: ColumnDef<StudentDisplay>[] = [
@@ -44,8 +46,11 @@ export const columns: ColumnDef<StudentDisplay>[] = [
         header: ({ table }) => (
             <Checkbox
                 checked={
-                    table.getIsAllPageRowsSelected() ||
-                    (table.getIsSomePageRowsSelected() && "indeterminate")
+                    table.getIsAllPageRowsSelected()
+                        ? true
+                        : table.getIsSomePageRowsSelected()
+                        ? "indeterminate"
+                        : false
                 }
                 onCheckedChange={(value) =>
                     table.toggleAllPageRowsSelected(!!value)
@@ -56,7 +61,7 @@ export const columns: ColumnDef<StudentDisplay>[] = [
         cell: ({ row }) => (
             <div className="mx-auto flex items-center justify-end">
                 <Checkbox
-                    checked={row.getIsSelected()}
+                    checked={!!row.getIsSelected()}
                     onCheckedChange={(value) => row.toggleSelected(!!value)}
                     aria-label="Select row"
                 />
@@ -92,136 +97,163 @@ export const columns: ColumnDef<StudentDisplay>[] = [
             return <div className="text-center font-medium">{age}</div>;
         },
     },
+
+    // {
+    //     id: "الحزب",
+    //     accessorKey: "ahzab",
+    //     header: () => (
+    //         <div className="flex justify-center cursor-pointer">الأحزاب</div>
+    //     ),
+    //     cell: ({ row }) => {
+    //         const student = row.original;
+    //         const { put, setData, errors } = useForm(student);
+    //         console.log(errors);
+    //         if (errors.ahzab_up || errors.ahzab_down) {
+    //             toast.error("حدث خطأ أثناء تعديل الأحزاب", {
+    //                 description: errors.ahzab_up || errors.ahzab_down,
+    //             });
+    //             errors.ahzab_up = "";
+    //             errors.ahzab_down = "";
+    //         }
+    //         const [open, setOpen] = useState(false);
+
+    //         // Use student.id in a key to force reset of state when ID changes
+    //         const [ahzabUp, setAhzabUp] = useState(() => student.ahzab_up || 0);
+    //         const [ahzabDown, setAhzabDown] = useState(
+    //             () => student.ahzab_down || 0
+    //         );
+
+    //         // Reset form values when student ID changes
+    //         useEffect(() => {
+    //             setAhzabUp(student.ahzab_up || 0);
+    //             setAhzabDown(student.ahzab_down || 0);
+    //             // Also update the form data to match
+    //             setData("ahzab_up", student.ahzab_up || 0);
+    //             setData("ahzab_down", student.ahzab_down || 0);
+    //         }, [student.id]); // This dependency ensures reset when student changes
+
+    //         // Compute the sum automatically.
+    //         const computedAhzab = Number(ahzabUp) + Number(ahzabDown);
+
+    //         const handleConfirm = () => {
+    //             put(`/students/ahzab/${student.id}`, {});
+    //             setOpen(false);
+    //         };
+
+    //         return (
+    //             <>
+    //                 <div
+    //                     onClick={() => setOpen(true)}
+    //                     className="text-center font-medium cursor-pointer transition-colors hover:font-bold"
+    //                 >
+    //                     <span className="w-8 inline-block text-center p-1 rounded-lg bg-gray-100 ring-neutral-900 ring-1 font-mono">
+    //                         {student.ahzab}
+    //                     </span>
+    //                 </div>
+    //                 <Dialog open={open} onOpenChange={setOpen}>
+    //                     <DialogContent dir="rtl">
+    //                         <DialogHeader>
+    //                             <DialogTitle>تعديل الأحزاب</DialogTitle>
+    //                             <DialogDescription>
+    //                                 قم بتعديل الأحزاب مع الأعلى والأسفل، وسيتم
+    //                                 حساب المجموع تلقائيًا.
+    //                             </DialogDescription>
+    //                             <div className="flex flex-col gap-4 mt-4">
+    //                                 <div>
+    //                                     <label className="block text-sm font-medium">
+    //                                         الأحزاب مع الأعلى
+    //                                     </label>
+    //                                     <input
+    //                                         type="number"
+    //                                         value={ahzabUp}
+    //                                         onChange={(e) => {
+    //                                             setData(
+    //                                                 "ahzab_up",
+    //                                                 Number(e.target.value)
+    //                                             );
+    //                                             setAhzabUp(
+    //                                                 Number(e.target.value)
+    //                                             );
+    //                                         }}
+    //                                         className="mt-1 block w-full border rounded p-1"
+    //                                     />
+    //                                 </div>
+    //                                 <div>
+    //                                     <label className="block text-sm font-medium">
+    //                                         الأحزاب مع الأسفل
+    //                                     </label>
+    //                                     <input
+    //                                         type="number"
+    //                                         value={ahzabDown}
+    //                                         onChange={(e) => {
+    //                                             setData(
+    //                                                 "ahzab_down",
+    //                                                 Number(e.target.value)
+    //                                             );
+    //                                             setAhzabDown(
+    //                                                 Number(e.target.value)
+    //                                             );
+    //                                         }}
+    //                                         className="mt-1 block w-full border rounded p-1"
+    //                                     />
+    //                                 </div>
+    //                                 <div>
+    //                                     <label className="block text-sm font-medium">
+    //                                         الأحزاب (المجموع)
+    //                                     </label>
+    //                                     <input
+    //                                         type="number"
+    //                                         value={computedAhzab}
+    //                                         disabled
+    //                                         className="mt-1 block w-full border rounded p-1 bg-gray-100"
+    //                                     />
+    //                                 </div>
+    //                             </div>
+    //                         </DialogHeader>
+    //                         <DialogFooter className="flex justify-start gap-2">
+    //                             <Button
+    //                                 onClick={handleConfirm}
+    //                                 variant="default"
+    //                             >
+    //                                 تأكيد
+    //                             </Button>
+    //                             <Button
+    //                                 onClick={() => setOpen(false)}
+    //                                 variant="secondary"
+    //                                 className="ml-2"
+    //                             >
+    //                                 إلغاء
+    //                             </Button>
+    //                         </DialogFooter>
+    //                     </DialogContent>
+    //                 </Dialog>
+    //             </>
+    //         );
+    //     },
+    // },
     {
         id: "الحزب",
-        accessorKey: "ahzab",
-        header: () => (
-            <div className="flex justify-center cursor-pointer">الأحزاب</div>
-        ),
+        accessorKey: "last_hizb_attendance.number",
+        header: () => <div className="text-center">الحزب</div>,
         cell: ({ row }) => {
-            const student = row.original;
-            const { put, setData, errors } = useForm(student);
-            console.log(errors);
-            if (errors.ahzab_up || errors.ahzab_down) {
-                toast.error("حدث خطأ أثناء تعديل الأحزاب", {
-                    description: errors.ahzab_up || errors.ahzab_down,
-                });
-                errors.ahzab_up = "";
-                errors.ahzab_down = "";
-            }
-            const [open, setOpen] = useState(false);
-
-            // Use student.id in a key to force reset of state when ID changes
-            const [ahzabUp, setAhzabUp] = useState(() => student.ahzab_up || 0);
-            const [ahzabDown, setAhzabDown] = useState(
-                () => student.ahzab_down || 0
-            );
-
-            // Reset form values when student ID changes
-            useEffect(() => {
-                setAhzabUp(student.ahzab_up || 0);
-                setAhzabDown(student.ahzab_down || 0);
-                // Also update the form data to match
-                setData("ahzab_up", student.ahzab_up || 0);
-                setData("ahzab_down", student.ahzab_down || 0);
-            }, [student.id]); // This dependency ensures reset when student changes
-
-            // Compute the sum automatically.
-            const computedAhzab = Number(ahzabUp) + Number(ahzabDown);
-
-            const handleConfirm = () => {
-                put(`/students/ahzab/${student.id}`, {});
-                setOpen(false);
-            };
-
+            const hizb = row.original.last_hizb_attendance;
             return (
-                <>
-                    <div
-                        onClick={() => setOpen(true)}
-                        className="text-center font-medium cursor-pointer transition-colors hover:font-bold"
-                    >
-                        <span className="w-8 inline-block text-center p-1 rounded-lg bg-gray-100 ring-neutral-900 ring-1 font-mono">
-                            {student.ahzab}
-                        </span>
-                    </div>
-                    <Dialog open={open} onOpenChange={setOpen}>
-                        <DialogContent dir="rtl">
-                            <DialogHeader>
-                                <DialogTitle>تعديل الأحزاب</DialogTitle>
-                                <DialogDescription>
-                                    قم بتعديل الأحزاب مع الأعلى والأسفل، وسيتم
-                                    حساب المجموع تلقائيًا.
-                                </DialogDescription>
-                                <div className="flex flex-col gap-4 mt-4">
-                                    <div>
-                                        <label className="block text-sm font-medium">
-                                            الأحزاب مع الأعلى
-                                        </label>
-                                        <input
-                                            type="number"
-                                            value={ahzabUp}
-                                            onChange={(e) => {
-                                                setData(
-                                                    "ahzab_up",
-                                                    Number(e.target.value)
-                                                );
-                                                setAhzabUp(
-                                                    Number(e.target.value)
-                                                );
-                                            }}
-                                            className="mt-1 block w-full border rounded p-1"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium">
-                                            الأحزاب مع الأسفل
-                                        </label>
-                                        <input
-                                            type="number"
-                                            value={ahzabDown}
-                                            onChange={(e) => {
-                                                setData(
-                                                    "ahzab_down",
-                                                    Number(e.target.value)
-                                                );
-                                                setAhzabDown(
-                                                    Number(e.target.value)
-                                                );
-                                            }}
-                                            className="mt-1 block w-full border rounded p-1"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium">
-                                            الأحزاب (المجموع)
-                                        </label>
-                                        <input
-                                            type="number"
-                                            value={computedAhzab}
-                                            disabled
-                                            className="mt-1 block w-full border rounded p-1 bg-gray-100"
-                                        />
-                                    </div>
-                                </div>
-                            </DialogHeader>
-                            <DialogFooter className="flex justify-start gap-2">
-                                <Button
-                                    onClick={handleConfirm}
-                                    variant="default"
-                                >
-                                    تأكيد
-                                </Button>
-                                <Button
-                                    onClick={() => setOpen(false)}
-                                    variant="secondary"
-                                    className="ml-2"
-                                >
-                                    إلغاء
-                                </Button>
-                            </DialogFooter>
-                        </DialogContent>
-                    </Dialog>
-                </>
+                <div className="text-center font-medium">
+                    {hizb ? hizb.hizb.number : "-"}
+                </div>
+            );
+        },
+    },
+    {
+        id: "الثمن",
+        accessorKey: "last_thoman_attendance.number",
+        header: () => <div className="text-center">الثمن</div>,
+        cell: ({ row }) => {
+            const thoman = row.original.last_thoman_attendance;
+            return (
+                <div className="text-center font-medium">
+                    {thoman ? thoman.thoman.number : "-"}
+                </div>
             );
         },
     },

@@ -9,6 +9,8 @@ use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PersonnelController;
 use App\Http\Controllers\BackupController;
 use App\Http\Controllers\LogController;
+use App\Http\Controllers\ProgramController;
+use App\Http\Controllers\ProgramSessionController;
 use App\Models\DatabaseBackup;
 use Illuminate\Support\Facades\Artisan;
 
@@ -49,20 +51,60 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     Route::get('/system/logs', [LogController::class, 'index'])->name('admin.logs.index')->middleware(\App\Http\Middleware\AdminMiddleware::class);
+
+
+    // ---------------------------
+    // Programs Routes
+    // ---------------------------
+    Route::prefix('programs')->name('programs.')->group(function () {
+
+
+         // Update program
+        Route::post('/{program}', [ProgramController::class, 'update'])->name('update');
+
+
+        // List all programs
+        Route::get('/', [ProgramController::class, 'index'])->name('index');
+
+        // Create program form
+        Route::get('/create', [ProgramController::class, 'create'])->name('create');
+
+        // Store new program
+        Route::post('/', [ProgramController::class, 'store'])->name('store');
+
+        // Show program details
+        Route::get('/{program}', [ProgramController::class, 'show'])->name('show');
+
+        // Edit program form
+        Route::get('/{program}/edit', [ProgramController::class, 'edit'])->name('edit');
+
+       
+        // Delete program
+        Route::delete('/{program}', [ProgramController::class, 'destroy'])->name('destroy');
+    });
+
+    // ---------------------------
+    // Program Sessions Routes
+    // ---------------------------
+    Route::prefix('sessions')->name('sessions.')->group(function () {
+
+        // Attendance page for a session
+        Route::get('/{session}/attendance', [ProgramSessionController::class, 'attendance'])->name('attendance');
+
+        // Record attendance
+        Route::post('/{session}/attendance', [ProgramSessionController::class, 'recordAttendance'])->name('recordAttendance');
+    });
 });
 
 Route::get('/dashboard/{any}', function () {
     return Inertia::render('Dashboard/Tmp');
 })->where('any', '.*');
 
+
 Route::get('/', function () {
-    return Inertia::render('Welcome', [
-        'canLogin' => Route::has('login'),
-        'canRegister' => Route::has('register'),
-        'laravelVersion' => Application::VERSION,
-        'phpVersion' => PHP_VERSION,
-    ]);
+    return redirect()->route('login');
 });
+
 
 Route::get('/dashboard', function () {
     return redirect()->route('students.index');

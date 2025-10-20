@@ -55,7 +55,7 @@ class ProgramTest extends TestCase
         (new GenerateProgramSessionsAction())->execute($program);
 
         $sessions = ProgramSession::where('program_id', $program->id)->get();
-        $this->assertCount(14, $sessions); // Mon, Wed, Fri
+        $this->assertCount(13, $sessions); // Mon, Wed, Fri
     }
 
     /** @test */

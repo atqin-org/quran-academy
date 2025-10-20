@@ -20,6 +20,7 @@ return new class extends Migration {
         // جدول البرامج
         Schema::create('programs', function (Blueprint $table) {
             $table->id();
+            $table->string('name');
             $table->foreignId('subject_id')->constrained('subjects')->onDelete('cascade');
             $table->foreignId('club_id')->constrained('clubs')->onDelete('cascade');
             $table->foreignId('category_id')->constrained('categories')->onDelete('cascade');
@@ -37,6 +38,25 @@ return new class extends Migration {
             $table->date('session_date');
             $table->time('start_time')->nullable();
             $table->time('end_time')->nullable();
+            // add status 
+            $table->enum('status', ['scheduled', 'completed', 'canceled'])->default('scheduled');
+            $table->timestamps();
+        });
+
+        // جدول الأحزاب
+        Schema::create('ahzab', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedInteger('number');   // رقم الحزب (1..60)
+            $table->string('start')->nullable(); // بداية الحزب (مرجع نصي فقط)
+            $table->timestamps();
+        });
+
+        // جدول الأثمان
+        Schema::create('athman', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('hizb_id')->constrained('ahzab')->onDelete('cascade');
+            $table->unsignedTinyInteger('number'); // من 1 إلى 8
+            $table->string('start')->nullable();   // بداية الثمن (مرجع نصي فقط)
             $table->timestamps();
         });
 
@@ -46,6 +66,13 @@ return new class extends Migration {
             $table->foreignId('session_id')->constrained('program_sessions')->onDelete('cascade');
             $table->foreignId('student_id')->constrained('students')->onDelete('cascade');
             $table->enum('status', ['present', 'absent', 'excused'])->default('absent');
+            $table->string('excusedReason')->nullable();
+
+            // ربط بالحزب والثمن
+            $table->foreignId('hizb_id')->nullable()->constrained('ahzab')->onDelete('set null');
+            $table->foreignId('thoman_id')->nullable()->constrained('athman')->onDelete('set null');
+
+
             $table->timestamps();
         });
     }
@@ -59,5 +86,7 @@ return new class extends Migration {
         Schema::dropIfExists('program_sessions');
         Schema::dropIfExists('programs');
         Schema::dropIfExists('subjects');
+        Schema::dropIfExists('athman');
+        Schema::dropIfExists('ahzab');
     }
 };
