@@ -36,7 +36,7 @@ export default function Update({
 }: DashboardProps) {
     console.log(siblings);
     const { data, setData, post, processing, errors } =
-        useInertiaForm<TStudentForm>({
+        useInertiaForm<TStudentForm & { [key: string]: any }>({
             firstName: student.first_name,
             lastName: student.last_name,
             gender: student.gender,

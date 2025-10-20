@@ -38,7 +38,7 @@ interface DashboardProps extends PageProps {
 
 export default function Dashboard({ auth, clubs, categories }: DashboardProps) {
     const { data, setData, post, processing, errors } =
-        useInertiaForm<TStudentForm>(initialFormState);
+        useInertiaForm<TStudentForm & { [key: string]: any }>(initialFormState);
 
     function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();
