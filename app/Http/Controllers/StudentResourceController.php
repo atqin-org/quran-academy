@@ -234,7 +234,7 @@ class StudentResourceController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show(Request $request, string $id)
     {
         $student = Student::with([
             'club',
@@ -246,19 +246,54 @@ class StudentResourceController extends Controller
 
         $totalHizb = 60;
 
+        // Get time range filter
+        $range = $request->input('range', 'all');
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
+
+        // Build base query for attendances with time filter
+        $attendanceQuery = $student->attendances();
+
+        if ($range === 'custom' && $startDate && $endDate) {
+            $attendanceQuery->whereBetween('created_at', [
+                Carbon::parse($startDate)->startOfDay(),
+                Carbon::parse($endDate)->endOfDay()
+            ]);
+        } elseif ($range === 'week') {
+            $attendanceQuery->where('created_at', '>=', Carbon::now()->subWeek());
+        } elseif ($range === 'month') {
+            $attendanceQuery->where('created_at', '>=', Carbon::now()->subMonth());
+        } elseif ($range === '3months') {
+            $attendanceQuery->where('created_at', '>=', Carbon::now()->subMonths(3));
+        } elseif ($range === '6months') {
+            $attendanceQuery->where('created_at', '>=', Carbon::now()->subMonths(6));
+        } elseif ($range === 'year') {
+            $attendanceQuery->where('created_at', '>=', Carbon::now()->subYear());
+        }
+
+        // Clone the query for different stats
+        $statsQuery = clone $attendanceQuery;
+        $progressQuery = clone $attendanceQuery;
+
         // إحصائيات عامة
         $attendanceStats = [
-            'present' => $student->attendances()->where('status', 'present')->count(),
-            'absent'  => $student->attendances()->where('status', 'absent')->count(),
-            'excused' => $student->attendances()->where('status', 'excused')->count(),
+            'present' => (clone $statsQuery)->where('status', 'present')->count(),
+            'absent'  => (clone $statsQuery)->where('status', 'absent')->count(),
+            'excused' => (clone $statsQuery)->where('status', 'excused')->count(),
+            'total'   => (clone $statsQuery)->count(),
         ];
+
+        // Calculate attendance rate
+        $attendanceStats['rate'] = $attendanceStats['total'] > 0
+            ? round(($attendanceStats['present'] / $attendanceStats['total']) * 100, 1)
+            : 0;
 
         // آخر مستوى تقدّم
         $lastHizb = $student->attendances()->whereNotNull('hizb_id')->latest()->first();
         $progress = $lastHizb ? round(($lastHizb->hizb_id / $totalHizb) * 100, 2) : 0;
 
-        // التقدّم بمرور الوقت
-        $progressTimeline = $student->attendances()
+        // التقدّم بمرور الوقت (with time filter)
+        $progressTimeline = $progressQuery
             ->whereNotNull('hizb_id')
             ->orderBy('created_at')
             ->get()
@@ -270,11 +305,58 @@ class StudentResourceController extends Controller
             })
             ->values();
 
+        // Monthly attendance breakdown for the chart (SQLite compatible)
+        $monthlyAttendance = $student->attendances()
+            ->selectRaw("strftime('%Y', created_at) as year, strftime('%m', created_at) as month, status, COUNT(*) as count")
+            ->when($range !== 'all', function ($q) use ($range, $startDate, $endDate) {
+                if ($range === 'custom' && $startDate && $endDate) {
+                    return $q->whereBetween('created_at', [
+                        Carbon::parse($startDate)->startOfDay(),
+                        Carbon::parse($endDate)->endOfDay()
+                    ]);
+                } elseif ($range === 'week') {
+                    return $q->where('created_at', '>=', Carbon::now()->subWeek());
+                } elseif ($range === 'month') {
+                    return $q->where('created_at', '>=', Carbon::now()->subMonth());
+                } elseif ($range === '3months') {
+                    return $q->where('created_at', '>=', Carbon::now()->subMonths(3));
+                } elseif ($range === '6months') {
+                    return $q->where('created_at', '>=', Carbon::now()->subMonths(6));
+                } elseif ($range === 'year') {
+                    return $q->where('created_at', '>=', Carbon::now()->subYear());
+                }
+            })
+            ->groupBy('year', 'month', 'status')
+            ->orderBy('year')
+            ->orderBy('month')
+            ->get();
+
         return inertia('Dashboard/Students/Show', [
-            'student' => $student,
+            'student' => [
+                'id' => $student->id,
+                'name' => $student->first_name . ' ' . $student->last_name,
+                'first_name' => $student->first_name,
+                'last_name' => $student->last_name,
+                'birthdate' => $student->birthdate,
+                'gender' => $student->gender,
+                'ahzab' => $student->ahzab,
+                'ahzab_up' => $student->ahzab_up,
+                'ahzab_down' => $student->ahzab_down,
+                'subscription' => $student->subscription,
+                'club' => $student->club,
+                'category' => $student->category,
+                'father' => $student->father,
+                'mother' => $student->mother,
+            ],
             'progress' => $progress,
             'attendanceStats' => $attendanceStats,
             'progressTimeline' => $progressTimeline,
+            'monthlyAttendance' => $monthlyAttendance,
+            'filters' => [
+                'range' => $range,
+                'start_date' => $startDate,
+                'end_date' => $endDate,
+            ],
         ]);
     }
 
