@@ -14,17 +14,14 @@ class LogController extends Controller
     {
         $type = request('type', 'all');
         $sort = request('sort', 'desc');
+
         $query = ($sort === 'asc') ? Activity::oldest() : Activity::latest();
         if ($type !== 'all') {
             $query->where('log_name', $type);
         }
-        $logs = $query->paginate(15);
-        //dd($logs);
-        //dd(Inertia::merge(ActivityLogResource::collection($logs)->collection->toArray()));
+
         return Inertia::render('Dashboard/System/Logs/Index', [
-            'logs' => Inertia::merge(ActivityLogResource::collection($logs)->collection->toArray()),
-            'page' => $logs->currentPage(),
-            'lastPage' => $logs->lastPage(),
+            'logs' => Inertia::scroll(fn () => ActivityLogResource::collection($query->paginate(15))),
             'filters' => [
                 'type' => $type,
                 'sort' => $sort
