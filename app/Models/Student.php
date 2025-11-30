@@ -253,7 +253,12 @@ class Student extends Model
             ])
             ->logOnlyDirty()
             ->setDescriptionForEvent(function (string $eventName) {
-                return "Student has been {$eventName}";
+                $events = [
+                    'created' => 'تم إنشاء الطالب',
+                    'updated' => 'تم تحديث الطالب',
+                    'deleted' => 'تم حذف الطالب',
+                ];
+                return $events[$eventName] ?? "تم {$eventName} الطالب";
             })
             ->useLogName('student');
     }

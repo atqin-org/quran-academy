@@ -18,10 +18,12 @@ import {
     SelectValue,
 } from "@/Components/ui/select";
 
+export type LogType = "user" | "student" | "guardian" | "payment" | "program" | "program_session" | "attendance";
+
 export interface TActivityLog {
     data: {
         id: number;
-        type: "user" | "student" | "guardian" | "payment";
+        type: LogType;
         description: string;
         causer: {
             name: string;
@@ -43,24 +45,30 @@ interface Props {
     lastPage: number;
 }
 
-const getTypeStyle = (type: TActivityLog["data"]["type"]) => {
-    const styles = {
+const getTypeStyle = (type: LogType) => {
+    const styles: Record<LogType, string> = {
         user: "bg-blue-100 text-blue-800",
         student: "bg-green-100 text-green-800",
         guardian: "bg-yellow-100 text-yellow-800",
         payment: "bg-purple-100 text-purple-800",
+        program: "bg-indigo-100 text-indigo-800",
+        program_session: "bg-cyan-100 text-cyan-800",
+        attendance: "bg-emerald-100 text-emerald-800",
     };
-    return styles[type];
+    return styles[type] || "bg-gray-100 text-gray-800";
 };
 
-const getTypeLabel = (type: TActivityLog["data"]["type"]) => {
-    const labels = {
+const getTypeLabel = (type: LogType) => {
+    const labels: Record<LogType, string> = {
         user: "مستخدم",
         student: "طالب",
         guardian: "ولي أمر",
         payment: "دفع",
+        program: "برنامج",
+        program_session: "حصة",
+        attendance: "حضور",
     };
-    return labels[type];
+    return labels[type] || type;
 };
 
 function CollapsibleProperties({ properties }: { properties: any }) {
@@ -111,10 +119,11 @@ export default function Index({ auth, logs, filters, page, lastPage }: Props) {
                             <SelectItem value="all">جميع السجلات</SelectItem>
                             <SelectItem value="user">مستخدمين</SelectItem>
                             <SelectItem value="student">طلاب</SelectItem>
-                            <SelectItem value="guardian">
-                                أولياء أمور
-                            </SelectItem>
+                            <SelectItem value="guardian">أولياء أمور</SelectItem>
                             <SelectItem value="payment">مدفوعات</SelectItem>
+                            <SelectItem value="program">برامج</SelectItem>
+                            <SelectItem value="program_session">حصص</SelectItem>
+                            <SelectItem value="attendance">حضور</SelectItem>
                         </SelectContent>
                     </Select>
 
@@ -209,11 +218,11 @@ export default function Index({ auth, logs, filters, page, lastPage }: Props) {
                                 <div className="size-6 animate-spin rounded-full border-4 border-primary border-t-transparent" />
                             </div>}
                             params={{
-                                data: { page: page + 1 },
+                                data: { page: page + 1, type: filters.type, sort: filters.sort },
                                 only: ["logs", "page"],
                                 preserveUrl: true,
                             }}
-                            data={["logs", "page"]}
+                            data="logs"
                         >
                             <div className="flex items-center justify-center my-2">
                                 <div className="size-6 animate-spin rounded-full border-4 border-primary border-t-transparent" />
