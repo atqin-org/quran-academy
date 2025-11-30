@@ -94,6 +94,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // ---------------------------
     Route::prefix('sessions')->name('sessions.')->group(function () {
 
+        // Update session date/time
+        Route::post('/{session}/update', [ProgramSessionController::class, 'update'])->name('update');
+
+        // Cancel session
+        Route::post('/{session}/cancel', [ProgramSessionController::class, 'cancel'])->name('cancel');
+
         // Attendance page for a session
         Route::get('/{session}/attendance', [ProgramSessionController::class, 'attendance'])->name('attendance');
 

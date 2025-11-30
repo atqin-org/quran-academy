@@ -8,6 +8,7 @@ use Inertia\Inertia;
 use App\Models\ProgramSession;
 use App\Models\Student;
 use App\Actions\Attendance\RecordAttendanceAction;
+use Illuminate\Support\Facades\Auth;
 
 class ProgramSessionController extends Controller
 {
@@ -54,6 +55,73 @@ class ProgramSessionController extends Controller
     }
 
     /**
+     * تحديث بيانات الحصة (التاريخ والوقت)
+     */
+    public function update(Request $request, ProgramSession $session)
+    {
+        $request->validate([
+            'session_date' => 'required|date',
+            'start_time' => 'nullable|date_format:H:i',
+            'end_time' => 'nullable|date_format:H:i',
+        ]);
+
+        $oldData = [
+            'session_date' => $session->session_date?->format('Y-m-d'),
+            'start_time' => $session->start_time,
+            'end_time' => $session->end_time,
+        ];
+
+        $session->update([
+            'session_date' => $request->session_date,
+            'start_time' => $request->start_time,
+            'end_time' => $request->end_time,
+        ]);
+
+        // Log session update
+        activity('program_session')
+            ->performedOn($session)
+            ->causedBy(Auth::user())
+            ->event('updated')
+            ->withProperties([
+                'program_id' => $session->program_id,
+                'old' => $oldData,
+                'new' => [
+                    'session_date' => $request->session_date,
+                    'start_time' => $request->start_time,
+                    'end_time' => $request->end_time,
+                ],
+            ])
+            ->log("تم تحديث الحصة: {$request->session_date}");
+
+        return redirect()
+            ->back()
+            ->with('success', 'تم تحديث الحصة بنجاح');
+    }
+
+    /**
+     * إلغاء حصة
+     */
+    public function cancel(ProgramSession $session)
+    {
+        $session->update(['status' => 'cancelled']);
+
+        // Log session cancellation
+        activity('program_session')
+            ->performedOn($session)
+            ->causedBy(Auth::user())
+            ->event('cancelled')
+            ->withProperties([
+                'program_id' => $session->program_id,
+                'session_date' => $session->session_date?->format('Y-m-d'),
+            ])
+            ->log("تم إلغاء الحصة: {$session->session_date?->format('Y-m-d')}");
+
+        return redirect()
+            ->back()
+            ->with('success', 'تم إلغاء الحصة بنجاح');
+    }
+
+    /**
      * تسجيل حضور طالب
      */
     public function recordAttendance(Request $request, ProgramSession $session)
@@ -76,6 +144,20 @@ class ProgramSessionController extends Controller
                 $request->thoman_id,
                 $request->excusedReason,
             );
+
+            // Log attendance recording
+            activity('attendance')
+                ->performedOn($session)
+                ->causedBy(Auth::user())
+                ->event('recorded')
+                ->withProperties([
+                    'student_id' => $student->id,
+                    'student_name' => $student->first_name . ' ' . $student->last_name,
+                    'status' => $request->status,
+                    'session_id' => $session->id,
+                    'session_date' => $session->session_date?->format('Y-m-d'),
+                ])
+                ->log("تم تسجيل الحضور: {$student->first_name} - {$request->status}");
 
             return redirect()
                 ->back()

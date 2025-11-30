@@ -1,20 +1,16 @@
-import DashboardLayout from "@/Layouts/DashboardLayout";
-import { PageProps } from "@/types";
-import { Head, Link } from "@inertiajs/react";
-import { useForm } from "@inertiajs/react";
-import { Input } from "@/Components/ui/input";
-import { Textarea } from "@/Components/ui/textarea";
 import { Button } from "@/Components/ui/button";
-import { Checkbox } from "@/Components/ui/checkbox";
+import { Input } from "@/Components/ui/input";
 import { Label } from "@/Components/ui/label";
+import MultipleSelector from "@/Components/ui/MultipleSelector";
 import {
     Select,
-    SelectTrigger,
-    SelectValue,
     SelectContent,
     SelectItem,
+    SelectTrigger,
+    SelectValue,
 } from "@/Components/ui/select";
-import MultipleSelector from "@/Components/ui/MultipleSelector";
+import DashboardLayout from "@/Layouts/DashboardLayout";
+import { Head, useForm } from "@inertiajs/react";
 
 export default function ProgramEdit({
     auth,
@@ -61,13 +57,13 @@ export default function ProgramEdit({
                         )}
                     </div>
 
-
                     {/* المادة */}
                     <div className="flex flex-col gap-2">
                         <Label>المادة</Label>
                         <Select
                             value={data.subject_id}
                             onValueChange={(val) => setData("subject_id", val)}
+                            dir="rtl"
                         >
                             <SelectTrigger>
                                 <SelectValue placeholder="اختر مادة" />
@@ -93,6 +89,7 @@ export default function ProgramEdit({
                         <Select
                             value={data.club_id}
                             onValueChange={(val) => setData("club_id", val)}
+                            dir="rtl"
                         >
                             <SelectTrigger>
                                 <SelectValue placeholder="اختر نادي" />
@@ -118,6 +115,7 @@ export default function ProgramEdit({
                         <Select
                             value={data.category_id}
                             onValueChange={(val) => setData("category_id", val)}
+                            dir="rtl"
                         >
                             <SelectTrigger>
                                 <SelectValue placeholder="اختر فئة" />
@@ -155,8 +153,6 @@ export default function ProgramEdit({
                             </p>
                         )}
                     </div>
-
-                
 
                     {/* تاريخ البداية */}
                     <div className="flex flex-col gap-2">
