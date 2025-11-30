@@ -13,6 +13,7 @@ use App\Http\Controllers\ProgramController;
 use App\Http\Controllers\ProgramSessionController;
 use App\Models\DatabaseBackup;
 use Illuminate\Support\Facades\Artisan;
+use App\Http\Middleware\AdminMiddleware;
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('/students', StudentResourceController::class);
@@ -23,13 +24,18 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/students/{student}/payment', [PaymentController::class, 'show'])->name('students.payment.show');
     Route::post('/students/{student}/payment', [PaymentController::class, 'store'])->name('students.payment.store');
 
-    Route::resource('/personnels', PersonnelController::class)->only(['index', 'create', 'store'])
-        ->middleware(\App\Http\Middleware\AdminMiddleware::class);
+    Route::resource('/personnels', PersonnelController::class)
+        ->middleware(AdminMiddleware::class);
+    Route::post('/personnels/{personnel}', [PersonnelController::class, 'update'])
+        ->name('personnels.update.post')
+        ->middleware(AdminMiddleware::class);
+    Route::post('/personnels/{personnel}/restore', [PersonnelController::class, 'restore'])
+        ->name('personnels.restore')
+        ->middleware(AdminMiddleware::class);
 
     Route::get('/system', function () {
         return Inertia::render('Dashboard/System/BackupDatabase');
-    })->middleware(\App\Http\Middleware\AdminMiddleware::class);
-
+    })->middleware(AdminMiddleware::class);
     Route::post('/backup', [BackupController::class, 'backup']);
 
     Route::get('/download-backup/{path}', function ($path) {
