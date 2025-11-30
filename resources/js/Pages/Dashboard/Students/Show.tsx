@@ -14,6 +14,14 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from "@/Components/ui/popover";
+import {
+    ChartConfig,
+    ChartContainer,
+    ChartTooltip,
+    ChartTooltipContent,
+    ChartLegend,
+    ChartLegendContent,
+} from "@/Components/ui/chart";
 import DashboardLayout from "@/Layouts/DashboardLayout";
 import { Head, router } from "@inertiajs/react";
 import {
@@ -22,11 +30,6 @@ import {
     CartesianGrid,
     XAxis,
     YAxis,
-    Tooltip,
-    ResponsiveContainer,
-    BarChart,
-    Bar,
-    Legend,
     PieChart,
     Pie,
     Cell,
@@ -84,11 +87,27 @@ interface Props {
     };
 }
 
-const COLORS = {
-    present: "#22c55e",
-    absent: "#ef4444",
-    excused: "#f59e0b",
-};
+const attendanceChartConfig = {
+    present: {
+        label: "حاضر",
+        color: "#22c55e",
+    },
+    absent: {
+        label: "غائب",
+        color: "#ef4444",
+    },
+    excused: {
+        label: "معذور",
+        color: "#f59e0b",
+    },
+} satisfies ChartConfig;
+
+const progressChartConfig = {
+    progress: {
+        label: "التقدم",
+        color: "#4f46e5",
+    },
+} satisfies ChartConfig;
 
 export default function Show({
     auth,
@@ -133,9 +152,9 @@ export default function Show({
 
     // Prepare pie chart data
     const pieData = [
-        { name: "حاضر", value: attendanceStats.present, color: COLORS.present },
-        { name: "غائب", value: attendanceStats.absent, color: COLORS.absent },
-        { name: "معذور", value: attendanceStats.excused, color: COLORS.excused },
+        { name: "present", value: attendanceStats.present, fill: "#22c55e" },
+        { name: "absent", value: attendanceStats.absent, fill: "#ef4444" },
+        { name: "excused", value: attendanceStats.excused, fill: "#f59e0b" },
     ].filter((item) => item.value > 0);
 
     return (
@@ -376,27 +395,32 @@ export default function Show({
                         </CardHeader>
                         <CardContent>
                             {pieData.length > 0 ? (
-                                <ResponsiveContainer width="100%" height={200}>
+                                <ChartContainer
+                                    config={attendanceChartConfig}
+                                    className="mx-auto aspect-square h-[200px]"
+                                >
                                     <PieChart>
+                                        <ChartTooltip
+                                            cursor={false}
+                                            content={<ChartTooltipContent hideLabel />}
+                                        />
                                         <Pie
                                             data={pieData}
-                                            cx="50%"
-                                            cy="50%"
+                                            dataKey="value"
+                                            nameKey="name"
                                             innerRadius={50}
                                             outerRadius={80}
                                             paddingAngle={2}
-                                            dataKey="value"
-                                            label={({ name, percent }) =>
-                                                `${name} ${(percent * 100).toFixed(0)}%`
-                                            }
                                         >
                                             {pieData.map((entry, index) => (
-                                                <Cell key={`cell-${index}`} fill={entry.color} />
+                                                <Cell key={`cell-${index}`} fill={entry.fill} />
                                             ))}
                                         </Pie>
-                                        <Tooltip />
+                                        <ChartLegend
+                                            content={<ChartLegendContent nameKey="name" />}
+                                        />
                                     </PieChart>
-                                </ResponsiveContainer>
+                                </ChartContainer>
                             ) : (
                                 <div className="h-[200px] flex items-center justify-center text-muted-foreground">
                                     لا توجد بيانات
@@ -446,9 +470,12 @@ export default function Show({
                     </CardHeader>
                     <CardContent>
                         {progressTimeline.length > 0 ? (
-                            <ResponsiveContainer width="100%" height={300}>
-                                <LineChart data={progressTimeline}>
-                                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                            <ChartContainer config={progressChartConfig} className="h-[300px] w-full">
+                                <LineChart
+                                    data={progressTimeline}
+                                    margin={{ top: 5, right: 10, left: 10, bottom: 5 }}
+                                >
+                                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                                     <XAxis
                                         dataKey="date"
                                         tick={{ fontSize: 12 }}
@@ -456,29 +483,34 @@ export default function Show({
                                             const date = new Date(value);
                                             return `${date.getDate()}/${date.getMonth() + 1}`;
                                         }}
+                                        className="text-muted-foreground"
                                     />
                                     <YAxis
                                         domain={[0, 100]}
                                         tickFormatter={(value) => `${value}%`}
                                         tick={{ fontSize: 12 }}
+                                        className="text-muted-foreground"
                                     />
-                                    <Tooltip
-                                        formatter={(value: any) => [`${value}%`, "التقدم"]}
-                                        labelFormatter={(label) => {
-                                            const date = new Date(label);
-                                            return format(date, "dd MMMM yyyy", { locale: ar });
-                                        }}
+                                    <ChartTooltip
+                                        content={
+                                            <ChartTooltipContent
+                                                labelFormatter={(label) => {
+                                                    const date = new Date(label);
+                                                    return format(date, "dd MMMM yyyy", { locale: ar });
+                                                }}
+                                            />
+                                        }
                                     />
                                     <Line
                                         type="monotone"
                                         dataKey="progress"
-                                        stroke="#4f46e5"
+                                        stroke="var(--color-progress)"
                                         strokeWidth={2}
-                                        dot={{ fill: "#4f46e5", strokeWidth: 2 }}
+                                        dot={{ fill: "var(--color-progress)", strokeWidth: 2 }}
                                         activeDot={{ r: 6 }}
                                     />
                                 </LineChart>
-                            </ResponsiveContainer>
+                            </ChartContainer>
                         ) : (
                             <div className="h-[300px] flex items-center justify-center text-muted-foreground">
                                 لا توجد بيانات للتقدم في الفترة المحددة
