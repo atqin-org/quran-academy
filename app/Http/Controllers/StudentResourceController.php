@@ -305,9 +305,19 @@ class StudentResourceController extends Controller
             })
             ->values();
 
-        // Monthly attendance breakdown for the chart (SQLite compatible)
+        // Monthly attendance breakdown for the chart (database-agnostic)
+        $driver = DB::connection()->getDriverName();
+        if ($driver === 'sqlite') {
+            $yearSelect = "strftime('%Y', created_at) as year";
+            $monthSelect = "strftime('%m', created_at) as month";
+        } else {
+            // MySQL / MariaDB
+            $yearSelect = "YEAR(created_at) as year";
+            $monthSelect = "MONTH(created_at) as month";
+        }
+
         $monthlyAttendance = $student->attendances()
-            ->selectRaw("strftime('%Y', created_at) as year, strftime('%m', created_at) as month, status, COUNT(*) as count")
+            ->selectRaw("{$yearSelect}, {$monthSelect}, status, COUNT(*) as count")
             ->when($range !== 'all', function ($q) use ($range, $startDate, $endDate) {
                 if ($range === 'custom' && $startDate && $endDate) {
                     return $q->whereBetween('created_at', [
