@@ -53,7 +53,6 @@ class ProgramController extends Controller
     // تخزين برنامج جديد
     public function store(Request $request)
     {
-
         $days = collect($request->input('days_of_week', []))
             ->pluck('value')
             ->toArray();
@@ -61,9 +60,17 @@ class ProgramController extends Controller
         $request->merge(['days_of_week' => $days]);
         $program = (new CreateProgramAction())->execute($request->all());
 
-        (new GenerateProgramSessionsAction())->execute($program);
+        // Check if custom sessions are provided
+        $customSessions = $request->input('sessions', []);
+        if (!empty($customSessions)) {
+            // Use custom sessions from frontend
+            (new GenerateProgramSessionsAction())->executeWithCustomSessions($program, $customSessions);
+        } else {
+            // Generate sessions automatically (fallback)
+            (new GenerateProgramSessionsAction())->execute($program);
+        }
 
-        return redirect()->route('programs.index')->with('success', 'Program created successfully.');
+        return redirect()->route('programs.index')->with('success', 'تم إنشاء البرنامج بنجاح');
     }
 
     // عرض تفاصيل برنامج واحد

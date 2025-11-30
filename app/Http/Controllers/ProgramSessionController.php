@@ -54,6 +54,40 @@ class ProgramSessionController extends Controller
     }
 
     /**
+     * تحديث بيانات الحصة (التاريخ والوقت)
+     */
+    public function update(Request $request, ProgramSession $session)
+    {
+        $request->validate([
+            'session_date' => 'required|date',
+            'start_time' => 'nullable|date_format:H:i',
+            'end_time' => 'nullable|date_format:H:i',
+        ]);
+
+        $session->update([
+            'session_date' => $request->session_date,
+            'start_time' => $request->start_time,
+            'end_time' => $request->end_time,
+        ]);
+
+        return redirect()
+            ->back()
+            ->with('success', 'تم تحديث الحصة بنجاح');
+    }
+
+    /**
+     * إلغاء حصة
+     */
+    public function cancel(ProgramSession $session)
+    {
+        $session->update(['status' => 'cancelled']);
+
+        return redirect()
+            ->back()
+            ->with('success', 'تم إلغاء الحصة بنجاح');
+    }
+
+    /**
      * تسجيل حضور طالب
      */
     public function recordAttendance(Request $request, ProgramSession $session)
