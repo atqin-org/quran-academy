@@ -50,6 +50,7 @@ class StudentFactory extends Factory
             'subscription' => $faker->randomElement([0,500,1000, 1500, 2000]),
             'subscription_expire_at' => $faker->optional()->dateTimeBetween('-8 months', '+8 months'),
             'insurance_expire_at' => $faker->optional()->dateTimeBetween('-3 months', '+8 months'),
+            'memorization_direction' => $faker->randomElement(['ascending', 'descending', 'descending', 'descending']), // 75% descending
         ];
     }
 

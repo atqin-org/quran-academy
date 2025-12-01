@@ -36,19 +36,41 @@ class ProgramSessionController extends Controller
 
 
 
+        // Get hizb number mapping for converting stored hizb numbers to IDs
+        $hizbNumberToId = \App\Models\Hizb::pluck('id', 'number')->toArray();
+
         return Inertia::render('Dashboard/Sessions/Attendance', [
             'session' => $session,
-            'students' => $students->map(fn($s) => [
-                'id' => $s->id,
-                'first_name' => $s->first_name,
-                'last_name' => $s->last_name,
-                'attendance_status' => optional($s->attendances->first())->status,
-                'excusedReason' => optional($s->attendances->first())->excusedReason,
-                'hizb_id' => $s->attendances->first()->hizb_id
-                    ?? optional($s->lastHizbAttendance)->hizb_id,
-                'thoman_id' => $s->attendances->first()->thoman_id
-                    ?? optional($s->lastThomanAttendance)->thoman_id,
-            ]),
+            'students' => $students->map(function ($s) use ($hizbNumberToId) {
+                // Get last hizb ID based on current direction
+                $lastHizbId = null;
+                if ($s->memorization_direction === 'ascending' && $s->last_hizb_ascending) {
+                    $lastHizbId = $hizbNumberToId[$s->last_hizb_ascending] ?? null;
+                } elseif ($s->memorization_direction === 'descending' && $s->last_hizb_descending) {
+                    $lastHizbId = $hizbNumberToId[$s->last_hizb_descending] ?? null;
+                }
+
+                // Fallback to lastHizbAttendance if no direction-specific data
+                if (!$lastHizbId) {
+                    $lastHizbId = optional($s->lastHizbAttendance)->hizb_id;
+                }
+
+                return [
+                    'id' => $s->id,
+                    'first_name' => $s->first_name,
+                    'last_name' => $s->last_name,
+                    'attendance_status' => optional($s->attendances->first())->status,
+                    'excusedReason' => optional($s->attendances->first())->excusedReason,
+                    'hizb_id' => $s->attendances->first()->hizb_id
+                        ?? optional($s->lastHizbAttendance)->hizb_id,
+                    'thoman_id' => $s->attendances->first()->thoman_id
+                        ?? optional($s->lastThomanAttendance)->thoman_id,
+                    'memorization_direction' => $s->memorization_direction ?? 'descending',
+                    'last_hizb_id' => $lastHizbId,
+                    'last_hizb_ascending' => $s->last_hizb_ascending,
+                    'last_hizb_descending' => $s->last_hizb_descending,
+                ];
+            }),
             'ahzab' => \App\Models\Hizb::all(),
             'athman' => \App\Models\Thoman::all(),
         ]);

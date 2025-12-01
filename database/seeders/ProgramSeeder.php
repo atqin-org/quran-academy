@@ -158,8 +158,8 @@ class ProgramSeeder extends Seeder
         // Sort sessions by date to track progress properly
         usort($sessions, fn($a, $b) => strtotime($a->session_date) - strtotime($b->session_date));
 
-        // Get all hizb IDs from the database (ahzab table has 60 records with IDs)
-        $ahzabIds = DB::table('ahzab')->orderBy('number')->pluck('id')->toArray();
+        // Get hizb data: number => id mapping
+        $hizbData = DB::table('ahzab')->orderBy('number')->pluck('id', 'number')->toArray();
 
         // Get all thoman IDs grouped by hizb_id
         $athmanByHizb = DB::table('athman')
@@ -169,18 +169,24 @@ class ProgramSeeder extends Seeder
             ->map(fn($items) => $items->pluck('id')->toArray())
             ->toArray();
 
-        if (empty($ahzabIds)) {
+        if (empty($hizbData)) {
             $this->command->warn('      No ahzab data found. Skipping hizb/thoman tracking.');
         }
 
         foreach ($students as $student) {
-            // Each student has a different starting point and learning pace
-            $startingHizbIndex = rand(0, 29); // Start somewhere in the first half of Quran (index 0-29 = hizb 1-30)
+            $direction = $student->memorization_direction ?? 'descending';
+
+            // Set starting hizb based on direction
+            if ($direction === 'ascending') {
+                $currentHizbNumber = rand(1, 15); // Start from hizb 1-15
+            } else {
+                $currentHizbNumber = rand(45, 60); // Start from hizb 45-60
+            }
+
             $learningPace = fake()->randomElement([1, 2, 2, 3, 3, 3, 4, 4, 5]); // Sessions per hizb advancement
             $attendanceRate = fake()->randomElement([0.7, 0.75, 0.8, 0.85, 0.9, 0.95]); // Individual attendance tendency
-
-            $currentHizbIndex = $startingHizbIndex;
             $sessionsAttended = 0;
+            $lastHizbNumber = null;
 
             foreach ($sessions as $index => $session) {
                 // Skip canceled sessions
@@ -195,17 +201,23 @@ class ProgramSeeder extends Seeder
                     // Present
                     $sessionsAttended++;
 
-                    // Progress in hizb (only for present students)
+                    // Progress in hizb based on direction
                     if ($sessionsAttended > 0 && $sessionsAttended % $learningPace === 0) {
-                        $currentHizbIndex = min(59, $currentHizbIndex + 1); // Max index 59 (hizb 60)
+                        if ($direction === 'ascending') {
+                            $currentHizbNumber = min(60, $currentHizbNumber + 1);
+                        } else {
+                            $currentHizbNumber = max(1, $currentHizbNumber - 1);
+                        }
                     }
 
-                    // Get actual hizb ID and random thoman ID
-                    $hizbId = !empty($ahzabIds) ? $ahzabIds[$currentHizbIndex] : null;
+                    // Get actual hizb ID from number
+                    $hizbId = $hizbData[$currentHizbNumber] ?? null;
                     $thomanId = null;
                     if ($hizbId && isset($athmanByHizb[$hizbId]) && !empty($athmanByHizb[$hizbId])) {
                         $thomanId = fake()->randomElement($athmanByHizb[$hizbId]);
                     }
+
+                    $lastHizbNumber = $currentHizbNumber;
 
                     Attendance::create([
                         'session_id' => $session->id,
@@ -248,6 +260,31 @@ class ProgramSeeder extends Seeder
                         'updated_at' => Carbon::parse($session->session_date)->setTime(rand(8, 17), rand(0, 59)),
                     ]);
                 }
+            }
+
+            // Update student's last hizb for their direction after all sessions
+            if ($lastHizbNumber !== null) {
+                if ($direction === 'ascending') {
+                    $student->last_hizb_ascending = $lastHizbNumber;
+                } else {
+                    $student->last_hizb_descending = $lastHizbNumber;
+                }
+
+                // 30% chance to simulate mixed approach (progress from both directions)
+                // This creates realistic examples where students switch directions
+                if (fake()->boolean(30)) {
+                    if ($direction === 'ascending') {
+                        // Student started ascending, also add some descending progress
+                        // They memorized from 60 down to somewhere between 35-55
+                        $student->last_hizb_descending = rand(35, 55);
+                    } else {
+                        // Student started descending, also add some ascending progress
+                        // They memorized from 1 up to somewhere between 5-25
+                        $student->last_hizb_ascending = rand(5, 25);
+                    }
+                }
+
+                $student->save();
             }
         }
     }

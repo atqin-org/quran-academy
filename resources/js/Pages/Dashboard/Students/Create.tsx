@@ -29,6 +29,7 @@ const initialFormState: TStudentForm = {
     insurance: false,
     picture: undefined,
     file: undefined,
+    memorizationDirection: "descending",
 };
 
 interface DashboardProps extends PageProps {

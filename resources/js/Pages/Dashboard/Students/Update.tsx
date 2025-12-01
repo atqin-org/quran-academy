@@ -60,6 +60,7 @@ export default function Update({
             subscription: student.subscription,
             picture: student.picture || undefined,
             file: student.file || undefined,
+            memorizationDirection: student.memorization_direction || "descending",
         });
 
     const url = window.location.href;

@@ -23,6 +23,7 @@ export interface TStudentForm {
     insurance?: boolean;
     picture?: File | string;
     file?: File | string;
+    memorizationDirection?: "ascending" | "descending";
 }
 export interface TStudentFormDB {
     first_name: string;
@@ -50,6 +51,7 @@ export interface TStudentFormDB {
     file?: string;
     club_id: number;
     category_id: number;
+    memorization_direction?: "ascending" | "descending";
 }
 export interface TSiblings {
     id: number;
