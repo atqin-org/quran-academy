@@ -58,6 +58,16 @@ interface AttendanceStats {
     rate: number;
 }
 
+interface DualProgress {
+    ascending: number;
+    descending: number;
+    overlap: number;
+    total: number;
+    percentage: number;
+    last_hizb_ascending: number | null;
+    last_hizb_descending: number | null;
+}
+
 interface Props {
     auth: { user: any };
     student: {
@@ -75,8 +85,10 @@ interface Props {
         category: { id: number; name: string } | null;
         father: { name: string; phone: string } | null;
         mother: { name: string; phone: string } | null;
+        memorization_direction?: "ascending" | "descending";
     };
     progress: number;
+    dualProgress: DualProgress;
     attendanceStats: AttendanceStats;
     progressTimeline: { date: string; progress: number }[];
     monthlyAttendance: any[];
@@ -113,6 +125,7 @@ export default function Show({
     auth,
     student,
     progress,
+    dualProgress,
     attendanceStats,
     progressTimeline,
     filters,
@@ -352,34 +365,77 @@ export default function Show({
                             <CardTitle className="text-lg flex items-center gap-2">
                                 <BookOpen className="h-5 w-5" />
                                 التقدّم في القرآن
+                                <span className="text-xs font-normal text-muted-foreground mr-auto">
+                                    {student.memorization_direction === "ascending" ? "↑ تصاعدي" : "↓ تنازلي"}
+                                </span>
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
                             <div className="space-y-4">
+                                {/* Dual Direction Progress Bar */}
                                 <div>
                                     <div className="flex justify-between mb-2">
                                         <span className="text-sm text-muted-foreground">التقدم الكلي</span>
-                                        <span className="text-sm font-medium">{progress}%</span>
+                                        <span className="text-sm font-medium">{dualProgress.percentage}%</span>
                                     </div>
-                                    <Progress value={progress} className="h-3" />
+
+                                    {/* Visual Progress Bar showing both directions */}
+                                    <div className="relative h-6 bg-muted rounded-full overflow-hidden">
+                                        {/* Ascending progress (from left - hizb 1) */}
+                                        {dualProgress.ascending > 0 && (
+                                            <div
+                                                className="absolute top-0 left-0 h-full bg-green-500 transition-all duration-500"
+                                                style={{ width: `${(dualProgress.ascending / 60) * 100}%` }}
+                                            />
+                                        )}
+                                        {/* Descending progress (from right - hizb 60) */}
+                                        {dualProgress.descending > 0 && (
+                                            <div
+                                                className="absolute top-0 right-0 h-full bg-blue-500 transition-all duration-500"
+                                                style={{ width: `${(dualProgress.descending / 60) * 100}%` }}
+                                            />
+                                        )}
+                                        {/* Center marker */}
+                                        <div className="absolute top-0 left-1/2 w-0.5 h-full bg-gray-400 -translate-x-1/2" />
+                                        {/* Labels */}
+                                        <span className="absolute left-1 top-1/2 -translate-y-1/2 text-[10px] font-bold text-white drop-shadow">1</span>
+                                        <span className="absolute right-1 top-1/2 -translate-y-1/2 text-[10px] font-bold text-white drop-shadow">60</span>
+                                    </div>
+
+                                    {/* Legend */}
+                                    <div className="flex justify-between mt-2 text-xs">
+                                        <div className="flex items-center gap-1">
+                                            <div className="w-3 h-3 bg-green-500 rounded" />
+                                            <span>تصاعدي: {dualProgress.last_hizb_ascending ? `1→${dualProgress.last_hizb_ascending}` : "-"}</span>
+                                        </div>
+                                        <div className="flex items-center gap-1">
+                                            <div className="w-3 h-3 bg-blue-500 rounded" />
+                                            <span>تنازلي: {dualProgress.last_hizb_descending ? `60→${dualProgress.last_hizb_descending}` : "-"}</span>
+                                        </div>
+                                    </div>
                                 </div>
 
-                                <div className="grid grid-cols-2 gap-4 pt-2">
-                                    <div className="text-center p-3 bg-muted rounded-lg">
-                                        <p className="text-2xl font-bold">{student.ahzab_up || 0}</p>
-                                        <p className="text-xs text-muted-foreground">أحزاب (حفظ)</p>
+                                {/* Stats Grid */}
+                                <div className="grid grid-cols-3 gap-2 pt-2">
+                                    <div className="text-center p-2 bg-green-50 rounded-lg border border-green-200">
+                                        <p className="text-xl font-bold text-green-700">{dualProgress.ascending}</p>
+                                        <p className="text-[10px] text-green-600">حزب ↑</p>
                                     </div>
-                                    <div className="text-center p-3 bg-muted rounded-lg">
-                                        <p className="text-2xl font-bold">{student.ahzab_down || 0}</p>
-                                        <p className="text-xs text-muted-foreground">أحزاب (مراجعة)</p>
+                                    <div className="text-center p-2 bg-blue-50 rounded-lg border border-blue-200">
+                                        <p className="text-xl font-bold text-blue-700">{dualProgress.descending}</p>
+                                        <p className="text-[10px] text-blue-600">حزب ↓</p>
+                                    </div>
+                                    <div className="text-center p-2 bg-purple-50 rounded-lg border border-purple-200">
+                                        <p className="text-xl font-bold text-purple-700">{dualProgress.total}</p>
+                                        <p className="text-[10px] text-purple-600">المجموع</p>
                                     </div>
                                 </div>
 
-                                <div className="text-center pt-2">
+                                <div className="text-center pt-2 border-t">
                                     <p className="text-3xl font-bold text-primary">
-                                        {student.ahzab || 0}
+                                        {dualProgress.total} / 60
                                     </p>
-                                    <p className="text-sm text-muted-foreground">إجمالي الأحزاب</p>
+                                    <p className="text-sm text-muted-foreground">حزب محفوظ</p>
                                 </div>
                             </div>
                         </CardContent>

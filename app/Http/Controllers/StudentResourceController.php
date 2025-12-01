@@ -288,22 +288,63 @@ class StudentResourceController extends Controller
             ? round(($attendanceStats['present'] / $attendanceStats['total']) * 100, 1)
             : 0;
 
-        // آخر مستوى تقدّم
+        // آخر مستوى تقدّم (legacy single progress)
         $lastHizb = $student->attendances()->whereNotNull('hizb_id')->latest()->first();
         $progress = $lastHizb ? round(($lastHizb->hizb_id / $totalHizb) * 100, 2) : 0;
 
-        // التقدّم بمرور الوقت (with time filter)
-        $progressTimeline = $progressQuery
+        // التقدم ثنائي الاتجاه (dual direction progress)
+        $dualProgress = $student->calculateDualDirectionProgress();
+
+        // التقدّم بمرور الوقت (with time filter) - dual direction aware
+        // We need to track cumulative progress from both directions
+        $attendancesWithHizb = $progressQuery
             ->whereNotNull('hizb_id')
+            ->with('hizb')
             ->orderBy('created_at')
-            ->get()
-            ->map(function ($attendance) use ($totalHizb) {
+            ->get();
+
+        // Track running progress from both directions
+        $maxAscending = 0;  // Highest hizb reached from ascending direction
+        $minDescending = 61; // Lowest hizb reached from descending direction (start at 61 so first real value wins)
+
+        $progressTimeline = $attendancesWithHizb->map(function ($attendance) use ($totalHizb, &$maxAscending, &$minDescending, $student) {
+            $hizbNumber = $attendance->hizb ? $attendance->hizb->number : null;
+
+            if ($hizbNumber) {
+                // Determine which direction this hizb belongs to based on the hizb number
+                // Hizbs 1-30 are typically ascending territory, 31-60 are descending territory
+                // But we also use the student's current direction as a hint
+
+                // Update tracking based on the hizb number
+                if ($hizbNumber <= 30) {
+                    // This is in the ascending range (1-30)
+                    $maxAscending = max($maxAscending, $hizbNumber);
+                } else {
+                    // This is in the descending range (31-60)
+                    $minDescending = min($minDescending, $hizbNumber);
+                }
+
+                // Calculate cumulative progress
+                $ascendingCount = $maxAscending; // Hizbs 1 to maxAscending
+                $descendingCount = ($minDescending <= 60) ? (60 - $minDescending + 1) : 0; // Hizbs minDescending to 60
+
+                // Check for overlap (if they meet in the middle)
+                $overlap = 0;
+                if ($maxAscending > 0 && $minDescending <= 60 && $maxAscending >= $minDescending) {
+                    $overlap = $maxAscending - $minDescending + 1;
+                }
+
+                $totalProgress = $ascendingCount + $descendingCount - $overlap;
+                $totalProgress = min(60, max(0, $totalProgress));
+
                 return [
                     'date' => $attendance->created_at->format('Y-m-d'),
-                    'progress' => round(($attendance->hizb_id / $totalHizb) * 100, 2),
+                    'progress' => round(($totalProgress / $totalHizb) * 100, 2),
                 ];
-            })
-            ->values();
+            }
+
+            return null;
+        })->filter()->values();
 
         // Monthly attendance breakdown for the chart (database-agnostic)
         $driver = DB::connection()->getDriverName();
@@ -357,8 +398,10 @@ class StudentResourceController extends Controller
                 'category' => $student->category,
                 'father' => $student->father,
                 'mother' => $student->mother,
+                'memorization_direction' => $student->memorization_direction,
             ],
             'progress' => $progress,
+            'dualProgress' => $dualProgress,
             'attendanceStats' => $attendanceStats,
             'progressTimeline' => $progressTimeline,
             'monthlyAttendance' => $monthlyAttendance,
@@ -410,6 +453,23 @@ class StudentResourceController extends Controller
         $student->save();
         return back()->with('success', 'تم تحديث الأحزاب بنجاح');
     }
+
+    /**
+     * Update memorization direction for a student.
+     */
+    public function updateDirection(Request $request, string $id)
+    {
+        $request->validate([
+            'direction' => 'required|in:ascending,descending',
+        ]);
+
+        $student = Student::findOrFail($id);
+        $student->memorization_direction = $request->direction;
+        $student->save();
+
+        return back()->with('success', 'تم تحديث اتجاه الحفظ بنجاح');
+    }
+
     /**
      * Update the specified resource in storage.
      */

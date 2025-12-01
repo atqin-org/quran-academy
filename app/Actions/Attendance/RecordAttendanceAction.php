@@ -2,6 +2,7 @@
 
 namespace App\Actions\Attendance;
 
+use App\Models\Hizb;
 use App\Models\ProgramSession;
 use App\Models\Student;
 use Illuminate\Support\Facades\Log;
@@ -26,6 +27,14 @@ class RecordAttendanceAction
                     'excusedReason'    => $excusedReason,
                 ]
             );
+
+            // Update student's last hizb for current direction if present and hizb is recorded
+            if ($status === 'present' && $hizb_id) {
+                $hizb = Hizb::find($hizb_id);
+                if ($hizb) {
+                    $student->updateLastHizbForCurrentDirection($hizb->number);
+                }
+            }
 
             Log::info('Attendance saved/updated', [
                 'id' => $attendance->id,
