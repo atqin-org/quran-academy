@@ -109,10 +109,10 @@ export const sidebarLinks = [
         icon: <DatabaseBackup />,
         label: "نسخ احتياطي",
         latin: "Backups",
-        display: true,
+        display: false,
         crud: false,
         visibleFor: ["admin"],
-        href: "/system",
+        href: "/system/backup",
     },
 ];
 
