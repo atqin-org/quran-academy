@@ -114,7 +114,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                                     icon={link.icon}
                                     label={link.label}
                                     isCollapsed={effectiveIsCollapsed}
-                                    isSelected={currentUrl.includes(link.href)}
+                                    isSelected={currentUrl === link.href || (currentUrl.startsWith(link.href + "/"))}
                                 />
                             ))}
                     </TooltipProvider>

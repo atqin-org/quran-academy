@@ -11,8 +11,6 @@ use App\Http\Controllers\BackupController;
 use App\Http\Controllers\LogController;
 use App\Http\Controllers\ProgramController;
 use App\Http\Controllers\ProgramSessionController;
-use App\Models\DatabaseBackup;
-use Illuminate\Support\Facades\Artisan;
 use App\Http\Middleware\AdminMiddleware;
 
 Route::middleware(['auth', 'verified'])->group(function () {
@@ -34,24 +32,22 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('personnels.restore')
         ->middleware(AdminMiddleware::class);
 
-    Route::get('/system', function () {
+    Route::get('/system/backup', function () {
         return Inertia::render('Dashboard/System/BackupDatabase');
     })->middleware(AdminMiddleware::class);
-    Route::post('/backup', [BackupController::class, 'backup']);
 
-    Route::get('/download-backup/{path}', function ($path) {
-        return response()->download(storage_path("app/$path"));
+    // Backup Routes - Admin Only
+    Route::middleware(AdminMiddleware::class)->prefix('backup')->group(function () {
+        Route::post('/', [BackupController::class, 'backup'])->name('backup.create');
+        Route::get('/', [BackupController::class, 'index'])->name('backup.index');
+        Route::get('/download/{filename}', [BackupController::class, 'download'])
+            ->name('backup.download')
+            ->where('filename', '[\d]{4}-[\d]{2}-[\d]{2}-[\d]{2}-[\d]{2}-[\d]{2}\.zip');
+        Route::delete('/', [BackupController::class, 'destroy'])->name('backup.destroy');
+        Route::post('/restore', [BackupController::class, 'restore'])->name('backup.restore');
+        Route::get('/settings', [BackupController::class, 'getSettings'])->name('backup.settings');
+        Route::put('/settings', [BackupController::class, 'updateSettings'])->name('backup.settings.update');
     });
-
-    Route::get('/get-backups', function () {
-        return DatabaseBackup::all();
-    });
-    Route::get('/bup', function () {
-        Artisan::call('backup:run');
-        return Artisan::output();
-    });
-
-    Route::post('/delete-backup', [BackupController::class, 'deleteBackup']);
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
