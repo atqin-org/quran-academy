@@ -73,10 +73,10 @@ export const sidebarLinks = [
         icon: <House />,
         label: "النوادي",
         latin: "Clubs",
-        display: true,
+        display: false,
         crud: true,
-        visibleFor: ["admin", "moderator", "staff", "teacher" ],
-        href: "/dashboard/clubs",
+        visibleFor: ["admin"],
+        href: "/clubs",
     },
     {
         icon: <Users />,
