@@ -11,6 +11,7 @@ use App\Http\Controllers\BackupController;
 use App\Http\Controllers\LogController;
 use App\Http\Controllers\ProgramController;
 use App\Http\Controllers\ProgramSessionController;
+use App\Http\Controllers\ClubController;
 use App\Http\Middleware\AdminMiddleware;
 
 Route::middleware(['auth', 'verified'])->group(function () {
@@ -55,6 +56,18 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('/system/logs', [LogController::class, 'index'])->name('admin.logs.index')->middleware(\App\Http\Middleware\AdminMiddleware::class);
 
+    // ---------------------------
+    // Clubs Routes
+    // ---------------------------
+    Route::prefix('clubs')->name('clubs.')->group(function () {
+        Route::get('/', [ClubController::class, 'index'])->name('index');
+        Route::get('/create', [ClubController::class, 'create'])->name('create');
+        Route::post('/', [ClubController::class, 'store'])->name('store');
+        Route::get('/{club}/edit', [ClubController::class, 'edit'])->name('edit');
+        Route::post('/{club}', [ClubController::class, 'update'])->name('update');
+        Route::delete('/{club}', [ClubController::class, 'destroy'])->name('destroy');
+        Route::post('/{club}/restore', [ClubController::class, 'restore'])->name('restore');
+    });
 
     // ---------------------------
     // Programs Routes
