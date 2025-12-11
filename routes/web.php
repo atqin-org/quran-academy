@@ -12,6 +12,7 @@ use App\Http\Controllers\LogController;
 use App\Http\Controllers\ProgramController;
 use App\Http\Controllers\ProgramSessionController;
 use App\Http\Controllers\ClubController;
+use App\Http\Controllers\ClubCategorySessionController;
 use App\Http\Middleware\AdminMiddleware;
 
 Route::middleware(['auth', 'verified'])->group(function () {
@@ -67,6 +68,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/{club}', [ClubController::class, 'update'])->name('update');
         Route::delete('/{club}', [ClubController::class, 'destroy'])->name('destroy');
         Route::post('/{club}/restore', [ClubController::class, 'restore'])->name('restore');
+
+        // Session configuration routes
+        Route::get('/{club}/sessions-config', [ClubCategorySessionController::class, 'edit'])->name('sessions-config.edit');
+        Route::put('/{club}/sessions-config', [ClubCategorySessionController::class, 'update'])->name('sessions-config.update');
     });
 
     // ---------------------------
@@ -109,6 +114,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         // Cancel session
         Route::post('/{session}/cancel', [ProgramSessionController::class, 'cancel'])->name('cancel');
+
+        // Toggle optional status
+        Route::put('/{session}/optional', [ProgramSessionController::class, 'toggleOptional'])->name('toggleOptional');
 
         // Attendance page for a session
         Route::get('/{session}/attendance', [ProgramSessionController::class, 'attendance'])->name('attendance');

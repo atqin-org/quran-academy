@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ClubCategorySession;
 use App\Models\Payment;
 use App\Models\Student;
 use Illuminate\Http\Request;
@@ -85,11 +86,32 @@ class PaymentController extends Controller
         $student = Student::find($request->student_id);
         if ($request->type == 'ins') {
             $student->insurance_expire_at = $expect['end_at'];
-        }else{
+        } else {
             $student->subscription_expire_at = $expect['end_at'];
+
+            // Add session credits based on club/category configuration
+            $this->addSessionCredits($student, $expect['duration']);
         }
         $student->save();
         return redirect()->route('students.payment.show', $request->student_id);
+    }
+
+    /**
+     * Add session credits based on payment duration and club/category config
+     */
+    private function addSessionCredits(Student $student, int $months): void
+    {
+        // Get sessions per month from club/category config
+        $sessionsPerMonth = ClubCategorySession::getSessionsPerMonth(
+            $student->club_id,
+            $student->category_id
+        );
+
+        // Calculate credits to add
+        $creditsToAdd = $months * $sessionsPerMonth;
+
+        // Add to existing credits (don't overwrite)
+        $student->addCredit($creditsToAdd);
     }
 
     /**
@@ -98,11 +120,19 @@ class PaymentController extends Controller
     public function show(Student $student)
     {
         $payments = Payment::where('student_id', $student->id)->latest()->get();
+
+        // Get sessions per month config for this student
+        $sessionsPerMonth = ClubCategorySession::getSessionsPerMonth(
+            $student->club_id,
+            $student->category_id
+        );
+
         return Inertia::render(
             'Dashboard/Students/Payment',
             [
-                'student' => $student->load('father', 'mother'),
+                'student' => $student->load('father', 'mother', 'club', 'category'),
                 'payments' => $payments,
+                'sessionsPerMonth' => $sessionsPerMonth,
             ]
         );
     }

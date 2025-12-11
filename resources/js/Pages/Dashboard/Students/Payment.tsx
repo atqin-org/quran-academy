@@ -7,8 +7,12 @@ import { Head, useForm } from "@inertiajs/react";
 import { Banknote, ChevronDownIcon } from "lucide-react";
 
 interface DashboardProps extends PageProps {
-    student: any;
+    student: any & {
+        sessions_credit: number;
+        subscription: number;
+    };
     payments: Payment[];
+    sessionsPerMonth: number;
 }
 
 interface Payment {
@@ -23,7 +27,7 @@ interface Payment {
     created_at: string;
 }
 
-export default function Dashboard({ auth, student, payments }: DashboardProps) {
+export default function Dashboard({ auth, student, payments, sessionsPerMonth }: DashboardProps) {
     const formatDate = (date: Date) => {
         const pad = (num: number) => (num < 10 ? "0" + num : num);
         return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(
@@ -37,7 +41,7 @@ export default function Dashboard({ auth, student, payments }: DashboardProps) {
         if (isNaN(value) || value < 0 || !student.subscription) return null;
 
         const duration = Math.floor(value / student.subscription);
-        const sessions = Math.floor((value * 16) / student.subscription);
+        const sessions = duration * sessionsPerMonth;
         const endDate = new Date(startAt);
         endDate.setMonth(endDate.getMonth() + duration);
 
@@ -90,6 +94,38 @@ export default function Dashboard({ auth, student, payments }: DashboardProps) {
                         {student.first_name} {student.last_name}
                     </span>
                 </h3>
+
+                {/* Credit Balance Display */}
+                <div className="bg-gray-50 rounded-lg p-4 max-w-sm">
+                    <h3 className="text-sm font-medium text-gray-700">رصيد الحصص</h3>
+                    <div className="flex items-baseline gap-2 mt-1">
+                        <span className={`text-2xl font-bold ${
+                            student.subscription === 0
+                                ? 'text-blue-600'
+                                : student.sessions_credit < 0
+                                    ? 'text-red-600'
+                                    : student.sessions_credit < 4
+                                        ? 'text-yellow-600'
+                                        : 'text-green-600'
+                        }`}>
+                            {student.subscription === 0
+                                ? '∞'
+                                : student.sessions_credit}
+                        </span>
+                        {student.subscription !== 0 && (
+                            <span className="text-sm text-gray-500">حصة متبقية</span>
+                        )}
+                        {student.subscription === 0 && (
+                            <span className="text-sm text-blue-500">(اشتراك مجاني)</span>
+                        )}
+                    </div>
+                    {student.subscription !== 0 && data.expect?.sessions ? (
+                        <p className="text-xs text-gray-500 mt-1">
+                            بعد الدفع: {student.sessions_credit + data.expect.sessions} حصة
+                        </p>
+                    ) : null}
+                </div>
+
                 <div className="flex md:items-start items-center justify-center flex-col md:flex-row gap-24">
                     <Tabs
                         defaultValue={student.subscription == 0 ? "ins" : "sub"}
@@ -152,35 +188,33 @@ export default function Dashboard({ auth, student, payments }: DashboardProps) {
                                             </div>
                                             <p>
                                                 من{" "}
-                                                {new Intl.DateTimeFormat(
-                                                    "ar-DZ",
-                                                    {
-                                                        year: "numeric",
-                                                        month: "2-digit",
-                                                        day: "2-digit",
-                                                    }
-                                                ).format(
-                                                    new Date(
-                                                        data.expect?.start_at ??
-                                                            ""
-                                                    )
-                                                )}
+                                                {data.expect?.start_at && !isNaN(new Date(data.expect.start_at).getTime())
+                                                    ? new Intl.DateTimeFormat(
+                                                          "ar-DZ",
+                                                          {
+                                                              year: "numeric",
+                                                              month: "2-digit",
+                                                              day: "2-digit",
+                                                          }
+                                                      ).format(
+                                                          new Date(data.expect.start_at)
+                                                      )
+                                                    : "-"}
                                             </p>
                                             <p>
                                                 إلى{" "}
-                                                {new Intl.DateTimeFormat(
-                                                    "ar-DZ",
-                                                    {
-                                                        year: "numeric",
-                                                        month: "2-digit",
-                                                        day: "2-digit",
-                                                    }
-                                                ).format(
-                                                    new Date(
-                                                        data.expect?.end_at ??
-                                                            ""
-                                                    )
-                                                )}
+                                                {data.expect?.end_at && !isNaN(new Date(data.expect.end_at).getTime())
+                                                    ? new Intl.DateTimeFormat(
+                                                          "ar-DZ",
+                                                          {
+                                                              year: "numeric",
+                                                              month: "2-digit",
+                                                              day: "2-digit",
+                                                          }
+                                                      ).format(
+                                                          new Date(data.expect.end_at)
+                                                      )
+                                                    : "-"}
                                             </p>
                                         </div>
                                     </div>

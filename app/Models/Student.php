@@ -34,6 +34,7 @@ class Student extends Model
         'ahzab_down',
         'subscription',
         'subscription_expire_at',
+        'sessions_credit',
         'insurance_expire_at',
         'picture',
         'file',
@@ -49,6 +50,7 @@ class Student extends Model
         'memorization_direction' => 'string',
         'last_hizb_ascending' => 'integer',
         'last_hizb_descending' => 'integer',
+        'sessions_credit' => 'integer',
     ];
     // Relationship students has father_id and mother_id are guardians
     public function father()
@@ -71,6 +73,45 @@ class Student extends Model
     {
         return $this->belongsTo(Category::class, 'category_id');
     }
+
+    /**
+     * Check if student has infinite sessions (subscription = 0)
+     */
+    public function hasInfiniteSessions(): bool
+    {
+        return $this->subscription == 0;
+    }
+
+    /**
+     * Deduct session credit
+     * Only deducts if student doesn't have infinite sessions
+     *
+     * @param int $amount Number of credits to deduct (default 1)
+     * @return bool Whether deduction was performed
+     */
+    public function deductCredit(int $amount = 1): bool
+    {
+        if ($this->hasInfiniteSessions()) {
+            return false;
+        }
+
+        $this->sessions_credit -= $amount;
+        $this->save();
+
+        return true;
+    }
+
+    /**
+     * Add session credits
+     *
+     * @param int $amount Number of credits to add
+     */
+    public function addCredit(int $amount): void
+    {
+        $this->sessions_credit += $amount;
+        $this->save();
+    }
+
     protected static function booted()
     {
         static::saving(function ($student) {
@@ -254,6 +295,7 @@ class Student extends Model
                 'family_status',
                 'ahzab',
                 'subscription',
+                'sessions_credit',
                 'club_id',
                 'category_id',
                 'father_id',

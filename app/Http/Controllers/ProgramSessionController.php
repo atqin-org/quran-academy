@@ -144,6 +144,32 @@ class ProgramSessionController extends Controller
     }
 
     /**
+     * Toggle optional status for a session
+     */
+    public function toggleOptional(Request $request, ProgramSession $session)
+    {
+        $validated = $request->validate([
+            'is_optional' => 'required|boolean',
+        ]);
+
+        $session->update(['is_optional' => $validated['is_optional']]);
+
+        activity('program_session')
+            ->performedOn($session)
+            ->causedBy(Auth::user())
+            ->event('optional_toggled')
+            ->withProperties([
+                'is_optional' => $validated['is_optional'],
+                'session_date' => $session->session_date?->format('Y-m-d'),
+            ])
+            ->log($validated['is_optional']
+                ? 'تم تحديد الحصة كاختيارية'
+                : 'تم إلغاء تحديد الحصة كاختيارية');
+
+        return redirect()->back();
+    }
+
+    /**
      * تسجيل حضور طالب
      */
     public function recordAttendance(Request $request, ProgramSession $session)

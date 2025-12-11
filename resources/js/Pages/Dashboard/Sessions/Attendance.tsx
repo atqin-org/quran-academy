@@ -16,6 +16,8 @@ import {
     TooltipProvider,
     TooltipTrigger,
 } from "@/Components/ui/tooltip";
+import { Switch } from "@/Components/ui/switch";
+import { Label } from "@/Components/ui/label";
 import { useState, useMemo } from "react";
 
 interface Hizb {
@@ -50,6 +52,7 @@ interface SessionAttendanceProps {
     session: {
         id: number;
         session_date: string;
+        is_optional: boolean;
     };
     students: Student[];
     ahzab: Hizb[];
@@ -445,6 +448,7 @@ export default function Attendance({
 }: SessionAttendanceProps) {
     // Track students locally to update direction immediately
     const [students, setStudents] = useState(initialStudents);
+    const [isOptional, setIsOptional] = useState(session.is_optional ?? false);
 
     const [attendance, setAttendance] = useState<Record<number, any>>(() =>
         initialStudents.reduce((acc, s) => {
@@ -523,6 +527,15 @@ export default function Attendance({
         }
     };
 
+    const handleOptionalToggle = (checked: boolean) => {
+        setIsOptional(checked);
+        router.put(
+            route("sessions.toggleOptional", session.id),
+            { is_optional: checked },
+            { preserveScroll: true }
+        );
+    };
+
     return (
         <DashboardLayout user={auth.user}>
             <Head title="تسجيل الحضور" />
@@ -531,6 +544,23 @@ export default function Attendance({
                 <h1 className="text-3xl font-bold text-gray-900">
                     تسجيل الحضور - الجلسة {session.id}
                 </h1>
+
+                {/* Optional Session Toggle */}
+                <div className="bg-white shadow rounded-lg p-4 flex items-center justify-between">
+                    <div>
+                        <Label htmlFor="optional-toggle" className="font-medium text-gray-900">
+                            حصة اختيارية
+                        </Label>
+                        <p className="text-sm text-gray-500">
+                            الحصص الاختيارية لا تخصم من رصيد الحصص
+                        </p>
+                    </div>
+                    <Switch
+                        id="optional-toggle"
+                        checked={isOptional}
+                        onCheckedChange={handleOptionalToggle}
+                    />
+                </div>
 
                 <div className="overflow-x-auto bg-white shadow rounded-lg">
                     <table className="w-full border-collapse">
