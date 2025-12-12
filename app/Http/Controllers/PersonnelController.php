@@ -27,7 +27,7 @@ class PersonnelController extends Controller
         });
 
         return Inertia::render(
-            'Dashboard/Personnels/IndexTmp',
+            'Dashboard/Personnels/Index',
             [
                 'clubs' => Club::all(),
                 'personnels' => $personnels

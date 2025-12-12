@@ -4,9 +4,7 @@ import { Head, Link, usePage } from "@inertiajs/react";
 import {
     Card,
     CardContent,
-    CardDescription,
     CardHeader,
-    CardTitle,
 } from "@/Components/ui/card";
 import { Badge } from "@/Components/ui/badge";
 import { Button } from "@/Components/ui/button";
@@ -47,6 +45,7 @@ import {
     X,
     CheckCircle,
     XCircle,
+    Calendar,
 } from "lucide-react";
 import { useState, useMemo, useEffect } from "react";
 import { toast } from "sonner";
@@ -102,9 +101,6 @@ export default function Index({ auth, clubs }: DashboardProps) {
         });
     }, [clubs, statusFilter, searchQuery]);
 
-    const activeCount = clubs.filter((c) => !c.deleted_at).length;
-    const deletedCount = clubs.filter((c) => !!c.deleted_at).length;
-
     const clearFilters = () => {
         setSearchQuery("");
         setStatusFilter("all");
@@ -127,78 +123,21 @@ export default function Index({ auth, clubs }: DashboardProps) {
                     </Link>
                 </div>
 
-                {/* Stats Cards */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <Card
-                        className={`cursor-pointer transition-all ${
-                            statusFilter === "all"
-                                ? "ring-2 ring-primary"
-                                : "hover:shadow-md"
-                        }`}
-                        onClick={() => setStatusFilter("all")}
-                    >
-                        <CardHeader className="flex flex-row items-center justify-between pb-2">
-                            <CardTitle className="text-sm font-medium text-muted-foreground">
-                                الإجمالي
-                            </CardTitle>
-                            <House className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">{clubs.length}</div>
-                        </CardContent>
-                    </Card>
-                    <Card
-                        className={`cursor-pointer transition-all ${
-                            statusFilter === "active"
-                                ? "ring-2 ring-primary"
-                                : "hover:shadow-md"
-                        }`}
-                        onClick={() => setStatusFilter("active")}
-                    >
-                        <CardHeader className="flex flex-row items-center justify-between pb-2">
-                            <CardTitle className="text-sm font-medium text-muted-foreground">
-                                نشط
-                            </CardTitle>
-                            <CheckCircle className="h-4 w-4 text-emerald-500" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold text-emerald-600">
-                                {activeCount}
-                            </div>
-                        </CardContent>
-                    </Card>
-                    <Card
-                        className={`cursor-pointer transition-all ${
-                            statusFilter === "deleted"
-                                ? "ring-2 ring-primary"
-                                : "hover:shadow-md"
-                        }`}
-                        onClick={() => setStatusFilter("deleted")}
-                    >
-                        <CardHeader className="flex flex-row items-center justify-between pb-2">
-                            <CardTitle className="text-sm font-medium text-muted-foreground">
-                                محذوف
-                            </CardTitle>
-                            <XCircle className="h-4 w-4 text-red-500" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold text-red-600">
-                                {deletedCount}
-                            </div>
-                        </CardContent>
-                    </Card>
-                </div>
-
                 {/* Table */}
                 <Card>
-                    <CardHeader>
-                        <div className="flex flex-col gap-4">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <CardTitle>قائمة النوادي</CardTitle>
-                                    <CardDescription>
-                                        {filteredClubs.length} من {clubs.length} نادي
-                                    </CardDescription>
+                    <CardHeader className="pb-4">
+                        <div className="flex flex-col gap-2">
+                            <div className="flex items-center gap-3">
+                                {/* Search */}
+                                <div className="relative flex-1 max-w-sm">
+                                    <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                    <Input
+                                        placeholder="البحث بالاسم أو الموقع..."
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        className="pr-9"
+                                        dir="rtl"
+                                    />
                                 </div>
                                 {hasActiveFilters && (
                                     <Button
@@ -212,18 +151,9 @@ export default function Index({ auth, clubs }: DashboardProps) {
                                     </Button>
                                 )}
                             </div>
-
-                            {/* Search */}
-                            <div className="relative flex-1 max-w-sm">
-                                <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                <Input
-                                    placeholder="البحث بالاسم أو الموقع..."
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="pr-9"
-                                    dir="rtl"
-                                />
-                            </div>
+                            <span className="text-xs text-muted-foreground">
+                                {filteredClubs.length} من {clubs.length} نادي
+                            </span>
                         </div>
                     </CardHeader>
                     <CardContent>
@@ -331,6 +261,16 @@ function ClubActions({ club }: { club: Club }) {
                                 >
                                     <Pencil className="h-4 w-4" />
                                     تعديل
+                                </Link>
+                            </DropdownMenuItem>
+
+                            <DropdownMenuItem asChild>
+                                <Link
+                                    href={`/clubs/${club.id}/sessions-config`}
+                                    className="flex items-center gap-2 cursor-pointer"
+                                >
+                                    <Calendar className="h-4 w-4" />
+                                    إعدادات الحصص
                                 </Link>
                             </DropdownMenuItem>
 

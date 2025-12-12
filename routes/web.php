@@ -12,6 +12,8 @@ use App\Http\Controllers\LogController;
 use App\Http\Controllers\ProgramController;
 use App\Http\Controllers\ProgramSessionController;
 use App\Http\Controllers\ClubController;
+use App\Http\Controllers\ClubCategorySessionController;
+use App\Http\Controllers\StatisticsController;
 use App\Http\Middleware\AdminMiddleware;
 
 Route::middleware(['auth', 'verified'])->group(function () {
@@ -57,6 +59,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/system/logs', [LogController::class, 'index'])->name('admin.logs.index')->middleware(\App\Http\Middleware\AdminMiddleware::class);
 
     // ---------------------------
+    // Statistics Routes (Admin Only)
+    // ---------------------------
+    Route::middleware(AdminMiddleware::class)->prefix('statistics')->name('statistics.')->group(function () {
+        Route::get('/', [StatisticsController::class, 'index'])->name('index');
+        Route::get('/data', [StatisticsController::class, 'getData'])->name('data');
+        Route::put('/layout', [StatisticsController::class, 'updateLayout'])->name('layout.update');
+    });
+
+    // ---------------------------
     // Clubs Routes
     // ---------------------------
     Route::prefix('clubs')->name('clubs.')->group(function () {
@@ -67,6 +78,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/{club}', [ClubController::class, 'update'])->name('update');
         Route::delete('/{club}', [ClubController::class, 'destroy'])->name('destroy');
         Route::post('/{club}/restore', [ClubController::class, 'restore'])->name('restore');
+
+        // Session configuration routes
+        Route::get('/{club}/sessions-config', [ClubCategorySessionController::class, 'edit'])->name('sessions-config.edit');
+        Route::put('/{club}/sessions-config', [ClubCategorySessionController::class, 'update'])->name('sessions-config.update');
     });
 
     // ---------------------------
@@ -109,6 +124,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         // Cancel session
         Route::post('/{session}/cancel', [ProgramSessionController::class, 'cancel'])->name('cancel');
+
+        // Toggle optional status
+        Route::put('/{session}/optional', [ProgramSessionController::class, 'toggleOptional'])->name('toggleOptional');
 
         // Attendance page for a session
         Route::get('/{session}/attendance', [ProgramSessionController::class, 'attendance'])->name('attendance');

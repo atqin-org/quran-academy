@@ -1,17 +1,18 @@
 import {
     Backpack,
-    Banknote,
     ChartPie,
     DatabaseBackup,
     House,
     LibraryBig,
+    LogOut,
     Network,
     NotebookPen,
     Presentation,
     ScrollText,
-    Settings,
+    User,
     Users,
 } from "lucide-react";
+
 export const sidebarLinks = [
     {
         icon: <ChartPie />,
@@ -19,18 +20,17 @@ export const sidebarLinks = [
         latin: "Statistics",
         display: false,
         crud: false,
-        visibleFor: ["admin", "moderator", "staff", "teacher" ],
-        href: "/dashboard/statistic",
+        visibleFor: ["admin"],
+        href: "/statistics",
     },
-    
     {
         icon: <LibraryBig />,
         label: "المداومة",
         latin: "Presence",
         display: true,
         crud: false,
-        visibleFor: ["admin", "moderator", "staff", "teacher" ],
-        href: "/dashboard/presence",
+        visibleFor: ["admin", "moderator", "staff", "teacher"],
+        href: "/presence",
     },
     {
         icon: <Backpack />,
@@ -38,17 +38,16 @@ export const sidebarLinks = [
         latin: "Students",
         display: false,
         crud: true,
-        visibleFor: ["admin", "moderator", "staff", "teacher" ],
+        visibleFor: ["admin", "moderator", "staff", "teacher"],
         href: "/students",
     },
-       {
-       
-         icon: <Network />,
+    {
+        icon: <Network />,
         label: "برنامج",
         latin: "Program",
         display: false,
         crud: true,
-        visibleFor: ["admin", "moderator", "staff", "teacher" ],
+        visibleFor: ["admin", "moderator", "staff", "teacher"],
         href: "/programs",
     },
     {
@@ -57,7 +56,7 @@ export const sidebarLinks = [
         latin: "Teachers",
         display: true,
         crud: true,
-        visibleFor: ["admin", "moderator", "staff", "teacher" ],
+        visibleFor: ["admin", "moderator", "staff", "teacher"],
         href: "/dashboard/teachers",
     },
     {
@@ -66,7 +65,7 @@ export const sidebarLinks = [
         latin: "Assistants",
         display: true,
         crud: true,
-        visibleFor: ["admin", "moderator", "staff", "teacher" ],
+        visibleFor: ["admin", "moderator", "staff", "teacher"],
         href: "/dashboard/assistants",
     },
     {
@@ -87,32 +86,38 @@ export const sidebarLinks = [
         visibleFor: ["admin"],
         href: "/personnels",
     },
+];
+
+// Profile menu items - shown in the profile dropdown at the bottom of sidebar
+export const profileMenuLinks = [
     {
-        icon: <Settings />,
-        label: "الاعدادات",
-        latin: "Settings",
-        display: false,
-        crud: false,
-        visibleFor: ["admin", "moderator", "staff", "teacher" ],
+        icon: <User className="h-4 w-4" />,
+        label: "الملف الشخصي",
+        latin: "Profile",
         href: "/profile",
+        visibleFor: ["admin", "moderator", "staff", "teacher"],
     },
     {
-        icon: <ScrollText />,
+        icon: <ScrollText className="h-4 w-4" />,
         label: "السجلّات",
         latin: "Logs",
-        display: false,
-        crud: true,
-        visibleFor: ["admin"],
         href: "/system/logs",
+        visibleFor: ["admin"],
     },
     {
-        icon: <DatabaseBackup />,
+        icon: <DatabaseBackup className="h-4 w-4" />,
         label: "نسخ احتياطي",
         latin: "Backups",
-        display: false,
-        crud: false,
-        visibleFor: ["admin"],
         href: "/system/backup",
+        visibleFor: ["admin"],
+    },
+    {
+        icon: <LogOut className="h-4 w-4" />,
+        label: "تسجيل الخروج",
+        latin: "Logout",
+        href: "logout",
+        visibleFor: ["admin", "moderator", "staff", "teacher"],
+        isLogout: true,
     },
 ];
 

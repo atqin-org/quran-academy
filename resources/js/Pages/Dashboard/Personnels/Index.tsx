@@ -5,9 +5,7 @@ import { TPersonnelFormDB } from "./Types/Personnel";
 import {
     Card,
     CardContent,
-    CardDescription,
     CardHeader,
-    CardTitle,
 } from "@/Components/ui/card";
 import { Badge } from "@/Components/ui/badge";
 import { Button } from "@/Components/ui/button";
@@ -43,6 +41,12 @@ import {
     SelectValue,
 } from "@/Components/ui/select";
 import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from "@/Components/ui/tooltip";
+import {
     MoreHorizontal,
     UserPen,
     Trash2,
@@ -58,6 +62,7 @@ import {
 } from "lucide-react";
 import { useState, useMemo, useEffect } from "react";
 import { toast } from "sonner";
+import UserAvatar from "@/Components/costume-cn/UserAvatar";
 
 interface DashboardProps extends PageProps {
     personnels: TPersonnelFormDB[];
@@ -150,9 +155,6 @@ export default function Dashboard({
         });
     }, [personnels, statusFilter, searchQuery, roleFilter, clubFilter]);
 
-    const activeCount = personnels.filter((p) => !p.deleted_at).length;
-    const deactivatedCount = personnels.filter((p) => !!p.deleted_at).length;
-
     const uniqueRoles = [...new Set(personnels.map((p) => p.role))];
 
     const clearFilters = () => {
@@ -181,95 +183,10 @@ export default function Dashboard({
                     </Link>
                 </div>
 
-                {/* Stats Cards */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <Card
-                        className={`cursor-pointer transition-all ${
-                            statusFilter === "all"
-                                ? "ring-2 ring-primary"
-                                : "hover:shadow-md"
-                        }`}
-                        onClick={() => setStatusFilter("all")}
-                    >
-                        <CardHeader className="flex flex-row items-center justify-between pb-2">
-                            <CardTitle className="text-sm font-medium text-muted-foreground">
-                                الإجمالي
-                            </CardTitle>
-                            <Users className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">
-                                {personnels.length}
-                            </div>
-                        </CardContent>
-                    </Card>
-                    <Card
-                        className={`cursor-pointer transition-all ${
-                            statusFilter === "active"
-                                ? "ring-2 ring-primary"
-                                : "hover:shadow-md"
-                        }`}
-                        onClick={() => setStatusFilter("active")}
-                    >
-                        <CardHeader className="flex flex-row items-center justify-between pb-2">
-                            <CardTitle className="text-sm font-medium text-muted-foreground">
-                                نشط
-                            </CardTitle>
-                            <UserCheck className="h-4 w-4 text-emerald-500" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold text-emerald-600">
-                                {activeCount}
-                            </div>
-                        </CardContent>
-                    </Card>
-                    <Card
-                        className={`cursor-pointer transition-all ${
-                            statusFilter === "deactivated"
-                                ? "ring-2 ring-primary"
-                                : "hover:shadow-md"
-                        }`}
-                        onClick={() => setStatusFilter("deactivated")}
-                    >
-                        <CardHeader className="flex flex-row items-center justify-between pb-2">
-                            <CardTitle className="text-sm font-medium text-muted-foreground">
-                                معطل
-                            </CardTitle>
-                            <UserX className="h-4 w-4 text-red-500" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold text-red-600">
-                                {deactivatedCount}
-                            </div>
-                        </CardContent>
-                    </Card>
-                </div>
-
                 {/* Table */}
                 <Card>
-                    <CardHeader>
-                        <div className="flex flex-col gap-4">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <CardTitle>قائمة الموظفين</CardTitle>
-                                    <CardDescription>
-                                        {filteredPersonnels.length} من {personnels.length} موظف
-                                    </CardDescription>
-                                </div>
-                                {hasActiveFilters && (
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={clearFilters}
-                                        className="gap-1 text-muted-foreground"
-                                    >
-                                        <X className="h-4 w-4" />
-                                        مسح الفلاتر
-                                    </Button>
-                                )}
-                            </div>
-
-                            {/* Search and Filters */}
+                    <CardHeader className="pb-4">
+                        <div className="flex flex-col gap-2">
                             <div className="flex flex-col sm:flex-row gap-3">
                                 <div className="relative flex-1">
                                     <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -317,7 +234,21 @@ export default function Dashboard({
                                         ))}
                                     </SelectContent>
                                 </Select>
+                                {hasActiveFilters && (
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={clearFilters}
+                                        className="gap-1 text-muted-foreground"
+                                    >
+                                        <X className="h-4 w-4" />
+                                        مسح الفلاتر
+                                    </Button>
+                                )}
                             </div>
+                            <span className="text-xs text-muted-foreground">
+                                {filteredPersonnels.length} من {personnels.length} موظف
+                            </span>
                         </div>
                     </CardHeader>
                     <CardContent>
@@ -372,8 +303,16 @@ export default function Dashboard({
                                                 }
                                             >
                                                 <TableCell className="font-medium">
-                                                    {personnel.name}{" "}
-                                                    {personnel.last_name}
+                                                    <div className="flex items-center gap-2">
+                                                        <UserAvatar
+                                                            firstName={personnel.name}
+                                                            lastName={personnel.last_name}
+                                                            size="sm"
+                                                        />
+                                                        <span>
+                                                            {personnel.name} {personnel.last_name}
+                                                        </span>
+                                                    </div>
                                                 </TableCell>
                                                 <TableCell>
                                                     {personnel.email}
@@ -389,19 +328,40 @@ export default function Dashboard({
                                                     </Badge>
                                                 </TableCell>
                                                 <TableCell>
-                                                    <div className="flex gap-1 flex-wrap">
-                                                        {personnel.clubs.map(
+                                                    <div className="flex gap-1 flex-wrap items-center">
+                                                        {personnel.clubs.slice(0, 3).map(
                                                             (club) => (
                                                                 <Badge
-                                                                    key={
-                                                                        club.id
-                                                                    }
+                                                                    key={club.id}
                                                                     variant="secondary"
                                                                     className="text-xs"
                                                                 >
                                                                     {club.name}
                                                                 </Badge>
                                                             )
+                                                        )}
+                                                        {personnel.clubs.length > 3 && (
+                                                            <TooltipProvider>
+                                                                <Tooltip>
+                                                                    <TooltipTrigger asChild>
+                                                                        <span>
+                                                                            <Badge
+                                                                                variant="outline"
+                                                                                className="text-xs cursor-pointer"
+                                                                            >
+                                                                                +{personnel.clubs.length - 3}
+                                                                            </Badge>
+                                                                        </span>
+                                                                    </TooltipTrigger>
+                                                                    <TooltipContent dir="rtl">
+                                                                        <div className="flex flex-col gap-1">
+                                                                            {personnel.clubs.slice(3).map((club) => (
+                                                                                <span key={club.id}>{club.name}</span>
+                                                                            ))}
+                                                                        </div>
+                                                                    </TooltipContent>
+                                                                </Tooltip>
+                                                            </TooltipProvider>
                                                         )}
                                                     </div>
                                                 </TableCell>

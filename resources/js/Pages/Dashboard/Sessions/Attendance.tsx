@@ -16,6 +16,8 @@ import {
     TooltipProvider,
     TooltipTrigger,
 } from "@/Components/ui/tooltip";
+import { Switch } from "@/Components/ui/switch";
+import { Label } from "@/Components/ui/label";
 import { useState, useMemo } from "react";
 
 interface Hizb {
@@ -35,7 +37,7 @@ interface Student {
     id: number;
     first_name: string;
     last_name: string;
-    attendance_status: "present" | "absent" | "excused" | null;
+    attendance_status: "present" | "absent" | "excused" | "late_excused" | "kicked" | null;
     excusedReason?: string;
     hizb_id?: number | null;
     thoman_id?: number | null;
@@ -50,6 +52,7 @@ interface SessionAttendanceProps {
     session: {
         id: number;
         session_date: string;
+        is_optional: boolean;
     };
     students: Student[];
     ahzab: Hizb[];
@@ -445,6 +448,7 @@ export default function Attendance({
 }: SessionAttendanceProps) {
     // Track students locally to update direction immediately
     const [students, setStudents] = useState(initialStudents);
+    const [isOptional, setIsOptional] = useState(session.is_optional ?? false);
 
     const [attendance, setAttendance] = useState<Record<number, any>>(() =>
         initialStudents.reduce((acc, s) => {
@@ -518,9 +522,22 @@ export default function Attendance({
                 return "bg-red-50";
             case "excused":
                 return "bg-yellow-50";
+            case "late_excused":
+                return "bg-orange-50";
+            case "kicked":
+                return "bg-purple-50";
             default:
                 return "";
         }
+    };
+
+    const handleOptionalToggle = (checked: boolean) => {
+        setIsOptional(checked);
+        router.put(
+            route("sessions.toggleOptional", session.id),
+            { is_optional: checked },
+            { preserveScroll: true }
+        );
     };
 
     return (
@@ -531,6 +548,86 @@ export default function Attendance({
                 <h1 className="text-3xl font-bold text-gray-900">
                     تسجيل الحضور - الجلسة {session.id}
                 </h1>
+
+                {/* Stats Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {/* Marked Count */}
+                    {(() => {
+                        const markedCount = Object.values(attendance).filter(a => a.status).length;
+                        const unmarkedCount = students.length - markedCount;
+                        const allMarked = unmarkedCount === 0;
+                        return (
+                            <div className={`bg-white shadow rounded-lg p-4 border-r-4 ${allMarked ? 'border-green-500' : 'border-amber-500'}`}>
+                                <div className="text-sm text-gray-500">التقدم</div>
+                                <div className="text-2xl font-bold">{markedCount}/{students.length}</div>
+                                {!allMarked && (
+                                    <div className="text-xs text-amber-600 mt-1">
+                                        متبقي {unmarkedCount} طالب
+                                    </div>
+                                )}
+                                {allMarked && (
+                                    <div className="text-xs text-green-600 mt-1">
+                                        تم تسجيل الجميع
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })()}
+
+                    {/* All Statuses */}
+                    <div className="bg-white shadow rounded-lg p-4">
+                        <div className="text-sm text-gray-500 mb-2">الحالات</div>
+                        <div className="grid grid-cols-5 gap-2 text-center">
+                            <div>
+                                <div className="text-lg font-bold text-green-600">
+                                    {Object.values(attendance).filter(a => a.status === 'present').length}
+                                </div>
+                                <div className="text-[10px] text-gray-500">حاضر</div>
+                            </div>
+                            <div>
+                                <div className="text-lg font-bold text-red-600">
+                                    {Object.values(attendance).filter(a => a.status === 'absent').length}
+                                </div>
+                                <div className="text-[10px] text-gray-500">غائب</div>
+                            </div>
+                            <div>
+                                <div className="text-lg font-bold text-yellow-600">
+                                    {Object.values(attendance).filter(a => a.status === 'excused').length}
+                                </div>
+                                <div className="text-[10px] text-gray-500">معذر</div>
+                            </div>
+                            <div>
+                                <div className="text-lg font-bold text-orange-600">
+                                    {Object.values(attendance).filter(a => a.status === 'late_excused').length}
+                                </div>
+                                <div className="text-[10px] text-gray-500">متأخر</div>
+                            </div>
+                            <div>
+                                <div className="text-lg font-bold text-purple-600">
+                                    {Object.values(attendance).filter(a => a.status === 'kicked').length}
+                                </div>
+                                <div className="text-[10px] text-gray-500">مطرود</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Optional Toggle Card */}
+                    <div className="bg-white shadow rounded-lg p-4 flex items-center justify-between">
+                        <div>
+                            <Label htmlFor="optional-toggle" className="font-medium text-gray-900 cursor-pointer">
+                                حصة اختيارية
+                            </Label>
+                            <p className="text-xs text-gray-500">
+                                لا تخصم الرصيد
+                            </p>
+                        </div>
+                        <Switch
+                            id="optional-toggle"
+                            checked={isOptional}
+                            onCheckedChange={handleOptionalToggle}
+                        />
+                    </div>
+                </div>
 
                 <div className="overflow-x-auto bg-white shadow rounded-lg">
                     <table className="w-full border-collapse">
@@ -570,7 +667,7 @@ export default function Attendance({
                                                 onDirectionChange={(direction) =>
                                                     handleDirectionChange(student.id, direction)
                                                 }
-                                                currentSessionHizbId={status === "present" ? hizb_id : undefined}
+                                                currentSessionHizbId={(status === "present" || status === "late_excused") ? hizb_id : undefined}
                                             />
                                         </td>
 
@@ -593,7 +690,13 @@ export default function Attendance({
                                                             غائب
                                                         </SelectItem>
                                                         <SelectItem value="excused">
-                                                            مُعذَر
+                                                            غائب بعذر
+                                                        </SelectItem>
+                                                        <SelectItem value="late_excused">
+                                                            متأخر بعذر
+                                                        </SelectItem>
+                                                        <SelectItem value="kicked">
+                                                            مطرود
                                                         </SelectItem>
                                                     </SelectGroup>
                                                 </SelectContent>
@@ -631,7 +734,7 @@ export default function Attendance({
                                                 />
                                             )}
 
-                                            {status === "present" && (
+                                            {(status === "present" || status === "late_excused") && (
                                                 <div className="flex gap-2">
                                                     <div className="flex-1">
                                                         <SmartHizbSelect
@@ -684,7 +787,7 @@ export default function Attendance({
                                                 </div>
                                             )}
 
-                                            {status === "absent" && (
+                                            {(status === "absent" || status === "kicked") && (
                                                 <span className="text-gray-400 text-sm">-</span>
                                             )}
                                         </td>
