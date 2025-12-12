@@ -5,9 +5,7 @@ import { TPersonnelFormDB } from "./Types/Personnel";
 import {
     Card,
     CardContent,
-    CardDescription,
     CardHeader,
-    CardTitle,
 } from "@/Components/ui/card";
 import { Badge } from "@/Components/ui/badge";
 import { Button } from "@/Components/ui/button";
@@ -186,29 +184,8 @@ export default function Dashboard({
 
                 {/* Table */}
                 <Card>
-                    <CardHeader>
-                        <div className="flex flex-col gap-4">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <CardTitle>قائمة الموظفين</CardTitle>
-                                    <CardDescription>
-                                        {filteredPersonnels.length} من {personnels.length} موظف
-                                    </CardDescription>
-                                </div>
-                                {hasActiveFilters && (
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={clearFilters}
-                                        className="gap-1 text-muted-foreground"
-                                    >
-                                        <X className="h-4 w-4" />
-                                        مسح الفلاتر
-                                    </Button>
-                                )}
-                            </div>
-
-                            {/* Search and Filters */}
+                    <CardHeader className="pb-4">
+                        <div className="flex flex-col gap-2">
                             <div className="flex flex-col sm:flex-row gap-3">
                                 <div className="relative flex-1">
                                     <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -256,7 +233,21 @@ export default function Dashboard({
                                         ))}
                                     </SelectContent>
                                 </Select>
+                                {hasActiveFilters && (
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={clearFilters}
+                                        className="gap-1 text-muted-foreground"
+                                    >
+                                        <X className="h-4 w-4" />
+                                        مسح الفلاتر
+                                    </Button>
+                                )}
                             </div>
+                            <span className="text-xs text-muted-foreground">
+                                {filteredPersonnels.length} من {personnels.length} موظف
+                            </span>
                         </div>
                     </CardHeader>
                     <CardContent>

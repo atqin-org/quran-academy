@@ -4,9 +4,7 @@ import { Head, Link, usePage } from "@inertiajs/react";
 import {
     Card,
     CardContent,
-    CardDescription,
     CardHeader,
-    CardTitle,
 } from "@/Components/ui/card";
 import { Badge } from "@/Components/ui/badge";
 import { Button } from "@/Components/ui/button";
@@ -127,14 +125,19 @@ export default function Index({ auth, clubs }: DashboardProps) {
 
                 {/* Table */}
                 <Card>
-                    <CardHeader>
-                        <div className="flex flex-col gap-4">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <CardTitle>قائمة النوادي</CardTitle>
-                                    <CardDescription>
-                                        {filteredClubs.length} من {clubs.length} نادي
-                                    </CardDescription>
+                    <CardHeader className="pb-4">
+                        <div className="flex flex-col gap-2">
+                            <div className="flex items-center gap-3">
+                                {/* Search */}
+                                <div className="relative flex-1 max-w-sm">
+                                    <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                    <Input
+                                        placeholder="البحث بالاسم أو الموقع..."
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        className="pr-9"
+                                        dir="rtl"
+                                    />
                                 </div>
                                 {hasActiveFilters && (
                                     <Button
@@ -148,18 +151,9 @@ export default function Index({ auth, clubs }: DashboardProps) {
                                     </Button>
                                 )}
                             </div>
-
-                            {/* Search */}
-                            <div className="relative flex-1 max-w-sm">
-                                <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                <Input
-                                    placeholder="البحث بالاسم أو الموقع..."
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="pr-9"
-                                    dir="rtl"
-                                />
-                            </div>
+                            <span className="text-xs text-muted-foreground">
+                                {filteredClubs.length} من {clubs.length} نادي
+                            </span>
                         </div>
                     </CardHeader>
                     <CardContent>
