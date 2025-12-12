@@ -26,7 +26,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/Components/ui/select";
-import { Banknote, Calendar, ChevronLeft, ChevronRight, CreditCard, ArrowUpDown, Shield, User } from "lucide-react";
+import { Banknote, ChevronLeft, ChevronRight, CreditCard, Shield, User } from "lucide-react";
 import { useMemo, useState } from "react";
 
 interface DashboardProps extends PageProps {
@@ -306,210 +306,220 @@ export default function Dashboard({ auth, student, payments, sessionsPerMonth }:
                     </p>
                 </div>
 
-                {/* Stats Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {/* Credit Balance */}
-                    <div className={`bg-white shadow rounded-lg p-4 border-r-4 ${
-                        student.subscription === 0
-                            ? 'border-blue-500'
-                            : student.sessions_credit < 0
-                                ? 'border-red-500'
-                                : student.sessions_credit < 4
-                                    ? 'border-yellow-500'
-                                    : 'border-green-500'
-                    }`}>
-                        <div className="flex items-center gap-2 text-sm text-gray-500">
-                            <CreditCard className="h-4 w-4" />
-                            رصيد الحصص
-                        </div>
-                        <div className="flex items-baseline gap-2 mt-1">
-                            <span className={`text-3xl font-bold ${
-                                student.subscription === 0
-                                    ? 'text-blue-600'
-                                    : student.sessions_credit < 0
-                                        ? 'text-red-600'
-                                        : student.sessions_credit < 4
-                                            ? 'text-yellow-600'
-                                            : 'text-green-600'
-                            }`}>
-                                {student.subscription === 0 ? '∞' : student.sessions_credit}
-                            </span>
-                            {student.subscription !== 0 && (
-                                <span className="text-sm text-gray-500">حصة</span>
-                            )}
-                        </div>
-                        {student.subscription === 0 && (
-                            <p className="text-xs text-blue-500 mt-1">اشتراك مجاني</p>
-                        )}
-                        {student.subscription !== 0 && data.expect?.sessions ? (
-                            <p className="text-xs text-gray-500 mt-1">
-                                بعد الدفع: <span className="font-semibold text-green-600">{student.sessions_credit + data.expect.sessions}</span> حصة
-                            </p>
-                        ) : null}
-                    </div>
-
-                    {/* Subscription Amount */}
-                    <div className="bg-white shadow rounded-lg p-4 border-r-4 border-gray-300">
-                        <div className="flex items-center gap-2 text-sm text-gray-500">
-                            <Banknote className="h-4 w-4" />
-                            الاشتراك الشهري
-                        </div>
-                        <div className="text-2xl font-bold mt-1">
-                            {student.subscription === 0 ? (
-                                <span className="text-blue-600">معفى</span>
-                            ) : (
-                                formatCurrency(student.subscription)
-                            )}
-                        </div>
-                    </div>
-
-                    {/* Total Payments */}
-                    <div className="bg-white shadow rounded-lg p-4 border-r-4 border-purple-500">
-                        <div className="flex items-center gap-2 text-sm text-gray-500">
-                            <Calendar className="h-4 w-4" />
-                            إجمالي المدفوعات
-                        </div>
-                        <div className="text-2xl font-bold text-purple-600 mt-1">
-                            {payments.length}
-                        </div>
-                        <p className="text-xs text-gray-500 mt-1">
-                            {formatCurrency(payments.reduce((sum, p) => sum + p.value, 0))}
-                        </p>
-                    </div>
-                </div>
-
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    {/* Payment Form */}
-                    <div className="bg-white shadow rounded-lg p-6">
-                        <h2 className="text-lg font-semibold mb-4">دفعة جديدة</h2>
-                        <Tabs
-                            defaultValue={student.subscription == 0 ? "ins" : "sub"}
-                            dir="rtl"
-                        >
-                            <TabsList className="w-full mb-4">
-                                <TabsTrigger
-                                    disabled={student.subscription == 0}
-                                    onClick={() => handleTypeChange("sub")}
-                                    value="sub"
-                                    className="flex-1"
-                                >
-                                    <Banknote className="h-4 w-4 ml-2" />
-                                    الاشتراك
-                                </TabsTrigger>
-                                <TabsTrigger
-                                    onClick={() => handleTypeChange("ins")}
-                                    value="ins"
-                                    className="flex-1"
-                                >
-                                    <Shield className="h-4 w-4 ml-2" />
-                                    التأمين
-                                </TabsTrigger>
-                            </TabsList>
-
-                            <TabsContent value="sub">
-                                <div className="flex flex-col gap-4">
-                                    <div>
-                                        <label className="text-sm font-medium text-gray-700 mb-1 block">
-                                            المبلغ
-                                        </label>
-                                        <Input
-                                            type="number"
-                                            placeholder="أدخل المبلغ..."
-                                            value={data.value}
-                                            onChange={(e) => handleValueChange(+e.target.value)}
-                                        />
-                                    </div>
-
-                                    {data.expect && (
-                                        <div className="bg-gray-50 rounded-lg p-4 space-y-2">
-                                            <div className="flex justify-between text-sm">
-                                                <span className="text-gray-500">المدة:</span>
-                                                <span className="font-medium">{data.expect.duration} شهر</span>
-                                            </div>
-                                            <div className="flex justify-between text-sm">
-                                                <span className="text-gray-500">الحصص:</span>
-                                                <span className="font-medium">{data.expect.sessions} حصة</span>
-                                            </div>
-                                            <div className="flex justify-between text-sm">
-                                                <span className="text-gray-500">من:</span>
-                                                <span className="font-medium">{formatDateShort(data.expect.start_at)}</span>
-                                            </div>
-                                            <div className="flex justify-between text-sm">
-                                                <span className="text-gray-500">إلى:</span>
-                                                <span className="font-medium">{formatDateShort(data.expect.end_at)}</span>
-                                            </div>
-                                        </div>
+                    {/* Left Side (RTL: appears on right) - Stats Cards + Payment Form */}
+                    <div className="flex flex-col gap-6">
+                        {/* Stats Cards - Side by Side */}
+                        <div className="grid grid-cols-2 gap-4">
+                            {/* Credit Balance */}
+                            <div className={`bg-white shadow rounded-lg p-4 border-r-4 ${
+                                student.subscription === 0
+                                    ? 'border-blue-500'
+                                    : student.sessions_credit < 0
+                                        ? 'border-red-500'
+                                        : student.sessions_credit < 4
+                                            ? 'border-yellow-500'
+                                            : 'border-green-500'
+                            }`}>
+                                <div className="flex items-center gap-2 text-sm text-gray-500">
+                                    <CreditCard className="h-4 w-4" />
+                                    رصيد الحصص
+                                </div>
+                                <div className="flex items-baseline gap-2 mt-1">
+                                    <span className={`text-3xl font-bold ${
+                                        student.subscription === 0
+                                            ? 'text-blue-600'
+                                            : student.sessions_credit < 0
+                                                ? 'text-red-600'
+                                                : student.sessions_credit < 4
+                                                    ? 'text-yellow-600'
+                                                    : 'text-green-600'
+                                    }`}>
+                                        {student.subscription === 0 ? '∞' : student.sessions_credit}
+                                    </span>
+                                    {student.subscription !== 0 && (
+                                        <span className="text-sm text-gray-500">حصة</span>
                                     )}
+                                </div>
+                                {student.subscription === 0 && (
+                                    <p className="text-xs text-blue-500 mt-1">اشتراك مجاني</p>
+                                )}
+                                {student.subscription !== 0 && data.expect?.sessions ? (
+                                    <p className="text-xs text-gray-500 mt-1">
+                                        بعد الدفع: <span className="font-semibold text-green-600">{student.sessions_credit + data.expect.sessions}</span> حصة
+                                    </p>
+                                ) : null}
+                            </div>
 
-                                    <Button
-                                        className="w-full"
-                                        onClick={() => post(`/students/${student.id}/payment`)}
-                                        disabled={!data.value || data.value <= 0}
+                            {/* Subscription Amount */}
+                            <div className="bg-white shadow rounded-lg p-4 border-r-4 border-gray-300">
+                                <div className="flex items-center gap-2 text-sm text-gray-500">
+                                    <Banknote className="h-4 w-4" />
+                                    الاشتراك الشهري
+                                </div>
+                                <div className="text-2xl font-bold mt-1">
+                                    {student.subscription === 0 ? (
+                                        <span className="text-blue-600">معفى</span>
+                                    ) : (
+                                        formatCurrency(student.subscription)
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Payment Form */}
+                        <div className="bg-white shadow rounded-lg p-6">
+                            <h2 className="text-lg font-semibold mb-4">دفعة جديدة</h2>
+                            <Tabs
+                                defaultValue={student.subscription == 0 ? "ins" : "sub"}
+                                dir="rtl"
+                            >
+                                <TabsList className="w-full mb-4">
+                                    <TabsTrigger
+                                        disabled={student.subscription == 0}
+                                        onClick={() => handleTypeChange("sub")}
+                                        value="sub"
+                                        className="flex-1"
                                     >
                                         <Banknote className="h-4 w-4 ml-2" />
-                                        تأكيد الدفع
-                                    </Button>
-                                    {errors.value && (
-                                        <span className="text-red-500 text-sm">{errors.value}</span>
-                                    )}
-                                </div>
-                            </TabsContent>
-
-                            <TabsContent value="ins">
-                                <div className="flex flex-col gap-4">
-                                    {!canPayInsurance && (
-                                        <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
-                                            <p className="text-sm text-amber-700">
-                                                الطالب مؤمّن حتى {formatDateShort(student.insurance_expire_at || "")}
-                                            </p>
-                                            <p className="text-xs text-amber-600 mt-1">
-                                                يمكن تجديد التأمين في الشهر الأخير فقط
-                                            </p>
-                                        </div>
-                                    )}
-
-                                    <div>
-                                        <label className="text-sm font-medium text-gray-700 mb-1 block">
-                                            المبلغ
-                                        </label>
-                                        <Input value={200} disabled />
-                                        <p className="text-xs text-gray-500 mt-1">مبلغ التأمين ثابت</p>
-                                    </div>
-
-                                    <div className="bg-gray-50 rounded-lg p-4 space-y-2">
-                                        {student.insurance_expire_at && (
-                                            <div className="flex justify-between text-sm">
-                                                <span className="text-gray-500">التأمين الحالي:</span>
-                                                <span className="font-medium">
-                                                    {formatDateShort(student.insurance_expire_at)}
-                                                </span>
-                                            </div>
-                                        )}
-                                        <div className="flex justify-between text-sm">
-                                            <span className="text-gray-500">ساري حتى:</span>
-                                            <span className="font-medium">
-                                                {formatDateShort(calculateInsuranceEndDate.toISOString())}
-                                            </span>
-                                        </div>
-                                    </div>
-
-                                    <Button
-                                        className="w-full"
-                                        onClick={() => post(`/students/${student.id}/payment`)}
-                                        disabled={!canPayInsurance}
+                                        الاشتراك
+                                    </TabsTrigger>
+                                    <TabsTrigger
+                                        onClick={() => handleTypeChange("ins")}
+                                        value="ins"
+                                        className="flex-1"
                                     >
                                         <Shield className="h-4 w-4 ml-2" />
-                                        تأكيد دفع التأمين
-                                    </Button>
-                                    {errors.value && (
-                                        <span className="text-red-500 text-sm">{errors.value}</span>
-                                    )}
-                                </div>
-                            </TabsContent>
-                        </Tabs>
+                                        التأمين
+                                    </TabsTrigger>
+                                </TabsList>
+
+                                <TabsContent value="sub">
+                                    <div className="flex flex-col gap-4">
+                                        {/* Quick Select Buttons */}
+                                        <div>
+                                            <label className="text-sm font-medium text-gray-700 mb-2 block">
+                                                اختيار سريع
+                                            </label>
+                                            <div className="flex gap-2">
+                                                {[1, 2, 3].map((months) => (
+                                                    <Button
+                                                        key={months}
+                                                        type="button"
+                                                        variant={data.value === student.subscription * months ? "default" : "outline"}
+                                                        size="sm"
+                                                        className="flex-1"
+                                                        onClick={() => handleValueChange(student.subscription * months)}
+                                                    >
+                                                        {months} {months === 1 ? 'شهر' : 'أشهر'}
+                                                    </Button>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label className="text-sm font-medium text-gray-700 mb-1 block">
+                                                المبلغ
+                                            </label>
+                                            <Input
+                                                type="number"
+                                                placeholder="أدخل المبلغ..."
+                                                value={data.value}
+                                                onChange={(e) => handleValueChange(+e.target.value)}
+                                            />
+                                        </div>
+
+                                        {data.expect && (
+                                            <div className="bg-gray-50 rounded-lg p-4 space-y-2">
+                                                <div className="flex justify-between text-sm">
+                                                    <span className="text-gray-500">المدة:</span>
+                                                    <span className="font-medium">{data.expect.duration} شهر</span>
+                                                </div>
+                                                <div className="flex justify-between text-sm">
+                                                    <span className="text-gray-500">الحصص:</span>
+                                                    <span className="font-medium">{data.expect.sessions} حصة</span>
+                                                </div>
+                                                <div className="flex justify-between text-sm">
+                                                    <span className="text-gray-500">من:</span>
+                                                    <span className="font-medium">{formatDateShort(data.expect.start_at)}</span>
+                                                </div>
+                                                <div className="flex justify-between text-sm">
+                                                    <span className="text-gray-500">إلى:</span>
+                                                    <span className="font-medium">{formatDateShort(data.expect.end_at)}</span>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        <Button
+                                            className="w-full"
+                                            onClick={() => post(`/students/${student.id}/payment`)}
+                                            disabled={!data.value || data.value <= 0}
+                                        >
+                                            <Banknote className="h-4 w-4 ml-2" />
+                                            تأكيد الدفع
+                                        </Button>
+                                        {errors.value && (
+                                            <span className="text-red-500 text-sm">{errors.value}</span>
+                                        )}
+                                    </div>
+                                </TabsContent>
+
+                                <TabsContent value="ins">
+                                    <div className="flex flex-col gap-4">
+                                        {!canPayInsurance && (
+                                            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+                                                <p className="text-sm text-amber-700">
+                                                    الطالب مؤمّن حتى {formatDateShort(student.insurance_expire_at || "")}
+                                                </p>
+                                                <p className="text-xs text-amber-600 mt-1">
+                                                    يمكن تجديد التأمين في الشهر الأخير فقط
+                                                </p>
+                                            </div>
+                                        )}
+
+                                        <div>
+                                            <label className="text-sm font-medium text-gray-700 mb-1 block">
+                                                المبلغ
+                                            </label>
+                                            <Input value={200} disabled />
+                                            <p className="text-xs text-gray-500 mt-1">مبلغ التأمين ثابت</p>
+                                        </div>
+
+                                        <div className="bg-gray-50 rounded-lg p-4 space-y-2">
+                                            {student.insurance_expire_at && (
+                                                <div className="flex justify-between text-sm">
+                                                    <span className="text-gray-500">التأمين الحالي:</span>
+                                                    <span className="font-medium">
+                                                        {formatDateShort(student.insurance_expire_at)}
+                                                    </span>
+                                                </div>
+                                            )}
+                                            <div className="flex justify-between text-sm">
+                                                <span className="text-gray-500">ساري حتى:</span>
+                                                <span className="font-medium">
+                                                    {formatDateShort(calculateInsuranceEndDate.toISOString())}
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        <Button
+                                            className="w-full"
+                                            onClick={() => post(`/students/${student.id}/payment`)}
+                                            disabled={!canPayInsurance}
+                                        >
+                                            <Shield className="h-4 w-4 ml-2" />
+                                            تأكيد دفع التأمين
+                                        </Button>
+                                        {errors.value && (
+                                            <span className="text-red-500 text-sm">{errors.value}</span>
+                                        )}
+                                    </div>
+                                </TabsContent>
+                            </Tabs>
+                        </div>
                     </div>
 
-                    {/* Payment History */}
+                    {/* Right Side (RTL: appears on left) - Payment History */}
                     <div className="bg-white shadow rounded-lg p-6">
                         <h2 className="text-lg font-semibold mb-4">سجل المدفوعات</h2>
 
