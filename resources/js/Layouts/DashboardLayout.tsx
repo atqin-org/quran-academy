@@ -19,15 +19,29 @@ import { Toaster } from "@/Components/ui/sonner";
 import { breadcrumbLinks, sidebarLinks } from "@/Data/Routes";
 import { TUser } from "@/types";
 import { Menu, Slash } from "lucide-react";
-import { PropsWithChildren, useState } from "react";
+import { PropsWithChildren, useState, useEffect } from "react";
+
+const SIDEBAR_COLLAPSED_KEY = "sidebar-collapsed";
 
 export default function DashboardLayout({
     user,
     children,
 }: PropsWithChildren<{ user: TUser }>) {
-    const [isCollapsed, setIsCollapsed] = useState(false);
+    const [isCollapsed, setIsCollapsed] = useState(() => {
+        // Initialize from localStorage
+        if (typeof window !== "undefined") {
+            const saved = localStorage.getItem(SIDEBAR_COLLAPSED_KEY);
+            return saved === "true";
+        }
+        return false;
+    });
+
     const toggleSidebar = () => {
-        setIsCollapsed(!isCollapsed);
+        setIsCollapsed((prev) => {
+            const newValue = !prev;
+            localStorage.setItem(SIDEBAR_COLLAPSED_KEY, String(newValue));
+            return newValue;
+        });
     };
     const currentUrl = String(window.location.pathname);
     const sidebarLinkObj = sidebarLinks.find((link) =>
@@ -44,7 +58,7 @@ export default function DashboardLayout({
             auth={user}
              isCollapsed={isCollapsed} toggleSidebar={toggleSidebar} />
 
-            <div className="flex flex-col overflow-y-scroll scrollbar-wraper flex-1 w-full my-5 mx-5 md:ms-0 p-2 md:px-6 lg:px-8 bg-background bg-zinc-50 border-2 border-gray-100 rounded-xl">
+            <div className="flex flex-col overflow-y-scroll scrollbar-wraper flex-1 w-full my-5 mx-3 md:ms-0 p-2 md:px-6 lg:px-8 bg-background bg-zinc-50 border-2 border-gray-100 rounded-xl">
                 <Sheet>
                     <SheetTrigger className="md:hidden" asChild>
                         <Button variant="outline" className="w-fit flex gap-2">

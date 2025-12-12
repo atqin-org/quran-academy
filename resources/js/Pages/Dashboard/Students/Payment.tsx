@@ -26,8 +26,9 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/Components/ui/select";
-import { Banknote, ChevronLeft, ChevronRight, CreditCard, Shield, User } from "lucide-react";
+import { Banknote, ChevronLeft, ChevronRight, CreditCard, Shield } from "lucide-react";
 import { useMemo, useState } from "react";
+import UserAvatar from "@/Components/costume-cn/UserAvatar";
 
 interface DashboardProps extends PageProps {
     student: any & {
@@ -68,12 +69,13 @@ export default function Dashboard({ auth, student, payments, sessionsPerMonth }:
 
     // Get unique users who have handled payments for this student
     const uniqueUsers = useMemo(() => {
-        const userMap = new Map<number, { id: number; name: string }>();
+        const userMap = new Map<number, { id: number; name: string; last_name: string }>();
         payments.forEach(payment => {
             if (payment.user && !userMap.has(payment.user.id)) {
                 userMap.set(payment.user.id, {
                     id: payment.user.id,
                     name: payment.user.name,
+                    last_name: payment.user.last_name || "",
                 });
             }
         });
@@ -544,14 +546,21 @@ export default function Dashboard({ auth, student, payments, sessionsPerMonth }:
                             <div className="flex flex-col gap-1">
                                 <label className="text-xs text-gray-500">بواسطة</label>
                                 <Select value={userFilter} onValueChange={(v) => handleFilterChange('user', v)}>
-                                    <SelectTrigger className="w-32">
+                                    <SelectTrigger className="w-40">
                                         <SelectValue placeholder="الكل" />
                                     </SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="all">الكل</SelectItem>
                                         {uniqueUsers.map(user => (
                                             <SelectItem key={user.id} value={user.id.toString()}>
-                                                {user.name}
+                                                <div className="flex items-center gap-2">
+                                                    <UserAvatar
+                                                        firstName={user.name}
+                                                        lastName={user.last_name}
+                                                        size="xs"
+                                                    />
+                                                    {user.name}
+                                                </div>
                                             </SelectItem>
                                         ))}
                                     </SelectContent>
@@ -605,8 +614,14 @@ export default function Dashboard({ auth, student, payments, sessionsPerMonth }:
                                                     <TableCell>
                                                         <Tooltip>
                                                             <TooltipTrigger asChild>
-                                                                <div className="flex items-center gap-1 text-sm text-gray-600 cursor-pointer hover:text-gray-900 transition-colors">
-                                                                    <User className="h-3 w-3" />
+                                                                <div className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer hover:text-gray-900 transition-colors">
+                                                                    {payment.user ? (
+                                                                        <UserAvatar
+                                                                            firstName={payment.user.name}
+                                                                            lastName={payment.user.last_name || ""}
+                                                                            size="xs"
+                                                                        />
+                                                                    ) : null}
                                                                     {payment.user?.name || "غير معروف"}
                                                                 </div>
                                                             </TooltipTrigger>
