@@ -102,4 +102,213 @@ class ProgramTest extends TestCase
 
         $this->assertDatabaseCount('attendances', 1);
     }
+
+    /** @test */
+    public function it_deducts_credit_when_student_is_marked_present()
+    {
+        $club = Club::factory()->create();
+        $category = Category::factory()->create();
+        $student = Student::factory()->create([
+            'club_id' => $club->id,
+            'category_id' => $category->id,
+            'subscription' => 100,
+            'sessions_credit' => 10,
+        ]);
+        $program = Program::factory()->create();
+        $session = ProgramSession::factory()->create([
+            'program_id' => $program->id,
+            'is_optional' => false,
+        ]);
+
+        (new RecordAttendanceAction())->execute($session, $student, 'present');
+
+        $student->refresh();
+        $this->assertEquals(9, $student->sessions_credit);
+    }
+
+    /** @test */
+    public function it_refunds_credit_when_status_changes_from_present_to_absent()
+    {
+        $club = Club::factory()->create();
+        $category = Category::factory()->create();
+        $student = Student::factory()->create([
+            'club_id' => $club->id,
+            'category_id' => $category->id,
+            'subscription' => 100,
+            'sessions_credit' => 10,
+        ]);
+        $program = Program::factory()->create();
+        $session = ProgramSession::factory()->create([
+            'program_id' => $program->id,
+            'is_optional' => false,
+        ]);
+
+        // Mark as present first (deducts 1 credit)
+        (new RecordAttendanceAction())->execute($session, $student, 'present');
+        $student->refresh();
+        $this->assertEquals(9, $student->sessions_credit);
+
+        // Change to absent (refunds 1 credit)
+        (new RecordAttendanceAction())->execute($session, $student, 'absent');
+        $student->refresh();
+        $this->assertEquals(10, $student->sessions_credit);
+    }
+
+    /** @test */
+    public function it_does_not_deduct_credit_for_optional_sessions()
+    {
+        $club = Club::factory()->create();
+        $category = Category::factory()->create();
+        $student = Student::factory()->create([
+            'club_id' => $club->id,
+            'category_id' => $category->id,
+            'subscription' => 100,
+            'sessions_credit' => 10,
+        ]);
+        $program = Program::factory()->create();
+        $session = ProgramSession::factory()->create([
+            'program_id' => $program->id,
+            'is_optional' => true,
+        ]);
+
+        (new RecordAttendanceAction())->execute($session, $student, 'present');
+
+        $student->refresh();
+        $this->assertEquals(10, $student->sessions_credit);
+    }
+
+    /** @test */
+    public function it_does_not_deduct_credit_for_students_with_infinite_sessions()
+    {
+        $club = Club::factory()->create();
+        $category = Category::factory()->create();
+        $student = Student::factory()->create([
+            'club_id' => $club->id,
+            'category_id' => $category->id,
+            'subscription' => 0, // Infinite sessions
+            'sessions_credit' => 5,
+        ]);
+        $program = Program::factory()->create();
+        $session = ProgramSession::factory()->create([
+            'program_id' => $program->id,
+            'is_optional' => false,
+        ]);
+
+        (new RecordAttendanceAction())->execute($session, $student, 'present');
+
+        $student->refresh();
+        $this->assertEquals(5, $student->sessions_credit);
+    }
+
+    /** @test */
+    public function it_does_not_double_deduct_when_re_recording_present_status()
+    {
+        $club = Club::factory()->create();
+        $category = Category::factory()->create();
+        $student = Student::factory()->create([
+            'club_id' => $club->id,
+            'category_id' => $category->id,
+            'subscription' => 100,
+            'sessions_credit' => 10,
+        ]);
+        $program = Program::factory()->create();
+        $session = ProgramSession::factory()->create([
+            'program_id' => $program->id,
+            'is_optional' => false,
+        ]);
+
+        // Mark as present twice
+        (new RecordAttendanceAction())->execute($session, $student, 'present');
+        (new RecordAttendanceAction())->execute($session, $student, 'present');
+
+        $student->refresh();
+        $this->assertEquals(9, $student->sessions_credit); // Only deducted once
+    }
+
+    /** @test */
+    public function it_allows_credits_to_go_negative()
+    {
+        $club = Club::factory()->create();
+        $category = Category::factory()->create();
+        $student = Student::factory()->create([
+            'club_id' => $club->id,
+            'category_id' => $category->id,
+            'subscription' => 100,
+            'sessions_credit' => 0,
+        ]);
+        $program = Program::factory()->create();
+        $session = ProgramSession::factory()->create([
+            'program_id' => $program->id,
+            'is_optional' => false,
+        ]);
+
+        (new RecordAttendanceAction())->execute($session, $student, 'present');
+
+        $student->refresh();
+        $this->assertEquals(-1, $student->sessions_credit);
+    }
+
+    /** @test */
+    public function it_refunds_credits_when_session_changes_from_required_to_optional()
+    {
+        $club = Club::factory()->create();
+        $category = Category::factory()->create();
+        $student = Student::factory()->create([
+            'club_id' => $club->id,
+            'category_id' => $category->id,
+            'subscription' => 100,
+            'sessions_credit' => 10,
+        ]);
+        $program = Program::factory()->create();
+        $session = ProgramSession::factory()->create([
+            'program_id' => $program->id,
+            'is_optional' => false,
+        ]);
+
+        // Record attendance as present (deducts 1 credit)
+        (new RecordAttendanceAction())->execute($session, $student, 'present');
+        $student->refresh();
+        $this->assertEquals(9, $student->sessions_credit);
+
+        // Change session to optional - should refund the credit
+        $controller = new \App\Http\Controllers\ProgramSessionController();
+        $reflection = new \ReflectionMethod($controller, 'adjustCreditsForOptionalChange');
+        $reflection->setAccessible(true);
+        $reflection->invoke($controller, $session, true);
+
+        $student->refresh();
+        $this->assertEquals(10, $student->sessions_credit);
+    }
+
+    /** @test */
+    public function it_deducts_credits_when_session_changes_from_optional_to_required()
+    {
+        $club = Club::factory()->create();
+        $category = Category::factory()->create();
+        $student = Student::factory()->create([
+            'club_id' => $club->id,
+            'category_id' => $category->id,
+            'subscription' => 100,
+            'sessions_credit' => 10,
+        ]);
+        $program = Program::factory()->create();
+        $session = ProgramSession::factory()->create([
+            'program_id' => $program->id,
+            'is_optional' => true,
+        ]);
+
+        // Record attendance as present (no credit deducted because optional)
+        (new RecordAttendanceAction())->execute($session, $student, 'present');
+        $student->refresh();
+        $this->assertEquals(10, $student->sessions_credit);
+
+        // Change session to required - should deduct the credit
+        $controller = new \App\Http\Controllers\ProgramSessionController();
+        $reflection = new \ReflectionMethod($controller, 'adjustCreditsForOptionalChange');
+        $reflection->setAccessible(true);
+        $reflection->invoke($controller, $session, false);
+
+        $student->refresh();
+        $this->assertEquals(9, $student->sessions_credit);
+    }
 }

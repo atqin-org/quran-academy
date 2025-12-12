@@ -6,15 +6,31 @@ use App\Models\Club;
 use App\Models\Category;
 use App\Models\ClubCategorySession;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 
 class ClubCategorySessionController extends Controller
 {
     /**
+     * Check if user has access to this club
+     */
+    private function authorizeClubAccess(Club $club): void
+    {
+        $user = Auth::user();
+        $accessibleClubIds = $user->accessibleClubs()->pluck('id')->toArray();
+
+        if (!in_array($club->id, $accessibleClubIds)) {
+            abort(403, 'غير مصرح لك بالوصول إلى إعدادات هذا النادي');
+        }
+    }
+
+    /**
      * Show configuration page for a club's category sessions
      */
     public function edit(Club $club)
     {
+        $this->authorizeClubAccess($club);
+
         $categories = Category::all();
         $configs = ClubCategorySession::where('club_id', $club->id)
             ->get()
@@ -43,6 +59,8 @@ class ClubCategorySessionController extends Controller
      */
     public function update(Request $request, Club $club)
     {
+        $this->authorizeClubAccess($club);
+
         $validated = $request->validate([
             'configs' => 'required|array',
             'configs.*.category_id' => 'required|exists:categories,id',

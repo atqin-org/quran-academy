@@ -108,6 +108,9 @@ class Student extends Model
      */
     public function addCredit(int $amount): void
     {
+        if ($this->hasInfiniteSessions()) {
+            return;
+        }
         $this->sessions_credit += $amount;
         $this->save();
     }

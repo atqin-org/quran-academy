@@ -13,11 +13,26 @@ use Illuminate\Support\Facades\Auth;
 class ProgramSessionController extends Controller
 {
     /**
+     * Check if user has access to this session's club
+     */
+    private function authorizeSessionAccess(ProgramSession $session): void
+    {
+        $user = Auth::user();
+        $sessionClubId = $session->program->club_id;
+        $accessibleClubIds = $user->accessibleClubs()->pluck('id')->toArray();
+
+        if (!in_array($sessionClubId, $accessibleClubIds)) {
+            abort(403, 'غير مصرح لك بالوصول إلى هذه الحصة');
+        }
+    }
+
+    /**
      * صفحة تسجيل الحضور لحصة معينة
      */
     public function attendance(ProgramSession $session)
-
     {
+        $this->authorizeSessionAccess($session);
+
         $session->update(['status' => 'completed']);
         // should get only student who have same club as program and category
         $students = Student::with([
@@ -81,6 +96,8 @@ class ProgramSessionController extends Controller
      */
     public function update(Request $request, ProgramSession $session)
     {
+        $this->authorizeSessionAccess($session);
+
         $request->validate([
             'session_date' => 'required|date',
             'start_time' => 'nullable|date_format:H:i',
@@ -125,6 +142,8 @@ class ProgramSessionController extends Controller
      */
     public function cancel(ProgramSession $session)
     {
+        $this->authorizeSessionAccess($session);
+
         $session->update(['status' => 'cancelled']);
 
         // Log session cancellation
@@ -148,21 +167,31 @@ class ProgramSessionController extends Controller
      */
     public function toggleOptional(Request $request, ProgramSession $session)
     {
+        $this->authorizeSessionAccess($session);
+
         $validated = $request->validate([
             'is_optional' => 'required|boolean',
         ]);
 
-        $session->update(['is_optional' => $validated['is_optional']]);
+        $wasOptional = $session->is_optional;
+        $isNowOptional = $validated['is_optional'];
+
+        // If the optional status actually changed, adjust credits for existing attendance
+        if ($wasOptional !== $isNowOptional) {
+            $this->adjustCreditsForOptionalChange($session, $isNowOptional);
+        }
+
+        $session->update(['is_optional' => $isNowOptional]);
 
         activity('program_session')
             ->performedOn($session)
             ->causedBy(Auth::user())
             ->event('optional_toggled')
             ->withProperties([
-                'is_optional' => $validated['is_optional'],
+                'is_optional' => $isNowOptional,
                 'session_date' => $session->session_date?->format('Y-m-d'),
             ])
-            ->log($validated['is_optional']
+            ->log($isNowOptional
                 ? 'تم تحديد الحصة كاختيارية'
                 : 'تم إلغاء تحديد الحصة كاختيارية');
 
@@ -170,10 +199,41 @@ class ProgramSessionController extends Controller
     }
 
     /**
+     * Adjust credits for students when session optional status changes
+     */
+    private function adjustCreditsForOptionalChange(ProgramSession $session, bool $isNowOptional): void
+    {
+        // Get all 'present' attendance records for this session
+        $presentAttendances = $session->attendances()
+            ->where('status', 'present')
+            ->with('student')
+            ->get();
+
+        foreach ($presentAttendances as $attendance) {
+            $student = $attendance->student;
+
+            // Skip students with infinite sessions
+            if ($student->hasInfiniteSessions()) {
+                continue;
+            }
+
+            if ($isNowOptional) {
+                // Changed from required to optional: refund the credit
+                $student->addCredit(1);
+            } else {
+                // Changed from optional to required: deduct the credit
+                $student->deductCredit(1);
+            }
+        }
+    }
+
+    /**
      * تسجيل حضور طالب
      */
     public function recordAttendance(Request $request, ProgramSession $session)
     {
+        $this->authorizeSessionAccess($session);
+
         try {
             $request->validate([
                 'student_id' => 'required|exists:students,id',
