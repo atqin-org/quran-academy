@@ -34,15 +34,23 @@ class Student extends Model
         'ahzab_down',
         'subscription',
         'subscription_expire_at',
+        'sessions_credit',
         'insurance_expire_at',
         'picture',
         'file',
+        'memorization_direction',
+        'last_hizb_ascending',
+        'last_hizb_descending',
     ];
 
     protected $casts = [
         'birthdate' => 'date',
         'subscription_expire_at' => 'date',
         'insurance_expire_at' => 'date',
+        'memorization_direction' => 'string',
+        'last_hizb_ascending' => 'integer',
+        'last_hizb_descending' => 'integer',
+        'sessions_credit' => 'integer',
     ];
     // Relationship students has father_id and mother_id are guardians
     public function father()
@@ -65,6 +73,48 @@ class Student extends Model
     {
         return $this->belongsTo(Category::class, 'category_id');
     }
+
+    /**
+     * Check if student has infinite sessions (subscription = 0)
+     */
+    public function hasInfiniteSessions(): bool
+    {
+        return $this->subscription == 0;
+    }
+
+    /**
+     * Deduct session credit
+     * Only deducts if student doesn't have infinite sessions
+     *
+     * @param int $amount Number of credits to deduct (default 1)
+     * @return bool Whether deduction was performed
+     */
+    public function deductCredit(int $amount = 1): bool
+    {
+        if ($this->hasInfiniteSessions()) {
+            return false;
+        }
+
+        $this->sessions_credit -= $amount;
+        $this->save();
+
+        return true;
+    }
+
+    /**
+     * Add session credits
+     *
+     * @param int $amount Number of credits to add
+     */
+    public function addCredit(int $amount): void
+    {
+        if ($this->hasInfiniteSessions()) {
+            return;
+        }
+        $this->sessions_credit += $amount;
+        $this->save();
+    }
+
     protected static function booted()
     {
         static::saving(function ($student) {
@@ -160,6 +210,7 @@ class Student extends Model
         $student->subscription = $attributes['subscription'];
         $student->father_id = $attributes['father_id'];
         $student->mother_id = $attributes['mother_id'];
+        $student->memorization_direction = $attributes['memorizationDirection'] ?? 'descending';
         if ($attributes['insurance']) {
             $student->insurance_expire_at = $nextOctober31;
         }
@@ -206,6 +257,7 @@ class Student extends Model
             'family_status' => $attributes['familyStatus'] ?? null,
             'category_id' => $attributes['category'],
             'subscription' => $attributes['subscription'],
+            'memorization_direction' => $attributes['memorizationDirection'] ?? $this->memorization_direction,
         ]);
 
         $this->save();
@@ -246,6 +298,7 @@ class Student extends Model
                 'family_status',
                 'ahzab',
                 'subscription',
+                'sessions_credit',
                 'club_id',
                 'category_id',
                 'father_id',
@@ -253,7 +306,12 @@ class Student extends Model
             ])
             ->logOnlyDirty()
             ->setDescriptionForEvent(function (string $eventName) {
-                return "Student has been {$eventName}";
+                $events = [
+                    'created' => 'تم إنشاء الطالب',
+                    'updated' => 'تم تحديث الطالب',
+                    'deleted' => 'تم حذف الطالب',
+                ];
+                return $events[$eventName] ?? "تم {$eventName} الطالب";
             })
             ->useLogName('student');
     }
@@ -292,5 +350,95 @@ class Student extends Model
             ->where('status', 'present')
             ->whereNotNull('thoman_id')
             ->latest();
+    }
+
+    /**
+     * Get hizbs ordered by student's memorization direction
+     *
+     * @return \Illuminate\Database\Eloquent\Collection
+     */
+    public function getOrderedHizbs()
+    {
+        $hizbs = Hizb::orderBy('number')->get();
+
+        return $this->memorization_direction === 'descending'
+            ? $hizbs->sortByDesc('number')->values()
+            : $hizbs;
+    }
+
+    /**
+     * Update last hizb for the current direction
+     * Called when attendance is recorded
+     *
+     * @param int $hizbNumber The hizb number (1-60)
+     */
+    public function updateLastHizbForCurrentDirection(int $hizbNumber): void
+    {
+        if ($this->memorization_direction === 'ascending') {
+            // For ascending, we store the highest hizb reached
+            if ($this->last_hizb_ascending === null || $hizbNumber > $this->last_hizb_ascending) {
+                $this->last_hizb_ascending = $hizbNumber;
+            }
+        } else {
+            // For descending, we store the lowest hizb reached
+            if ($this->last_hizb_descending === null || $hizbNumber < $this->last_hizb_descending) {
+                $this->last_hizb_descending = $hizbNumber;
+            }
+        }
+        $this->save();
+    }
+
+    /**
+     * Get the last hizb for the current direction
+     *
+     * @return int|null
+     */
+    public function getLastHizbForCurrentDirection(): ?int
+    {
+        return $this->memorization_direction === 'ascending'
+            ? $this->last_hizb_ascending
+            : $this->last_hizb_descending;
+    }
+
+    /**
+     * Calculate total memorization progress from both directions
+     * Returns array with ascending count, descending count, and total percentage
+     *
+     * @return array{ascending: int, descending: int, total: int, percentage: float}
+     */
+    public function calculateDualDirectionProgress(): array
+    {
+        // Ascending: memorized from 1 to last_hizb_ascending
+        // e.g., if last_hizb_ascending = 20, means memorized hizbs 1-20 (20 hizbs)
+        $ascendingCount = $this->last_hizb_ascending ?? 0;
+
+        // Descending: memorized from 60 down to last_hizb_descending
+        // e.g., if last_hizb_descending = 40, means memorized hizbs 60-40 (21 hizbs)
+        $descendingCount = $this->last_hizb_descending
+            ? (60 - $this->last_hizb_descending + 1)
+            : 0;
+
+        // Check for overlap (if both directions meet in the middle)
+        // If ascending reached 30 and descending reached 30, they overlap at 30
+        $overlap = 0;
+        if ($this->last_hizb_ascending && $this->last_hizb_descending) {
+            if ($this->last_hizb_ascending >= $this->last_hizb_descending) {
+                // They've met or crossed - calculate overlap
+                $overlap = $this->last_hizb_ascending - $this->last_hizb_descending + 1;
+            }
+        }
+
+        $total = $ascendingCount + $descendingCount - $overlap;
+        $total = min(60, max(0, $total)); // Clamp to 0-60
+
+        return [
+            'ascending' => $ascendingCount,
+            'descending' => $descendingCount,
+            'overlap' => $overlap,
+            'total' => $total,
+            'percentage' => round(($total / 60) * 100, 1),
+            'last_hizb_ascending' => $this->last_hizb_ascending,
+            'last_hizb_descending' => $this->last_hizb_descending,
+        ];
     }
 }

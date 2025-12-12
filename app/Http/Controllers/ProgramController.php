@@ -10,6 +10,7 @@ use App\Models\Club;
 use App\Models\Category;
 use App\Actions\Program\CreateProgramAction;
 use App\Actions\Program\GenerateProgramSessionsAction;
+use Illuminate\Support\Facades\Auth;
 
 use function PHPSTORM_META\map;
 
@@ -53,7 +54,6 @@ class ProgramController extends Controller
     // تخزين برنامج جديد
     public function store(Request $request)
     {
-
         $days = collect($request->input('days_of_week', []))
             ->pluck('value')
             ->toArray();
@@ -61,9 +61,28 @@ class ProgramController extends Controller
         $request->merge(['days_of_week' => $days]);
         $program = (new CreateProgramAction())->execute($request->all());
 
-        (new GenerateProgramSessionsAction())->execute($program);
+        // Check if custom sessions are provided
+        $customSessions = $request->input('sessions', []);
+        if (!empty($customSessions)) {
+            // Use custom sessions from frontend
+            (new GenerateProgramSessionsAction())->executeWithCustomSessions($program, $customSessions);
+        } else {
+            // Generate sessions automatically (fallback)
+            (new GenerateProgramSessionsAction())->execute($program);
+        }
 
-        return redirect()->route('programs.index')->with('success', 'Program created successfully.');
+        // Log program creation
+        activity('program')
+            ->performedOn($program)
+            ->causedBy(Auth::user())
+            ->event('created')
+            ->withProperties([
+                'program_name' => $program->name,
+                'sessions_count' => $program->sessions()->count(),
+            ])
+            ->log("تم إنشاء البرنامج: {$program->name}");
+
+        return redirect()->route('programs.index')->with('success', 'تم إنشاء البرنامج بنجاح');
     }
 
     // عرض تفاصيل برنامج واحد
@@ -190,6 +209,8 @@ class ProgramController extends Controller
     // تحديث برنامج
     public function update(Request $request, Program $program)
     {
+        $oldData = $program->toArray();
+
         $days = collect($request->input('days_of_week', []))
             ->pluck('value')
             ->toArray();
@@ -199,13 +220,38 @@ class ProgramController extends Controller
 
         (new GenerateProgramSessionsAction())->execute($program);
 
-        return redirect()->route('programs.index')->with('success', 'Program updated successfully.');
+        // Log program update
+        activity('program')
+            ->performedOn($program)
+            ->causedBy(Auth::user())
+            ->event('updated')
+            ->withProperties([
+                'old' => $oldData,
+                'new' => $program->fresh()->toArray(),
+            ])
+            ->log("تم تحديث البرنامج: {$program->name}");
+
+        return redirect()->route('programs.index')->with('success', 'تم تحديث البرنامج بنجاح');
     }
 
     // حذف برنامج
     public function destroy(Program $program)
     {
+        $programName = $program->name;
+        $programId = $program->id;
+
         $program->delete();
-        return redirect()->route('programs.index')->with('success', 'Program deleted successfully.');
+
+        // Log program deletion
+        activity('program')
+            ->causedBy(Auth::user())
+            ->event('deleted')
+            ->withProperties([
+                'program_id' => $programId,
+                'program_name' => $programName,
+            ])
+            ->log("تم حذف البرنامج: {$programName}");
+
+        return redirect()->route('programs.index')->with('success', 'تم حذف البرنامج بنجاح');
     }
 }

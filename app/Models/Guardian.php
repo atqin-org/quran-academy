@@ -29,7 +29,14 @@ class Guardian extends Model
         return LogOptions::defaults()
             ->logOnly(['name', 'gender', 'job', 'phone'])
             ->logOnlyDirty()
-            ->setDescriptionForEvent(fn(string $eventName) => "Guardian has been {$eventName}")
+            ->setDescriptionForEvent(function (string $eventName) {
+                $events = [
+                    'created' => 'تم إنشاء ولي الأمر',
+                    'updated' => 'تم تحديث ولي الأمر',
+                    'deleted' => 'تم حذف ولي الأمر',
+                ];
+                return $events[$eventName] ?? "تم {$eventName} ولي الأمر";
+            })
             ->useLogName('guardian');
     }
 

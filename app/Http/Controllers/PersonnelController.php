@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Models\Club;
 use App\Models\Category;
+use Spatie\Activitylog\Models\Activity;
 
 class PersonnelController extends Controller
 {
@@ -15,11 +16,21 @@ class PersonnelController extends Controller
      */
     public function index()
     {
+        $personnels = User::withTrashed()->with('clubs')->latest()->get()->map(function ($user) {
+            $lastActivity = Activity::where('causer_id', $user->id)
+                ->where('causer_type', User::class)
+                ->latest()
+                ->first();
+
+            $user->last_activity_at = $lastActivity ? $lastActivity->created_at->toISOString() : null;
+            return $user;
+        });
+
         return Inertia::render(
-            'Dashboard/Personnels/IndexTmp',
+            'Dashboard/Personnels/Index',
             [
                 'clubs' => Club::all(),
-                'personnels' => User::with('clubs')->latest()->get()
+                'personnels' => $personnels
             ]
         );
     }
@@ -80,7 +91,16 @@ class PersonnelController extends Controller
      */
     public function edit(string $id)
     {
-        //
+        $personnel = User::withTrashed()->findOrFail($id);
+
+        return Inertia::render(
+            'Dashboard/Personnels/Edit',
+            [
+                'personnel' => $personnel->load('clubs'),
+                'clubs' => Club::all(),
+                'categories' => Category::all()
+            ]
+        );
     }
 
     /**
@@ -88,14 +108,69 @@ class PersonnelController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        //
+        $request->validate([
+            'firstName' => 'required',
+            'lastName' => 'required',
+            'clubs' => 'required|array',
+            'role' => 'required',
+            'phone' => 'required',
+            'mail' => 'required|email',
+        ]);
+
+        $user = User::withTrashed()->findOrFail($id);
+
+        $user->update([
+            'name' => $request->firstName,
+            'last_name' => $request->lastName,
+            'role' => $request->role,
+            'phone' => $request->phone,
+            'email' => $request->mail,
+        ]);
+
+        $user->clubs()->sync($request->clubs);
+
+        return redirect()->route('personnels.index')->with('success', 'تم تحديث البيانات بنجاح');
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Remove the specified resource from storage (soft delete).
      */
     public function destroy(string $id)
     {
-        //
+        $user = User::findOrFail($id);
+
+        // Prevent self-deactivation
+        if ($user->id === auth()->id()) {
+            return redirect()->route('personnels.index')->with('error', 'لا يمكنك تعطيل حسابك الخاص');
+        }
+
+        $user->delete();
+
+        // Log the deactivation
+        activity('user')
+            ->performedOn($user)
+            ->causedBy(auth()->user())
+            ->withProperties(['action' => 'deactivated'])
+            ->log("User account deactivated");
+
+        return redirect()->route('personnels.index')->with('success', 'تم تعطيل الحساب بنجاح');
+    }
+
+    /**
+     * Restore a soft deleted resource.
+     */
+    public function restore(string $id)
+    {
+        $user = User::withTrashed()->findOrFail($id);
+        $user->restore();
+
+        // Log the restoration
+        activity('user')
+            ->performedOn($user)
+            ->causedBy(auth()->user())
+            ->withProperties(['action' => 'restored'])
+            ->log("User account restored");
+
+        return redirect()->route('personnels.index')->with('success', 'تم تفعيل الحساب بنجاح');
     }
 }

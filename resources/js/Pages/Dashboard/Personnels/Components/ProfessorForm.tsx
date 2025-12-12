@@ -33,11 +33,12 @@ interface PersonnelFormProps {
     setData: (key: string, value: any) => void;
     errors: any;
     clubs: { id: number; name: string }[];
-    categories?: { id: number; name: string }[]; // Added categories as optional
+    categories?: { id: number; name: string }[];
     processing: boolean;
     mode: "create" | "edit";
     personnelId?: string;
     handleSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
+    initialClubs?: number[];
 }
 
 const roles = [
@@ -51,14 +52,15 @@ const PersonnelForm = ({
     setData,
     errors,
     clubs,
-    categories, // Accept categories as a prop
+    categories,
     processing,
     personnelId,
     handleSubmit,
+    initialClubs = [],
 }: PersonnelFormProps) => {
     const [isOpen, setIsOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
-    const [selectedClubs, setSelectedClubs] = useState<number[]>([]);
+    const [selectedClubs, setSelectedClubs] = useState<number[]>(initialClubs);
 
     const filteredClubs = clubs.filter((club) =>
         club.name.toLowerCase().includes(searchTerm.toLowerCase())

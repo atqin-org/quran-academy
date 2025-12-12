@@ -34,6 +34,7 @@ export type StudentDisplay = {
     gender: "male" | "female";
     birthdate: Date;
     subscription: number;
+    sessions_credit: number;
     insurance_expire_at: Date | null;
     subscription_expire_at: Date | null;
     last_hizb_attendance: any;
@@ -358,23 +359,51 @@ export const columns: ColumnDef<StudentDisplay>[] = [
             const isDatePassed = subscription
                 ? new Date() > subscription
                 : false || subscription === null;
+            const sessionsCredit = row.original.sessions_credit;
+
+            // For exempt students (subscription=0), show credit balance
+            if (subscriptionAmount === 0) {
+                return (
+                    <div className="flex justify-center font-medium">
+                        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-100 text-blue-700 border border-blue-200">
+                            <span className="text-lg font-bold">∞</span>
+                            <span className="text-xs">معفى</span>
+                        </div>
+                    </div>
+                );
+            }
+
+            // For paying students, show credit with color coding
+            const creditColor =
+                sessionsCredit < 0
+                    ? "bg-red-100 text-red-700 border-red-200"
+                    : sessionsCredit < 4
+                    ? "bg-yellow-100 text-yellow-700 border-yellow-200"
+                    : "bg-emerald-100 text-emerald-700 border-emerald-200";
+
             return (
                 <div className="flex justify-center font-medium">
-                    <div
-                        className={`w-fit p-2 rounded-xl ${
-                            isDatePassed && subscriptionAmount !== 0
-                                ? "bg-red-200 text-red-700"
-                                : "bg-emerald-200 text-emerald-700"
-                        }`}
-                    >
-                        {subscriptionAmount === 0
-                            ? "معفى"
-                            : subscription
-                            ? new Intl.DateTimeFormat("ar-DZ", {
-                                  month: "2-digit",
-                                  day: "2-digit",
-                              }).format(subscription)
-                            : "N/A"}
+                    <div className="flex items-center gap-2">
+                        <div
+                            className={`flex items-center gap-1 px-2 py-1 rounded-lg border ${creditColor}`}
+                        >
+                            <span className="font-bold">{sessionsCredit}</span>
+                            <span className="text-xs">حصة</span>
+                        </div>
+                        <div
+                            className={`w-fit px-2 py-1 rounded-lg text-xs ${
+                                isDatePassed
+                                    ? "bg-red-200 text-red-700"
+                                    : "bg-emerald-200 text-emerald-700"
+                            }`}
+                        >
+                            {subscription
+                                ? new Intl.DateTimeFormat("ar-DZ", {
+                                      month: "2-digit",
+                                      day: "2-digit",
+                                  }).format(subscription)
+                                : "N/A"}
+                        </div>
                     </div>
                 </div>
             );

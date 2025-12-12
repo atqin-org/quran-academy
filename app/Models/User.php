@@ -86,7 +86,14 @@ class User extends Authenticatable
         return LogOptions::defaults()
             ->logOnly(['name', 'last_name', 'phone', 'role', 'email'])
             ->logOnlyDirty()
-            ->setDescriptionForEvent(fn(string $eventName) => "User has been {$eventName}")
+            ->setDescriptionForEvent(function (string $eventName) {
+                $events = [
+                    'created' => 'تم إنشاء المستخدم',
+                    'updated' => 'تم تحديث المستخدم',
+                    'deleted' => 'تم حذف المستخدم',
+                ];
+                return $events[$eventName] ?? "تم {$eventName} المستخدم";
+            })
             ->useLogName('user');
     }
 

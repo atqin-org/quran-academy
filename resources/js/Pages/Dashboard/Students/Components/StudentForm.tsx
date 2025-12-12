@@ -572,6 +572,30 @@ const StudentForm = ({
                     />
                 </div>
             </div>
+            <div className="w-full sm:w-1/3">
+                <Label>اتجاه الحفظ</Label>
+                <Select
+                    onValueChange={(value) => setData("memorizationDirection", value as "ascending" | "descending")}
+                    defaultValue={data.memorizationDirection || "descending"}
+                    dir="rtl"
+                >
+                    <SelectTrigger>
+                        <SelectValue placeholder="اختر اتجاه الحفظ ..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="descending">
+                            تنازلي (60 ← 1) ↓
+                        </SelectItem>
+                        <SelectItem value="ascending">
+                            تصاعدي (1 ← 60) ↑
+                        </SelectItem>
+                    </SelectContent>
+                </Select>
+                <FormErrorMessage
+                    formStateErrors={form.formState.errors.memorizationDirection}
+                    errors={errors.memorizationDirection}
+                />
+            </div>
             <div className="flex sm:flex-row flex-col gap-6 w-full">
                 <div className="w-full">
                     <Label>الصورة الشخصية</Label>
