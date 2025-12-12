@@ -10,9 +10,9 @@ use Illuminate\Support\Facades\Log;
 class RecordAttendanceAction
 {
     /**
-     * Statuses that should deduct credits
+     * Statuses that should deduct credits (all except 'excused' which is absent excused)
      */
-    private const CREDIT_DEDUCTING_STATUSES = ['present'];
+    private const CREDIT_DEDUCTING_STATUSES = ['present', 'absent', 'late_excused', 'kicked'];
 
     public function execute(
         ProgramSession $session,

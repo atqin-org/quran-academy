@@ -127,7 +127,7 @@ class ProgramTest extends TestCase
     }
 
     /** @test */
-    public function it_refunds_credit_when_status_changes_from_present_to_absent()
+    public function it_refunds_credit_when_status_changes_from_present_to_excused()
     {
         $club = Club::factory()->create();
         $category = Category::factory()->create();
@@ -148,10 +148,38 @@ class ProgramTest extends TestCase
         $student->refresh();
         $this->assertEquals(9, $student->sessions_credit);
 
-        // Change to absent (refunds 1 credit)
-        (new RecordAttendanceAction())->execute($session, $student, 'absent');
+        // Change to excused (refunds 1 credit - excused is the only non-deducting status)
+        (new RecordAttendanceAction())->execute($session, $student, 'excused');
         $student->refresh();
         $this->assertEquals(10, $student->sessions_credit);
+    }
+
+    /** @test */
+    public function it_does_not_refund_when_status_changes_from_present_to_absent()
+    {
+        $club = Club::factory()->create();
+        $category = Category::factory()->create();
+        $student = Student::factory()->create([
+            'club_id' => $club->id,
+            'category_id' => $category->id,
+            'subscription' => 100,
+            'sessions_credit' => 10,
+        ]);
+        $program = Program::factory()->create();
+        $session = ProgramSession::factory()->create([
+            'program_id' => $program->id,
+            'is_optional' => false,
+        ]);
+
+        // Mark as present first (deducts 1 credit)
+        (new RecordAttendanceAction())->execute($session, $student, 'present');
+        $student->refresh();
+        $this->assertEquals(9, $student->sessions_credit);
+
+        // Change to absent (no refund - absent also deducts credit)
+        (new RecordAttendanceAction())->execute($session, $student, 'absent');
+        $student->refresh();
+        $this->assertEquals(9, $student->sessions_credit);
     }
 
     /** @test */
@@ -310,5 +338,97 @@ class ProgramTest extends TestCase
 
         $student->refresh();
         $this->assertEquals(9, $student->sessions_credit);
+    }
+
+    /** @test */
+    public function it_deducts_credit_for_late_excused_status()
+    {
+        $club = Club::factory()->create();
+        $category = Category::factory()->create();
+        $student = Student::factory()->create([
+            'club_id' => $club->id,
+            'category_id' => $category->id,
+            'subscription' => 100,
+            'sessions_credit' => 10,
+        ]);
+        $program = Program::factory()->create();
+        $session = ProgramSession::factory()->create([
+            'program_id' => $program->id,
+            'is_optional' => false,
+        ]);
+
+        (new RecordAttendanceAction())->execute($session, $student, 'late_excused');
+
+        $student->refresh();
+        $this->assertEquals(9, $student->sessions_credit);
+    }
+
+    /** @test */
+    public function it_deducts_credit_for_kicked_status()
+    {
+        $club = Club::factory()->create();
+        $category = Category::factory()->create();
+        $student = Student::factory()->create([
+            'club_id' => $club->id,
+            'category_id' => $category->id,
+            'subscription' => 100,
+            'sessions_credit' => 10,
+        ]);
+        $program = Program::factory()->create();
+        $session = ProgramSession::factory()->create([
+            'program_id' => $program->id,
+            'is_optional' => false,
+        ]);
+
+        (new RecordAttendanceAction())->execute($session, $student, 'kicked');
+
+        $student->refresh();
+        $this->assertEquals(9, $student->sessions_credit);
+    }
+
+    /** @test */
+    public function it_deducts_credit_for_absent_status()
+    {
+        $club = Club::factory()->create();
+        $category = Category::factory()->create();
+        $student = Student::factory()->create([
+            'club_id' => $club->id,
+            'category_id' => $category->id,
+            'subscription' => 100,
+            'sessions_credit' => 10,
+        ]);
+        $program = Program::factory()->create();
+        $session = ProgramSession::factory()->create([
+            'program_id' => $program->id,
+            'is_optional' => false,
+        ]);
+
+        (new RecordAttendanceAction())->execute($session, $student, 'absent');
+
+        $student->refresh();
+        $this->assertEquals(9, $student->sessions_credit);
+    }
+
+    /** @test */
+    public function excused_is_the_only_status_that_does_not_deduct_credit()
+    {
+        $club = Club::factory()->create();
+        $category = Category::factory()->create();
+        $student = Student::factory()->create([
+            'club_id' => $club->id,
+            'category_id' => $category->id,
+            'subscription' => 100,
+            'sessions_credit' => 10,
+        ]);
+        $program = Program::factory()->create();
+        $session = ProgramSession::factory()->create([
+            'program_id' => $program->id,
+            'is_optional' => false,
+        ]);
+
+        (new RecordAttendanceAction())->execute($session, $student, 'excused');
+
+        $student->refresh();
+        $this->assertEquals(10, $student->sessions_credit);
     }
 }

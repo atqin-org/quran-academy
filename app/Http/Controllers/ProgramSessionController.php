@@ -200,16 +200,20 @@ class ProgramSessionController extends Controller
 
     /**
      * Adjust credits for students when session optional status changes
+     * All statuses except 'excused' deduct credits
      */
     private function adjustCreditsForOptionalChange(ProgramSession $session, bool $isNowOptional): void
     {
-        // Get all 'present' attendance records for this session
-        $presentAttendances = $session->attendances()
-            ->where('status', 'present')
+        // Statuses that deduct credits (all except 'excused' which is absent excused)
+        $creditDeductingStatuses = ['present', 'absent', 'late_excused', 'kicked'];
+
+        // Get all attendance records that would deduct credits
+        $deductingAttendances = $session->attendances()
+            ->whereIn('status', $creditDeductingStatuses)
             ->with('student')
             ->get();
 
-        foreach ($presentAttendances as $attendance) {
+        foreach ($deductingAttendances as $attendance) {
             $student = $attendance->student;
 
             // Skip students with infinite sessions
@@ -237,7 +241,7 @@ class ProgramSessionController extends Controller
         try {
             $request->validate([
                 'student_id' => 'required|exists:students,id',
-                'status' => 'required|in:present,absent,excused',
+                'status' => 'required|in:present,absent,excused,late_excused,kicked',
                 'hizb_id' => 'nullable|exists:ahzab,id',
                 'thoman_id' => 'nullable|exists:athman,id',
                 'excusedReason' => 'nullable|string|max:255',
