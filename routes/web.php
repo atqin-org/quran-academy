@@ -13,6 +13,7 @@ use App\Http\Controllers\ProgramController;
 use App\Http\Controllers\ProgramSessionController;
 use App\Http\Controllers\ClubController;
 use App\Http\Controllers\ClubCategorySessionController;
+use App\Http\Controllers\StatisticsController;
 use App\Http\Middleware\AdminMiddleware;
 
 Route::middleware(['auth', 'verified'])->group(function () {
@@ -56,6 +57,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     Route::get('/system/logs', [LogController::class, 'index'])->name('admin.logs.index')->middleware(\App\Http\Middleware\AdminMiddleware::class);
+
+    // ---------------------------
+    // Statistics Routes (Admin Only)
+    // ---------------------------
+    Route::middleware(AdminMiddleware::class)->prefix('statistics')->name('statistics.')->group(function () {
+        Route::get('/', [StatisticsController::class, 'index'])->name('index');
+        Route::get('/data', [StatisticsController::class, 'getData'])->name('data');
+        Route::put('/layout', [StatisticsController::class, 'updateLayout'])->name('layout.update');
+    });
 
     // ---------------------------
     // Clubs Routes

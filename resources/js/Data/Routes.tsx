@@ -20,8 +20,8 @@ export const sidebarLinks = [
         latin: "Statistics",
         display: false,
         crud: false,
-        visibleFor: ["admin", "moderator", "staff", "teacher"],
-        href: "/statistic",
+        visibleFor: ["admin"],
+        href: "/statistics",
     },
     {
         icon: <LibraryBig />,
