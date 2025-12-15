@@ -45,6 +45,7 @@ import {
     CheckCircle,
     ArrowLeft,
     CalendarIcon,
+    Plus,
 } from "lucide-react";
 import { useState } from "react";
 import { format, parse } from "date-fns";
@@ -346,6 +347,45 @@ function SessionCard({ session, isPast = false }: { session: ProgramSession; isP
 }
 
 export default function Programs({ auth, program }: ProgramsProps) {
+    const [addSessionDialogOpen, setAddSessionDialogOpen] = useState(false);
+    const [newSessionDate, setNewSessionDate] = useState<Date | undefined>();
+    const [newSessionStartTime, setNewSessionStartTime] = useState("");
+    const [newSessionEndTime, setNewSessionEndTime] = useState("");
+    const [isAddingSession, setIsAddingSession] = useState(false);
+
+    const handleAddSession = () => {
+        if (!newSessionDate) {
+            toast.error("يرجى اختيار تاريخ الحصة");
+            return;
+        }
+
+        setIsAddingSession(true);
+        router.post(
+            `/programs/${program.id}/sessions`,
+            {
+                session_date: format(newSessionDate, "yyyy-MM-dd"),
+                start_time: newSessionStartTime || null,
+                end_time: newSessionEndTime || null,
+            },
+            {
+                preserveState: false,
+                onSuccess: () => {
+                    toast.success("تم إنشاء الحصة الاستثنائية بنجاح");
+                    setAddSessionDialogOpen(false);
+                    setNewSessionDate(undefined);
+                    setNewSessionStartTime("");
+                    setNewSessionEndTime("");
+                },
+                onError: () => {
+                    toast.error("حدث خطأ أثناء إنشاء الحصة");
+                },
+                onFinish: () => {
+                    setIsAddingSession(false);
+                },
+            }
+        );
+    };
+
     return (
         <DashboardLayout user={auth.user}>
             <Head title="تفاصيل البرنامج" />
@@ -353,17 +393,9 @@ export default function Programs({ auth, program }: ProgramsProps) {
             <div className="flex flex-col gap-6">
                 {/* Header */}
                 <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                        <Link href={route("programs.index")}>
-                            <Button variant="ghost" size="sm" className="gap-2">
-                                <ArrowLeft className="h-4 w-4" />
-                                العودة
-                            </Button>
-                        </Link>
-                        <h1 className="text-3xl font-bold text-gray-900">
-                            تفاصيل البرنامج
-                        </h1>
-                    </div>
+                    <h1 className="text-3xl font-bold text-gray-900">
+                        تفاصيل البرنامج
+                    </h1>
                     <Link href={`/programs/${program.id}/edit`}>
                         <Button variant="outline" className="gap-2">
                             <Pencil className="h-4 w-4" />
@@ -479,15 +511,28 @@ export default function Programs({ auth, program }: ProgramsProps) {
                 {/* Future Sessions */}
                 <Card>
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <Calendar className="h-5 w-5 text-blue-500" />
-                            الحصص القادمة
-                        </CardTitle>
-                        <CardDescription>
-                            {program.future_sessions.length > 0
-                                ? `${program.future_sessions.length} حصة قادمة`
-                                : "لا توجد حصص قادمة"}
-                        </CardDescription>
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <CardTitle className="flex items-center gap-2">
+                                    <Calendar className="h-5 w-5 text-blue-500" />
+                                    الحصص القادمة
+                                </CardTitle>
+                                <CardDescription>
+                                    {program.future_sessions.length > 0
+                                        ? `${program.future_sessions.length} حصة قادمة`
+                                        : "لا توجد حصص قادمة"}
+                                </CardDescription>
+                            </div>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                className="gap-2"
+                                onClick={() => setAddSessionDialogOpen(true)}
+                            >
+                                <Plus className="h-4 w-4" />
+                                إضافة حصة استثنائية
+                            </Button>
+                        </div>
                     </CardHeader>
                     <CardContent>
                         {program.future_sessions.length > 0 ? (
@@ -534,6 +579,84 @@ export default function Programs({ auth, program }: ProgramsProps) {
                     </CardContent>
                 </Card>
             </div>
+
+            {/* Add Exceptional Session Dialog */}
+            <Dialog open={addSessionDialogOpen} onOpenChange={setAddSessionDialogOpen}>
+                <DialogContent dir="rtl" className="sm:max-w-[425px]">
+                    <DialogHeader>
+                        <DialogTitle>إضافة حصة استثنائية</DialogTitle>
+                        <DialogDescription>
+                            أضف حصة استثنائية جديدة لهذا البرنامج (حصة إعادة جدولة أو حصة إضافية)
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                        {/* Date Picker */}
+                        <div className="flex flex-col gap-2">
+                            <Label>تاريخ الحصة</Label>
+                            <Popover>
+                                <PopoverTrigger asChild>
+                                    <Button
+                                        variant="outline"
+                                        className={cn(
+                                            "justify-start text-right font-normal",
+                                            !newSessionDate && "text-muted-foreground"
+                                        )}
+                                    >
+                                        <CalendarIcon className="ml-2 h-4 w-4" />
+                                        {newSessionDate ? (
+                                            format(newSessionDate, "dd/MM/yyyy", { locale: ar })
+                                        ) : (
+                                            <span>اختر التاريخ</span>
+                                        )}
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0" align="start">
+                                    <CalendarComponent
+                                        mode="single"
+                                        selected={newSessionDate}
+                                        onSelect={setNewSessionDate}
+                                        locale={ar}
+                                        initialFocus
+                                    />
+                                </PopoverContent>
+                            </Popover>
+                        </div>
+
+                        {/* Time Inputs */}
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="flex flex-col gap-2">
+                                <Label>وقت البداية</Label>
+                                <Input
+                                    type="time"
+                                    value={newSessionStartTime}
+                                    onChange={(e) => setNewSessionStartTime(e.target.value)}
+                                />
+                            </div>
+                            <div className="flex flex-col gap-2">
+                                <Label>وقت النهاية</Label>
+                                <Input
+                                    type="time"
+                                    value={newSessionEndTime}
+                                    onChange={(e) => setNewSessionEndTime(e.target.value)}
+                                />
+                            </div>
+                        </div>
+                    </div>
+                    <DialogFooter className="gap-2 sm:gap-0">
+                        <DialogClose asChild>
+                            <Button variant="outline">إلغاء</Button>
+                        </DialogClose>
+                        <Button
+                            onClick={handleAddSession}
+                            disabled={isAddingSession}
+                            className="gap-2"
+                        >
+                            {isAddingSession ? "جاري الإنشاء..." : "إنشاء الحصة"}
+                            <Plus className="h-4 w-4" />
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </DashboardLayout>
     );
 }

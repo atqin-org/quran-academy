@@ -14,17 +14,63 @@ class ClubController extends Controller
      */
     public function index()
     {
-        // Count users with no clubs (they belong to all clubs)
-        $usersWithNoClubs = User::whereDoesntHave('clubs')->count();
+        // Get users with no clubs grouped by role
+        $usersWithNoClubs = User::whereDoesntHave('clubs')->get();
+        $usersWithNoClubsCount = $usersWithNoClubs->count();
+        $usersWithNoClubsByRole = $usersWithNoClubs->groupBy('role')->map->count()->toArray();
+
+        // Get all categories ordered by ID for consistent ordering
+        $allCategories = \App\Models\Category::orderBy('id')->get()->keyBy('id');
 
         $clubs = Club::withTrashed()
-            ->withCount('students')
-            ->withCount('users')
+            ->with([
+                'users:id,role',
+                'students:id,club_id,category_id',
+                'students.category:id,name,gender'
+            ])
+            ->withCount(['students', 'users'])
             ->latest()
             ->get()
-            ->map(function ($club) use ($usersWithNoClubs) {
-                // Add users with no clubs to each club's count
-                $club->users_count += $usersWithNoClubs;
+            ->map(function ($club) use ($usersWithNoClubsCount, $usersWithNoClubsByRole, $allCategories) {
+                // Calculate role breakdown for club users
+                $usersByRole = $club->users->groupBy('role')->map->count()->toArray();
+
+                // Add users with no clubs to each role count
+                foreach ($usersWithNoClubsByRole as $role => $count) {
+                    $usersByRole[$role] = ($usersByRole[$role] ?? 0) + $count;
+                }
+
+                // Calculate category breakdown for students with gender distinction
+                $studentsByCategory = [];
+                $categoryGroups = $club->students->groupBy('category_id');
+
+                // Use the global category order
+                foreach ($allCategories as $categoryId => $category) {
+                    if (isset($categoryGroups[$categoryId])) {
+                        $count = $categoryGroups[$categoryId]->count();
+                        $genderLabel = $category->gender === 'male' ? 'ذكور' : ($category->gender === 'female' ? 'إناث' : '');
+                        $label = $genderLabel ? "{$category->name} ({$genderLabel})" : $category->name;
+                        $studentsByCategory[$label] = $count;
+                    }
+                }
+
+                // Handle students with no category
+                if (isset($categoryGroups[null]) || isset($categoryGroups[''])) {
+                    $nullCount = ($categoryGroups[null] ?? collect())->count() + ($categoryGroups[''] ?? collect())->count();
+                    if ($nullCount > 0) {
+                        $studentsByCategory['غير محدد'] = $nullCount;
+                    }
+                }
+
+                // Add users with no clubs to total count
+                $club->users_count += $usersWithNoClubsCount;
+                $club->users_by_role = $usersByRole;
+                $club->students_by_category = $studentsByCategory;
+
+                // Remove the eager loaded relations to keep response clean
+                unset($club->users);
+                unset($club->students);
+
                 return $club;
             });
 

@@ -72,4 +72,7 @@
   .scrollbar-wraper {
     @apply scrollbar-thin scrollbar-thumb-primary scrollbar-track-transparent;
   }
+  .scrollbar-wraper::-webkit-scrollbar-button {
+    display: none;
+  }
 }

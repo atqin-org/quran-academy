@@ -112,6 +112,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
        
         // Delete program
         Route::delete('/{program}', [ProgramController::class, 'destroy'])->name('destroy');
+
+        // Add exceptional session to program
+        Route::post('/{program}/sessions', [ProgramSessionController::class, 'store'])->name('sessions.store');
     });
 
     // ---------------------------

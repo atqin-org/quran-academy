@@ -10,7 +10,12 @@ interface DashboardProps extends PageProps {
     categories: { id: number; name: string }[];
 }
 
-export default function Edit({ auth, personnel, clubs, categories }: DashboardProps) {
+export default function Edit({
+    auth,
+    personnel,
+    clubs,
+    categories,
+}: DashboardProps) {
     const initialFormState: TPersonnelForm = {
         firstName: personnel.name,
         lastName: personnel.last_name,
@@ -21,8 +26,9 @@ export default function Edit({ auth, personnel, clubs, categories }: DashboardPr
         card: personnel.card || undefined,
     };
 
-    const { data, setData, post, processing, errors } =
-        useInertiaForm<TPersonnelForm & { [key: string]: any }>(initialFormState);
+    const { data, setData, post, processing, errors } = useInertiaForm<
+        TPersonnelForm & { [key: string]: any }
+    >(initialFormState);
 
     function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();
@@ -34,7 +40,7 @@ export default function Edit({ auth, personnel, clubs, categories }: DashboardPr
             <Head title="تعديل الموظف" />
 
             <div className="flex flex-col gap-10">
-                <h1 className="text-4xl font-bold text-gray-900">
+                <h1 className="text-2xl font-bold text-gray-900">
                     تعديل بيانات الموظف
                 </h1>
                 <ProfessorForm
