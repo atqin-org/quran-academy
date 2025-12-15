@@ -530,7 +530,7 @@ export default function Dashboard({ auth, student, payments, sessionsPerMonth }:
                             {/* Type Filter */}
                             <div className="flex flex-col gap-1">
                                 <label className="text-xs text-gray-500">النوع</label>
-                                <Select value={typeFilter} onValueChange={(v) => handleFilterChange('type', v)}>
+                                <Select dir="rtl" value={typeFilter} onValueChange={(v) => handleFilterChange('type', v)}>
                                     <SelectTrigger className="w-28">
                                         <SelectValue placeholder="الكل" />
                                     </SelectTrigger>
@@ -545,7 +545,7 @@ export default function Dashboard({ auth, student, payments, sessionsPerMonth }:
                             {/* User Filter */}
                             <div className="flex flex-col gap-1">
                                 <label className="text-xs text-gray-500">بواسطة</label>
-                                <Select value={userFilter} onValueChange={(v) => handleFilterChange('user', v)}>
+                                <Select dir="rtl" value={userFilter} onValueChange={(v) => handleFilterChange('user', v)}>
                                     <SelectTrigger className="w-40">
                                         <SelectValue placeholder="الكل" />
                                     </SelectTrigger>
@@ -570,7 +570,7 @@ export default function Dashboard({ auth, student, payments, sessionsPerMonth }:
                             {/* Sort Order */}
                             <div className="flex flex-col gap-1">
                                 <label className="text-xs text-gray-500">الترتيب</label>
-                                <Select value={sortOrder} onValueChange={(v) => handleFilterChange('sort', v)}>
+                                <Select dir="rtl" value={sortOrder} onValueChange={(v) => handleFilterChange('sort', v)}>
                                     <SelectTrigger className="w-32">
                                         <SelectValue placeholder="الأحدث" />
                                     </SelectTrigger>

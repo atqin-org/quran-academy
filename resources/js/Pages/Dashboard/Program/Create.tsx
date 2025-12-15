@@ -54,6 +54,8 @@ import {
     CalendarDays,
     Edit,
     AlertCircle,
+    List,
+    LayoutGrid,
 } from "lucide-react";
 import { useState, useMemo, useEffect } from "react";
 import { format, addDays, isBefore, isAfter, isSameDay } from "date-fns";
@@ -108,6 +110,9 @@ export default function ProgramCreate({
     const [sessions, setSessions] = useState<SessionPreview[]>([]);
     const [editingSession, setEditingSession] = useState<SessionPreview | null>(null);
     const [editDialogOpen, setEditDialogOpen] = useState(false);
+    const [sessionsViewMode, setSessionsViewMode] = useState<"table" | "calendar">("table");
+    const [addSessionDialogOpen, setAddSessionDialogOpen] = useState(false);
+    const [newSessionDate, setNewSessionDate] = useState<Date | undefined>();
 
     const { data, setData, post, processing, errors } = useForm({
         name: "",
@@ -193,6 +198,13 @@ export default function ProgramCreate({
     };
 
     const addCustomSession = (date: Date) => {
+        // Check if session already exists on this date
+        const existingSession = sessions.find((s) => isSameDay(s.date, date));
+        if (existingSession) {
+            toast.error("توجد حصة بالفعل في هذا التاريخ");
+            return;
+        }
+
         const newSession: SessionPreview = {
             id: `custom-${Date.now()}`,
             date,
@@ -203,11 +215,27 @@ export default function ProgramCreate({
             isModified: true,
         };
         setSessions((prev) => [...prev, newSession].sort((a, b) => a.date.getTime() - b.date.getTime()));
+        toast.success("تم إضافة الحصة الاستثنائية");
+    };
+
+    const handleAddExceptionalSession = () => {
+        if (!newSessionDate) {
+            toast.error("يرجى اختيار تاريخ الحصة");
+            return;
+        }
+        addCustomSession(newSessionDate);
+        setAddSessionDialogOpen(false);
+        setNewSessionDate(undefined);
     };
 
     const removeSession = (sessionId: string) => {
         setSessions((prev) => prev.filter((s) => s.id !== sessionId));
     };
+
+    // Get all dates with sessions for calendar view
+    const sessionDates = useMemo(() => {
+        return sessions.map((s) => s.date);
+    }, [sessions]);
 
     const enabledSessions = useMemo(() => sessions.filter((s) => s.isEnabled), [sessions]);
 
@@ -475,15 +503,48 @@ export default function ProgramCreate({
                         {/* Sessions Preview */}
                         <Card>
                             <CardHeader>
-                                <CardTitle className="flex items-center justify-between">
-                                    <span>معاينة الحصص</span>
-                                    <Badge variant="secondary">
-                                        {enabledSessions.length} حصة
-                                    </Badge>
-                                </CardTitle>
-                                <CardDescription>
-                                    يمكنك تعديل أو حذف الحصص حسب الحاجة
-                                </CardDescription>
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <CardTitle className="flex items-center gap-2">
+                                            معاينة الحصص
+                                            <Badge variant="secondary">
+                                                {enabledSessions.length} حصة
+                                            </Badge>
+                                        </CardTitle>
+                                        <CardDescription>
+                                            يمكنك تعديل أو حذف الحصص حسب الحاجة
+                                        </CardDescription>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => setAddSessionDialogOpen(true)}
+                                            className="gap-1"
+                                        >
+                                            <Plus className="h-4 w-4" />
+                                            حصة استثنائية
+                                        </Button>
+                                        <div className="flex border rounded-md">
+                                            <Button
+                                                variant={sessionsViewMode === "table" ? "secondary" : "ghost"}
+                                                size="sm"
+                                                onClick={() => setSessionsViewMode("table")}
+                                                className="rounded-l-none"
+                                            >
+                                                <List className="h-4 w-4" />
+                                            </Button>
+                                            <Button
+                                                variant={sessionsViewMode === "calendar" ? "secondary" : "ghost"}
+                                                size="sm"
+                                                onClick={() => setSessionsViewMode("calendar")}
+                                                className="rounded-r-none"
+                                            >
+                                                <LayoutGrid className="h-4 w-4" />
+                                            </Button>
+                                        </div>
+                                    </div>
+                                </div>
                             </CardHeader>
                             <CardContent>
                                 {sessions.length === 0 ? (
@@ -491,7 +552,7 @@ export default function ProgramCreate({
                                         <CalendarDays className="h-12 w-12 mb-2" />
                                         <p>اختر فترة البرنامج وأيام الحصص لعرض المعاينة</p>
                                     </div>
-                                ) : (
+                                ) : sessionsViewMode === "table" ? (
                                     <div className="max-h-[400px] overflow-y-auto">
                                         <Table>
                                             <TableHeader>
@@ -558,6 +619,32 @@ export default function ProgramCreate({
                                                 ))}
                                             </TableBody>
                                         </Table>
+                                    </div>
+                                ) : (
+                                    <div className="flex justify-center">
+                                        <Calendar
+                                            mode="multiple"
+                                            selected={sessionDates}
+                                            locale={ar}
+                                            numberOfMonths={2}
+                                            defaultMonth={dateRange?.from || new Date()}
+                                            modifiers={{
+                                                disabled: sessions.filter((s) => !s.isEnabled).map((s) => s.date),
+                                            }}
+                                            modifiersClassNames={{
+                                                disabled: "opacity-30 line-through",
+                                            }}
+                                            onDayClick={(day) => {
+                                                const session = sessions.find((s) => isSameDay(s.date, day));
+                                                if (session) {
+                                                    setEditingSession(session);
+                                                    setEditDialogOpen(true);
+                                                }
+                                            }}
+                                            classNames={{
+                                                day_selected: "bg-primary text-primary-foreground hover:bg-primary/90",
+                                            }}
+                                        />
                                     </div>
                                 )}
                             </CardContent>
@@ -747,6 +834,59 @@ export default function ProgramCreate({
                                 }}
                             >
                                 حفظ التعديلات
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+
+                {/* Add Exceptional Session Dialog */}
+                <Dialog open={addSessionDialogOpen} onOpenChange={setAddSessionDialogOpen}>
+                    <DialogContent dir="rtl" className="sm:max-w-[425px]">
+                        <DialogHeader>
+                            <DialogTitle>إضافة حصة استثنائية</DialogTitle>
+                            <DialogDescription>
+                                أضف حصة استثنائية خارج الجدول الزمني المحدد
+                            </DialogDescription>
+                        </DialogHeader>
+                        <div className="py-4">
+                            <div className="flex flex-col gap-2">
+                                <Label>تاريخ الحصة</Label>
+                                <Popover>
+                                    <PopoverTrigger asChild>
+                                        <Button
+                                            variant="outline"
+                                            className={cn(
+                                                "justify-start text-right font-normal",
+                                                !newSessionDate && "text-muted-foreground"
+                                            )}
+                                        >
+                                            <CalendarIcon className="ml-2 h-4 w-4" />
+                                            {newSessionDate ? (
+                                                format(newSessionDate, "dd/MM/yyyy", { locale: ar })
+                                            ) : (
+                                                <span>اختر التاريخ</span>
+                                            )}
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0" align="start">
+                                        <Calendar
+                                            mode="single"
+                                            selected={newSessionDate}
+                                            onSelect={setNewSessionDate}
+                                            locale={ar}
+                                            initialFocus
+                                        />
+                                    </PopoverContent>
+                                </Popover>
+                            </div>
+                        </div>
+                        <DialogFooter className="gap-2 sm:gap-0">
+                            <DialogClose asChild>
+                                <Button variant="outline">إلغاء</Button>
+                            </DialogClose>
+                            <Button onClick={handleAddExceptionalSession} className="gap-2">
+                                <Plus className="h-4 w-4" />
+                                إضافة الحصة
                             </Button>
                         </DialogFooter>
                     </DialogContent>

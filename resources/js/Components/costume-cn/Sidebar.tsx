@@ -68,7 +68,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                     </div>
                 )}
 
-                <div className="flex flex-col items-start gap-3 flex-1 w-full px-4 py-1 overflow-y-scroll overflow-x-hidden scrollbar-wraper">
+                <div className="flex flex-col items-start gap-3 flex-1 w-full px-4 py-1 overflow-y-auto overflow-x-hidden scrollbar-wraper">
                     <TooltipProvider key={tooltipKey}>
                         {sidebarLinks
                             .filter(

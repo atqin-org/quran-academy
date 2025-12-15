@@ -68,7 +68,7 @@ export default function WidgetWrapper({
                         <GripVertical className="h-4 w-4 text-muted-foreground" />
                     </button>
                     {icon}
-                    <CardTitle className="text-sm font-medium">{title}</CardTitle>
+                    <CardTitle className="text-base font-semibold">{title}</CardTitle>
                 </div>
 
                 <DropdownMenu>

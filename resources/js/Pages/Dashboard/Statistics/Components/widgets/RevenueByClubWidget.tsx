@@ -41,8 +41,9 @@ export default function RevenueByClubWidget({ statistics }: Props) {
                 <YAxis
                     dataKey="name"
                     type="category"
-                    width={70}
-                    tick={{ fontSize: 11 }}
+                    width={80}
+                    tick={{ fontSize: 11, textAnchor: "start" }}
+                    tickMargin={5}
                 />
                 <ChartTooltip
                     content={

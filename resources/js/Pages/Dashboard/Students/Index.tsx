@@ -63,7 +63,7 @@ export default function Dashboard({
             <Head title="Students" />
             <div className="flex flex-col items-center justify-start h-full">
                 <div className="flex items-center w-full">
-                    <h1 className="text-4xl font-bold text-gray-900">الطالب</h1>
+                    <h1 className="text-2xl font-bold text-gray-900">الطالب</h1>
                     <div className="flex-1"></div>
                     <Link
                         className="text-primary-foreground font-bold text-center bg-primary p-4 rounded-xl select-none"

@@ -20,6 +20,7 @@ import { ColumnDef } from "@tanstack/react-table";
 import { Banknote, MoreHorizontal, Trash2, UserPen } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import ThomanCircle from "./ThomanCircle";
 
 export type StudentDisplay = {
     id: string;
@@ -238,22 +239,24 @@ export const columns: ColumnDef<StudentDisplay>[] = [
         header: () => <div className="text-center">الحزب</div>,
         cell: ({ row }) => {
             const hizb = row.original.last_hizb_attendance;
-            return (
-                <div className="text-center font-medium">
-                    {hizb ? hizb.hizb.number : "-"}
-                </div>
-            );
-        },
-    },
-    {
-        id: "الثمن",
-        accessorKey: "last_thoman_attendance.number",
-        header: () => <div className="text-center">الثمن</div>,
-        cell: ({ row }) => {
             const thoman = row.original.last_thoman_attendance;
+            const hizbNumber = hizb ? hizb.hizb.number : null;
+            const thomanNumber = thoman ? thoman.thoman.number : 0;
+
+            if (hizbNumber === null) {
+                return (
+                    <div className="text-center font-medium text-muted-foreground">
+                        -
+                    </div>
+                );
+            }
+
             return (
-                <div className="text-center font-medium">
-                    {thoman ? thoman.thoman.number : "-"}
+                <div className="flex items-center justify-center gap-2">
+                    <ThomanCircle value={thomanNumber} size={22} />
+                    <span className="font-medium tabular-nums">
+                        {hizbNumber}
+                    </span>
                 </div>
             );
         },

@@ -20,8 +20,9 @@ interface DashboardProps extends PageProps {
 }
 
 export default function Dashboard({ auth, clubs, categories }: DashboardProps) {
-    const { data, setData, post, processing, errors } =
-        useInertiaForm<TPersonnelForm & { [key: string]: any }>(initialFormState);
+    const { data, setData, post, processing, errors } = useInertiaForm<
+        TPersonnelForm & { [key: string]: any }
+    >(initialFormState);
 
     function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();
@@ -33,7 +34,7 @@ export default function Dashboard({ auth, clubs, categories }: DashboardProps) {
             <Head title="Dashboard" />
 
             <div className=" flex flex-col gap-10">
-                <h1 className="text-4xl font-bold text-gray-900">
+                <h1 className="text-2xl font-bold text-gray-900">
                     تسجيل الموارد البشرية{" "}
                 </h1>
                 <ProfessorForm

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
+use App\Models\Program;
 use App\Models\ProgramSession;
 use App\Models\Student;
 use App\Actions\Attendance\RecordAttendanceAction;
@@ -24,6 +25,58 @@ class ProgramSessionController extends Controller
         if (!in_array($sessionClubId, $accessibleClubIds)) {
             abort(403, 'غير مصرح لك بالوصول إلى هذه الحصة');
         }
+    }
+
+    /**
+     * Check if user has access to this program's club
+     */
+    private function authorizeProgramAccess(Program $program): void
+    {
+        $user = Auth::user();
+        $accessibleClubIds = $user->accessibleClubs()->pluck('id')->toArray();
+
+        if (!in_array($program->club_id, $accessibleClubIds)) {
+            abort(403, 'غير مصرح لك بالوصول إلى هذا البرنامج');
+        }
+    }
+
+    /**
+     * إنشاء حصة استثنائية جديدة
+     */
+    public function store(Request $request, Program $program)
+    {
+        $this->authorizeProgramAccess($program);
+
+        $request->validate([
+            'session_date' => 'required|date',
+            'start_time' => 'nullable|date_format:H:i',
+            'end_time' => 'nullable|date_format:H:i',
+        ]);
+
+        $session = ProgramSession::create([
+            'program_id' => $program->id,
+            'session_date' => $request->session_date,
+            'start_time' => $request->start_time,
+            'end_time' => $request->end_time,
+            'status' => 'scheduled',
+        ]);
+
+        activity('program_session')
+            ->performedOn($session)
+            ->causedBy(Auth::user())
+            ->event('created')
+            ->withProperties([
+                'program_id' => $program->id,
+                'session_date' => $request->session_date,
+                'start_time' => $request->start_time,
+                'end_time' => $request->end_time,
+                'type' => 'exceptional',
+            ])
+            ->log("تم إنشاء حصة استثنائية: {$request->session_date}");
+
+        return redirect()
+            ->back()
+            ->with('success', 'تم إنشاء الحصة الاستثنائية بنجاح');
     }
 
     /**
