@@ -130,7 +130,7 @@ export default function Index({ auth, clubs }: DashboardProps) {
             <div className="flex flex-col gap-6">
                 {/* Header */}
                 <div className="flex items-center justify-between">
-                    <h1 className="text-3xl font-bold text-gray-900">النوادي</h1>
+                    <h1 className="text-2xl font-bold text-gray-900">النوادي</h1>
                     <Link href="/clubs/create">
                         <Button className="gap-2">
                             <Plus className="h-4 w-4" />

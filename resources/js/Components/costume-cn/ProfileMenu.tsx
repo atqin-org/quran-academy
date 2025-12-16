@@ -85,7 +85,7 @@ const ProfileMenu: React.FC<ProfileMenuProps> = ({
             <PopoverTrigger asChild>
                 <button
                     className={cn(
-                        "border-2 border-primary w-full px-2 py-2 text-center rounded-md flex gap-2 items-center text-nowrap",
+                        "border-2 border-primary w-full px-2 py-2 text-center rounded-full flex gap-2 items-center text-nowrap",
                         "hover:bg-gray-50 transition-colors",
                         {
                             "justify-center": isCollapsed && !mobile,
@@ -104,7 +104,7 @@ const ProfileMenu: React.FC<ProfileMenuProps> = ({
                     </div>
                     {(!isCollapsed || mobile) && (
                         <div className="flex flex-col items-start text-sm flex-1 min-w-0">
-                            <span className={`truncate font-semibold text-start ${mobile ? "" : "w-24"}`}>
+                            <span className={`truncate font-semibold text-start ${mobile ? "" : "w-[100px]"}`}>
                                 {auth.name} {auth.last_name}
                             </span>
                             <span className="truncate text-xs text-gray-500">

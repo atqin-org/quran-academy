@@ -104,6 +104,18 @@ class StatisticsController extends Controller
     }
 
     /**
+     * Reset user's widget layout to defaults.
+     */
+    public function resetLayout()
+    {
+        $user = Auth::user();
+
+        DashboardLayout::where('user_id', $user->id)->delete();
+
+        return redirect()->back();
+    }
+
+    /**
      * Calculate date range based on filter.
      */
     private function calculateDateRange(string $range, ?string $startDate, ?string $endDate): array
