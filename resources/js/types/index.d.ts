@@ -114,6 +114,21 @@ export interface AttendanceStats {
     }>;
 }
 
+export interface CategoryBreakdownRow {
+    category_id: number | null;
+    category_name: string;
+    has_insurance: number;
+    monthly_paid: number;
+    exempt: number;
+    late_payment: number;
+    total: number;
+}
+
+export interface CategoryBreakdown {
+    rows: CategoryBreakdownRow[];
+    totals: CategoryBreakdownRow;
+}
+
 export interface StudentStats {
     total: number;
     active: number;
@@ -154,6 +169,7 @@ export interface StudentStats {
         expires_at: string;
     }>;
     expiring_insurance_count: number;
+    category_breakdown: CategoryBreakdown;
 }
 
 export interface PersonnelStats {
@@ -210,4 +226,5 @@ export interface Category {
     id: number;
     name: string;
     gender: string;
+    display_name: string;
 }

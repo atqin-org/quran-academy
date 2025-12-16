@@ -232,10 +232,10 @@ class StatisticsController extends Controller
         if ($connectionType === 'sqlite') {
             $monthlyTrend = Payment::query()
                 ->when($clubId, function ($q) use ($clubId) {
-                    $q->whereHas('student', fn($sq) => $sq->where('club_id', $clubId));
+                    $q->whereHas('student', fn ($sq) => $sq->where('club_id', $clubId));
                 })
                 ->when($categoryId, function ($q) use ($categoryId) {
-                    $q->whereHas('student', fn($sq) => $sq->where('category_id', $categoryId));
+                    $q->whereHas('student', fn ($sq) => $sq->where('category_id', $categoryId));
                 })
                 ->where('created_at', '>=', Carbon::now()->subMonths(12))
                 ->select(
@@ -248,7 +248,8 @@ class StatisticsController extends Controller
                 ->orderBy('month')
                 ->get()
                 ->map(function ($item) {
-                    $date = Carbon::createFromDate((int)$item->year, (int)$item->month, 1);
+                    $date = Carbon::createFromDate((int) $item->year, (int) $item->month, 1);
+
                     return [
                         'month' => $date->translatedFormat('M Y'),
                         'total' => (float) $item->total,
@@ -257,10 +258,10 @@ class StatisticsController extends Controller
         } else {
             $monthlyTrend = Payment::query()
                 ->when($clubId, function ($q) use ($clubId) {
-                    $q->whereHas('student', fn($sq) => $sq->where('club_id', $clubId));
+                    $q->whereHas('student', fn ($sq) => $sq->where('club_id', $clubId));
                 })
                 ->when($categoryId, function ($q) use ($categoryId) {
-                    $q->whereHas('student', fn($sq) => $sq->where('category_id', $categoryId));
+                    $q->whereHas('student', fn ($sq) => $sq->where('category_id', $categoryId));
                 })
                 ->where('created_at', '>=', Carbon::now()->subMonths(12))
                 ->select(
@@ -274,6 +275,7 @@ class StatisticsController extends Controller
                 ->get()
                 ->map(function ($item) {
                     $date = Carbon::createFromDate($item->year, $item->month, 1);
+
                     return [
                         'month' => $date->translatedFormat('M Y'),
                         'total' => (float) $item->total,
@@ -380,14 +382,15 @@ class StatisticsController extends Controller
             ->select(
                 'categories.name as category_name',
                 'categories.id as category_id',
+                'categories.gender as category_gender',
                 DB::raw('COUNT(*) as total'),
                 DB::raw("SUM(CASE WHEN attendances.status = 'present' THEN 1 ELSE 0 END) as present_count")
             )
-            ->groupBy('categories.id', 'categories.name')
+            ->groupBy('categories.id', 'categories.name', 'categories.gender')
             ->get()
             ->map(function ($item) {
                 return [
-                    'category_name' => $item->category_name,
+                    'category_name' => Category::formatName($item->category_name, $item->category_gender),
                     'category_id' => $item->category_id,
                     'total' => $item->total,
                     'present_count' => $item->present_count,
@@ -421,7 +424,7 @@ class StatisticsController extends Controller
             ->map(function ($item) {
                 return [
                     'id' => $item->id,
-                    'name' => $item->first_name . ' ' . $item->last_name,
+                    'name' => $item->first_name.' '.$item->last_name,
                     'absent_count' => $item->absent_count,
                 ];
             });
@@ -493,9 +496,16 @@ class StatisticsController extends Controller
             ->when($categoryId, function ($q) use ($categoryId) {
                 $q->where('students.category_id', $categoryId);
             })
-            ->select('categories.name as category_name', 'categories.id as category_id', DB::raw('COUNT(*) as count'))
-            ->groupBy('categories.id', 'categories.name')
-            ->get();
+            ->select('categories.name as category_name', 'categories.id as category_id', 'categories.gender as category_gender', DB::raw('COUNT(*) as count'))
+            ->groupBy('categories.id', 'categories.name', 'categories.gender')
+            ->get()
+            ->map(function ($item) {
+                return [
+                    'category_name' => Category::formatName($item->category_name, $item->category_gender),
+                    'category_id' => $item->category_id,
+                    'count' => $item->count,
+                ];
+            });
 
         // By club and category (breakdown)
         $byClubCategory = Student::query()
@@ -512,19 +522,21 @@ class StatisticsController extends Controller
                 'clubs.id as club_id',
                 'categories.name as category_name',
                 'categories.id as category_id',
+                'categories.gender as category_gender',
                 DB::raw('COUNT(*) as count')
             )
-            ->groupBy('clubs.id', 'clubs.name', 'categories.id', 'categories.name')
+            ->groupBy('clubs.id', 'clubs.name', 'categories.id', 'categories.name', 'categories.gender')
             ->get()
             ->groupBy('club_id')
             ->map(function ($items, $clubId) {
                 $first = $items->first();
+
                 return [
                     'club_name' => $first->club_name,
                     'club_id' => $clubId,
                     'categories' => $items->map(function ($item) {
                         return [
-                            'category_name' => $item->category_name,
+                            'category_name' => Category::formatName($item->category_name, $item->category_gender),
                             'category_id' => $item->category_id,
                             'count' => $item->count,
                         ];
@@ -566,21 +578,21 @@ class StatisticsController extends Controller
             ->map(function ($item) {
                 return [
                     'id' => $item->id,
-                    'name' => $item->first_name . ' ' . $item->last_name,
+                    'name' => $item->first_name.' '.$item->last_name,
                     'credit' => $item->sessions_credit,
                 ];
             });
 
         $negativeCreditCount = Student::query()
             ->where('sessions_credit', '<', 0)
-            ->when($clubId, fn($q) => $q->where('club_id', $clubId))
-            ->when($categoryId, fn($q) => $q->where('category_id', $categoryId))
+            ->when($clubId, fn ($q) => $q->where('club_id', $clubId))
+            ->when($categoryId, fn ($q) => $q->where('category_id', $categoryId))
             ->count();
 
         // Expiring insurance (next 30 days)
         $expiringInsurance = Student::query()
-            ->when($clubId, fn($q) => $q->where('club_id', $clubId))
-            ->when($categoryId, fn($q) => $q->where('category_id', $categoryId))
+            ->when($clubId, fn ($q) => $q->where('club_id', $clubId))
+            ->when($categoryId, fn ($q) => $q->where('category_id', $categoryId))
             ->whereNotNull('insurance_expire_at')
             ->whereBetween('insurance_expire_at', [Carbon::now(), Carbon::now()->addDays(30)])
             ->select('id', 'first_name', 'last_name', 'insurance_expire_at')
@@ -590,17 +602,20 @@ class StatisticsController extends Controller
             ->map(function ($item) {
                 return [
                     'id' => $item->id,
-                    'name' => $item->first_name . ' ' . $item->last_name,
+                    'name' => $item->first_name.' '.$item->last_name,
                     'expires_at' => Carbon::parse($item->insurance_expire_at)->format('Y-m-d'),
                 ];
             });
 
         $expiringInsuranceCount = Student::query()
-            ->when($clubId, fn($q) => $q->where('club_id', $clubId))
-            ->when($categoryId, fn($q) => $q->where('category_id', $categoryId))
+            ->when($clubId, fn ($q) => $q->where('club_id', $clubId))
+            ->when($categoryId, fn ($q) => $q->where('category_id', $categoryId))
             ->whereNotNull('insurance_expire_at')
             ->whereBetween('insurance_expire_at', [Carbon::now(), Carbon::now()->addDays(30)])
             ->count();
+
+        // Category breakdown table (for export)
+        $categoryBreakdown = $this->getCategoryBreakdownStats($clubId, $categoryId);
 
         return [
             'total' => $total,
@@ -614,6 +629,78 @@ class StatisticsController extends Controller
             'negative_credit_count' => $negativeCreditCount,
             'expiring_insurance' => $expiringInsurance,
             'expiring_insurance_count' => $expiringInsuranceCount,
+            'category_breakdown' => $categoryBreakdown,
+        ];
+    }
+
+    /**
+     * Get category breakdown statistics for export table.
+     */
+    private function getCategoryBreakdownStats(?int $clubId, ?int $categoryId = null): array
+    {
+        $categories = Category::query()
+            ->when($categoryId, fn ($q) => $q->where('id', $categoryId))
+            ->orderBy('id')
+            ->get();
+
+        $breakdown = [];
+
+        foreach ($categories as $category) {
+            $query = Student::query()
+                ->where('category_id', $category->id)
+                ->when($clubId, fn ($q) => $q->where('club_id', $clubId));
+
+            // Total students in category
+            $total = (clone $query)->count();
+
+            // Has insurance (insurance_expire_at is not null and not expired)
+            $hasInsurance = (clone $query)
+                ->whereNotNull('insurance_expire_at')
+                ->where('insurance_expire_at', '>=', Carbon::now())
+                ->count();
+
+            // Monthly paid (sessions_credit >= 0 AND subscription != 0)
+            $monthlyPaid = (clone $query)
+                ->where('sessions_credit', '>=', 0)
+                ->where('subscription', '!=', 0)
+                ->count();
+
+            // Exempt (subscription = 0)
+            $exempt = (clone $query)
+                ->where('subscription', 0)
+                ->count();
+
+            // Late in payment (sessions_credit < 0 AND subscription != 0)
+            $latePayment = (clone $query)
+                ->where('sessions_credit', '<', 0)
+                ->where('subscription', '!=', 0)
+                ->count();
+
+            $breakdown[] = [
+                'category_id' => $category->id,
+                'category_name' => $category->display_name,
+                'has_insurance' => $hasInsurance,
+                'monthly_paid' => $monthlyPaid,
+                'exempt' => $exempt,
+                'late_payment' => $latePayment,
+                'total' => $total,
+            ];
+        }
+
+        // Add totals row
+        $totals = [
+            'category_id' => null,
+            'category_name' => 'المجموع',
+            'has_insurance' => array_sum(array_column($breakdown, 'has_insurance')),
+            'monthly_paid' => array_sum(array_column($breakdown, 'monthly_paid')),
+            'exempt' => array_sum(array_column($breakdown, 'exempt')),
+            'late_payment' => array_sum(array_column($breakdown, 'late_payment')),
+            'total' => array_sum(array_column($breakdown, 'total')),
+        ];
+
+        return [
+            'rows' => $breakdown,
+            'totals' => $totals,
         ];
     }
 
@@ -636,6 +723,7 @@ class StatisticsController extends Controller
                     'staff' => 'موظف',
                     'teacher' => 'معلم',
                 ];
+
                 return [
                     'role' => $item->role,
                     'label' => $labels[$item->role] ?? $item->role,
@@ -645,7 +733,7 @@ class StatisticsController extends Controller
 
         // By club (users can be associated with multiple clubs)
         $byClub = [];
-        if (!$clubId) {
+        if (! $clubId) {
             $clubs = Club::with('users')->get();
             foreach ($clubs as $club) {
                 $byClub[] = [
@@ -713,14 +801,14 @@ class StatisticsController extends Controller
 
             $topPerformers[] = [
                 'id' => $student->id,
-                'name' => $student->first_name . ' ' . $student->last_name,
+                'name' => $student->first_name.' '.$student->last_name,
                 'percentage' => $percentage,
                 'total_hizbs' => $progress['total'],
             ];
         }
 
         // Sort and take top 10
-        usort($topPerformers, fn($a, $b) => $b['percentage'] <=> $a['percentage']);
+        usort($topPerformers, fn ($a, $b) => $b['percentage'] <=> $a['percentage']);
         $topPerformers = array_slice($topPerformers, 0, 10);
 
         $averageProgress = count($students) > 0 ? round($totalProgress / count($students), 1) : 0;
@@ -729,7 +817,7 @@ class StatisticsController extends Controller
         $distributionChart = [];
         foreach ($progressDistribution as $range => $count) {
             $distributionChart[] = [
-                'range' => $range . '%',
+                'range' => $range.'%',
                 'count' => $count,
             ];
         }
