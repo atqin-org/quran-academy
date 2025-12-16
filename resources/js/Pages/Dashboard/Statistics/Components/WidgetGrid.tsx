@@ -88,6 +88,7 @@ export default function WidgetGrid({
                         }
 
                         const WidgetComponent = definition.component;
+                        const menuItems = definition.getMenuItems?.(statistics);
 
                         return (
                             <WidgetWrapper
@@ -97,6 +98,7 @@ export default function WidgetGrid({
                                 icon={definition.icon}
                                 onToggleVisibility={handleToggleVisibility}
                                 isLoading={isLoading}
+                                menuItems={menuItems}
                             >
                                 <WidgetComponent statistics={statistics} />
                             </WidgetWrapper>

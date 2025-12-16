@@ -65,6 +65,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/', [StatisticsController::class, 'index'])->name('index');
         Route::get('/data', [StatisticsController::class, 'getData'])->name('data');
         Route::put('/layout', [StatisticsController::class, 'updateLayout'])->name('layout.update');
+        Route::delete('/layout', [StatisticsController::class, 'resetLayout'])->name('layout.reset');
     });
 
     // ---------------------------

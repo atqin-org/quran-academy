@@ -103,7 +103,7 @@ interface Props extends PageProps {
     program: Program;
     subjects: { id: number; name: string }[];
     clubs: { id: number; name: string }[];
-    categories: { id: number; name: string }[];
+    categories: { id: number; name: string; display_name: string }[];
 }
 
 const daysOfWeek = [
@@ -463,7 +463,7 @@ export default function ProgramEdit({
                                         <SelectContent>
                                             {categories.map((cat: any) => (
                                                 <SelectItem key={cat.id} value={String(cat.id)}>
-                                                    {cat.name}
+                                                    {cat.display_name}
                                                 </SelectItem>
                                             ))}
                                         </SelectContent>
@@ -786,7 +786,7 @@ export default function ProgramEdit({
                                     <div>
                                         <p className="text-sm text-muted-foreground">الفئة</p>
                                         <p className="font-medium">
-                                            {categories.find((c: any) => String(c.id) === data.category_id)?.name}
+                                            {categories.find((c: any) => String(c.id) === data.category_id)?.display_name}
                                         </p>
                                     </div>
                                 </div>

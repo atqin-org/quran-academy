@@ -388,7 +388,7 @@ export default function ProgramCreate({
                                         <SelectContent>
                                             {categories.map((cat: any) => (
                                                 <SelectItem key={cat.id} value={String(cat.id)}>
-                                                    {cat.name}
+                                                    {cat.display_name}
                                                 </SelectItem>
                                             ))}
                                         </SelectContent>
@@ -697,7 +697,7 @@ export default function ProgramCreate({
                                     <div>
                                         <p className="text-sm text-muted-foreground">الفئة</p>
                                         <p className="font-medium">
-                                            {categories.find((c: any) => String(c.id) === data.category_id)?.name}
+                                            {categories.find((c: any) => String(c.id) === data.category_id)?.display_name}
                                         </p>
                                     </div>
                                 </div>

@@ -127,6 +127,13 @@ class DashboardLayout extends Model
                 'size' => ['w' => 2, 'h' => 1],
                 'visible' => true,
             ],
+            [
+                'id' => 'category-breakdown',
+                'type' => 'category_breakdown',
+                'position' => ['x' => 0, 'y' => 7],
+                'size' => ['w' => 4, 'h' => 1],
+                'visible' => true,
+            ],
         ];
     }
 }

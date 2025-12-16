@@ -1,25 +1,31 @@
+import { DropdownMenuItem } from "@/Components/ui/dropdown-menu";
 import { Statistics } from "@/types";
+import { Download } from "lucide-react";
 import { ReactNode } from "react";
-import FinancialTotalWidget from "./widgets/FinancialTotalWidget";
-import RevenueByTypeWidget from "./widgets/RevenueByTypeWidget";
-import RevenueByClubWidget from "./widgets/RevenueByClubWidget";
-import AttendanceRateWidget from "./widgets/AttendanceRateWidget";
 import AttendanceChartWidget from "./widgets/AttendanceChartWidget";
-import StudentCountWidget from "./widgets/StudentCountWidget";
-import StudentsByClubWidget from "./widgets/StudentsByClubWidget";
+import AttendanceRateWidget from "./widgets/AttendanceRateWidget";
+import CategoryBreakdownWidget, {
+    exportCategoryBreakdownToCSV,
+} from "./widgets/CategoryBreakdownWidget";
+import FinancialTotalWidget from "./widgets/FinancialTotalWidget";
+import MostAbsentWidget from "./widgets/MostAbsentWidget";
 import NegativeCreditWidget from "./widgets/NegativeCreditWidget";
 import PersonnelWidget from "./widgets/PersonnelWidget";
 import ProgressOverviewWidget from "./widgets/ProgressOverviewWidget";
-import TopPerformersWidget from "./widgets/TopPerformersWidget";
-import MostAbsentWidget from "./widgets/MostAbsentWidget";
+import RevenueByClubWidget from "./widgets/RevenueByClubWidget";
+import RevenueByTypeWidget from "./widgets/RevenueByTypeWidget";
+import StudentCountWidget from "./widgets/StudentCountWidget";
 import StudentsByCategoryWidget from "./widgets/StudentsByCategoryWidget";
 import StudentsByClubCategoryWidget from "./widgets/StudentsByClubCategoryWidget";
+import StudentsByClubWidget from "./widgets/StudentsByClubWidget";
+import TopPerformersWidget from "./widgets/TopPerformersWidget";
 
 export interface WidgetDefinition {
     type: string;
     title: string;
     icon?: ReactNode;
     component: React.FC<{ statistics: Statistics }>;
+    getMenuItems?: (statistics: Statistics) => ReactNode;
 }
 
 export const widgetRegistry: Record<string, WidgetDefinition> = {
@@ -92,6 +98,23 @@ export const widgetRegistry: Record<string, WidgetDefinition> = {
         type: "students_by_club_category",
         title: "الطلاب حسب النادي والفئة",
         component: StudentsByClubCategoryWidget,
+    },
+    category_breakdown: {
+        type: "category_breakdown",
+        title: "تقرير الطلاب حسب الفئة",
+        component: CategoryBreakdownWidget,
+        getMenuItems: (statistics: Statistics) => (
+            <DropdownMenuItem
+                onClick={() =>
+                    exportCategoryBreakdownToCSV(
+                        statistics.students.category_breakdown
+                    )
+                }
+            >
+                <Download className="ml-2 h-4 w-4" />
+                تصدير
+            </DropdownMenuItem>
+        ),
     },
 };
 

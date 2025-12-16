@@ -33,6 +33,7 @@ import {
     Eye,
     MoreHorizontal,
     Pencil,
+    Plus,
     Search,
     Trash2,
     Users,
@@ -152,16 +153,15 @@ export default function Programs({ auth, programs }: ProgramsProps) {
             <Head title="البرامج" />
             <div className="flex flex-col items-center justify-start h-full">
                 {/* Header */}
-                <div className="flex items-center w-full">
+                <div className="flex items-center justify-between w-full">
                     <h1 className="text-2xl font-bold text-gray-900">
                         البرامج
                     </h1>
-                    <div className="flex-1"></div>
-                    <Link
-                        className="text-primary-foreground font-bold text-center bg-primary p-4 rounded-xl select-none"
-                        href={route("programs.create")}
-                    >
-                        سجل برنامج جديد
+                    <Link href={route("programs.create")}>
+                        <Button className="gap-2">
+                            <Plus className="h-4 w-4" />
+                            برنامج جديد
+                        </Button>
                     </Link>
                 </div>
 
