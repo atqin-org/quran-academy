@@ -57,8 +57,9 @@ import {
     List,
     LayoutGrid,
 } from "lucide-react";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { format, addDays, isBefore, isAfter, isSameDay } from "date-fns";
+import axios from "axios";
 import { ar } from "date-fns/locale";
 import { DateRange } from "react-day-picker";
 import { cn } from "@/lib/utils";
@@ -72,6 +73,12 @@ interface SessionPreview {
     endTime: string;
     isEnabled: boolean;
     isModified: boolean;
+}
+
+interface Group {
+    id: number;
+    name: string;
+    students_count: number;
 }
 
 const daysOfWeek = [
@@ -113,17 +120,46 @@ export default function ProgramCreate({
     const [sessionsViewMode, setSessionsViewMode] = useState<"table" | "calendar">("table");
     const [addSessionDialogOpen, setAddSessionDialogOpen] = useState(false);
     const [newSessionDate, setNewSessionDate] = useState<Date | undefined>();
+    const [groups, setGroups] = useState<Group[]>([]);
+    const [loadingGroups, setLoadingGroups] = useState(false);
 
     const { data, setData, post, processing, errors } = useForm({
         name: "",
         subject_id: "",
         club_id: "",
         category_id: "",
+        group_id: "all",
         days_of_week: [] as string[],
         start_date: "",
         end_date: "",
         sessions: [] as { date: string; start_time: string; end_time: string }[],
     });
+
+    // Fetch groups when club and category are selected
+    useEffect(() => {
+        if (data.club_id && data.category_id) {
+            setLoadingGroups(true);
+            axios.get(route("groups.index"), {
+                params: {
+                    club_id: data.club_id,
+                    category_id: data.category_id,
+                }
+            })
+            .then((response) => {
+                setGroups(response.data.groups || []);
+            })
+            .catch(() => {
+                setGroups([]);
+            })
+            .finally(() => {
+                setLoadingGroups(false);
+            });
+        } else {
+            setGroups([]);
+        }
+        // Reset group selection when club or category changes
+        setData("group_id", "all");
+    }, [data.club_id, data.category_id]);
 
     // Generate sessions whenever date range or selected days change
     useEffect(() => {
@@ -264,6 +300,7 @@ export default function ProgramCreate({
             subject_id: data.subject_id,
             club_id: data.club_id,
             category_id: data.category_id,
+            group_id: data.group_id === "all" ? null : data.group_id,
             days_of_week: daysData,
             start_date: dateRange?.from ? format(dateRange.from, "yyyy-MM-dd") : "",
             end_date: dateRange?.to ? format(dateRange.to, "yyyy-MM-dd") : "",
@@ -395,6 +432,33 @@ export default function ProgramCreate({
                                     </Select>
                                 </div>
                             </div>
+
+                            {/* Group Selection - Only show if groups exist */}
+                            {groups.length > 0 && (
+                                <div className="flex flex-col gap-2">
+                                    <Label>الفوج (اختياري)</Label>
+                                    <Select
+                                        value={data.group_id}
+                                        onValueChange={(val) => setData("group_id", val)}
+                                        dir="rtl"
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="جميع الطلاب" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">جميع الطلاب</SelectItem>
+                                            {groups.map((g) => (
+                                                <SelectItem key={g.id} value={String(g.id)}>
+                                                    فوج {g.name} ({g.students_count} طالب)
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <p className="text-sm text-muted-foreground">
+                                        اختر فوج معين أو اترك الخيار "جميع الطلاب" لتشمل كل طلاب الفئة
+                                    </p>
+                                </div>
+                            )}
 
                             <div className="flex justify-end pt-4">
                                 <Button
@@ -701,6 +765,14 @@ export default function ProgramCreate({
                                         </p>
                                     </div>
                                 </div>
+                                {data.group_id && data.group_id !== "all" && (
+                                    <div className="mt-4">
+                                        <p className="text-sm text-muted-foreground">الفوج</p>
+                                        <p className="font-medium">
+                                            فوج {groups.find((g) => String(g.id) === data.group_id)?.name}
+                                        </p>
+                                    </div>
+                                )}
 
                                 <div className="border-t pt-4">
                                     <div className="grid grid-cols-2 md:grid-cols-3 gap-4">

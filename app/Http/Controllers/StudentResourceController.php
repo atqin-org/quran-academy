@@ -3,18 +3,18 @@
 namespace App\Http\Controllers;
 
 use App\Exports\StudentsExport;
-use Maatwebsite\Excel\Facades\Excel;
 use App\Models\Category;
-use Illuminate\Http\Request;
-use Inertia\Inertia;
 use App\Models\Club;
-use App\Models\Student;
 use App\Models\Guardian;
+use App\Models\Student;
 use App\Rules\AtLeastOnePhone;
 use App\Rules\FileOrString;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Inertia\Inertia;
+use Maatwebsite\Excel\Facades\Excel;
 
 class StudentResourceController extends Controller
 {
@@ -73,7 +73,7 @@ class StudentResourceController extends Controller
         $students = $query->paginate(10, ['id', 'first_name', 'last_name', 'birthdate', 'ahzab', 'ahzab_up', 'ahzab_down', 'gender', 'insurance_expire_at', 'subscription', 'subscription_expire_at', 'sessions_credit', 'club_id', 'category_id'])->withQueryString();
 
         $students->getCollection()->transform(function ($student) {
-            $student->name = $student->first_name . ' ' . $student->last_name;
+            $student->name = $student->first_name.' '.$student->last_name;
             $birthdate = Carbon::parse($student->birthdate);
             $student->age = (int) $birthdate->diffInYears(Carbon::now());
             $student->club = Club::find($student->club_id)->name;
@@ -82,6 +82,7 @@ class StudentResourceController extends Controller
             $student->category_gender = $category->gender;
             $student->insurance_expire_at = $student->insurance_expire_at ? Carbon::parse($student->insurance_expire_at)->format('Y-m-d') : null;
             $student->subscription_expire_at = $student->subscription_expire_at ? Carbon::parse($student->subscription_expire_at)->format('Y-m-d') : null;
+
             return $student;
         });
 
@@ -97,7 +98,7 @@ class StudentResourceController extends Controller
         $clubCounts = Club::withCount(['students' => function ($query) use ($accessibleClubs) {
             $query->whereIn('club_id', $accessibleClubs);
         }])->whereIn('id', $accessibleClubs)->get();
-       
+
         return Inertia::render(
             'Dashboard/Students/Index',
             [
@@ -106,10 +107,11 @@ class StudentResourceController extends Controller
                     'clubs' => $clubCounts,
                     'categories' => $categoryCounts,
                     'genders' => $genderCounts,
-                ]
+                ],
             ]
         );
     }
+
     public function export(Request $request)
     {
         $query = Student::query();
@@ -159,7 +161,7 @@ class StudentResourceController extends Controller
         $export = new StudentsExport($students);
         $export->onExport();
 
-        return Excel::download($export, 'students-' . now()->format('Y-m-d') . '.xlsx');
+        return Excel::download($export, 'students-'.now()->format('Y-m-d').'.xlsx');
     }
 
     /**
@@ -172,7 +174,7 @@ class StudentResourceController extends Controller
             'Dashboard/Students/Create',
             [
                 'clubs' => Auth::user()->accessibleClubs(),
-                'categories' => Category::all()
+                'categories' => Category::all(),
             ]
         );
     }
@@ -190,8 +192,8 @@ class StudentResourceController extends Controller
             'birthdate' => [
                 'required',
                 'date',
-                'before:' . now()->subYears(3)->format('Y-m-d'),
-                'after:' . now()->subYears(100)->format('Y-m-d'),
+                'before:'.now()->subYears(3)->format('Y-m-d'),
+                'after:'.now()->subYears(100)->format('Y-m-d'),
             ],
             'socialStatus' => 'required|in:good,mid,low',
             'hasCronicDisease' => 'required|in:yes,no',
@@ -205,25 +207,26 @@ class StudentResourceController extends Controller
             'subscription' => 'required|numeric',
             'club' => 'required|exists:clubs,id',
             'category' => 'required|exists:categories,id',
+            'group_id' => 'nullable|exists:groups,id',
             'picture' => 'nullable|mimes:jpg,jpeg,png,pdf|max:6144', // 6144 KB = 6 MB
             'file' => 'nullable|mimes:jpg,jpeg,png,pdf|max:6144',    // 6144 KB = 6 MB
         ]);
 
-        //TODO: check if this student was deleted before from the same club
+        // TODO: check if this student was deleted before from the same club
 
         $father_id = Guardian::create([
-            'phone' => $request->father["phone"],
-            'name' => $request->father["name"],
-            'job' => $request->father["job"],
+            'phone' => $request->father['phone'],
+            'name' => $request->father['name'],
+            'job' => $request->father['job'],
             'gender' => 'male',
         ])->id;
         $mother_id = Guardian::create([
-            'phone' => $request->mother["phone"],
-            'name' => $request->mother["name"],
-            'job' => $request->mother["job"],
+            'phone' => $request->mother['phone'],
+            'name' => $request->mother['name'],
+            'job' => $request->mother['job'],
             'gender' => 'female',
         ])->id;
-        //add $father_id and $mother_id to the student
+        // add $father_id and $mother_id to the student
         $request->merge(['father_id' => $father_id, 'mother_id' => $mother_id]);
         Student::create($request->all());
 
@@ -241,7 +244,7 @@ class StudentResourceController extends Controller
             'category',
             'father',
             'mother',
-            'attendances.session'
+            'attendances.session',
         ])->findOrFail($id);
 
         $totalHizb = 60;
@@ -257,7 +260,7 @@ class StudentResourceController extends Controller
         if ($range === 'custom' && $startDate && $endDate) {
             $attendanceQuery->whereBetween('created_at', [
                 Carbon::parse($startDate)->startOfDay(),
-                Carbon::parse($endDate)->endOfDay()
+                Carbon::parse($endDate)->endOfDay(),
             ]);
         } elseif ($range === 'week') {
             $attendanceQuery->where('created_at', '>=', Carbon::now()->subWeek());
@@ -278,9 +281,9 @@ class StudentResourceController extends Controller
         // إحصائيات عامة
         $attendanceStats = [
             'present' => (clone $statsQuery)->where('status', 'present')->count(),
-            'absent'  => (clone $statsQuery)->where('status', 'absent')->count(),
+            'absent' => (clone $statsQuery)->where('status', 'absent')->count(),
             'excused' => (clone $statsQuery)->where('status', 'excused')->count(),
-            'total'   => (clone $statsQuery)->count(),
+            'total' => (clone $statsQuery)->count(),
         ];
 
         // Calculate attendance rate
@@ -307,7 +310,7 @@ class StudentResourceController extends Controller
         $maxAscending = 0;  // Highest hizb reached from ascending direction
         $minDescending = 61; // Lowest hizb reached from descending direction (start at 61 so first real value wins)
 
-        $progressTimeline = $attendancesWithHizb->map(function ($attendance) use ($totalHizb, &$maxAscending, &$minDescending, $student) {
+        $progressTimeline = $attendancesWithHizb->map(function ($attendance) use ($totalHizb, &$maxAscending, &$minDescending) {
             $hizbNumber = $attendance->hizb ? $attendance->hizb->number : null;
 
             if ($hizbNumber) {
@@ -353,8 +356,8 @@ class StudentResourceController extends Controller
             $monthSelect = "strftime('%m', created_at) as month";
         } else {
             // MySQL / MariaDB
-            $yearSelect = "YEAR(created_at) as year";
-            $monthSelect = "MONTH(created_at) as month";
+            $yearSelect = 'YEAR(created_at) as year';
+            $monthSelect = 'MONTH(created_at) as month';
         }
 
         $monthlyAttendance = $student->attendances()
@@ -363,7 +366,7 @@ class StudentResourceController extends Controller
                 if ($range === 'custom' && $startDate && $endDate) {
                     return $q->whereBetween('created_at', [
                         Carbon::parse($startDate)->startOfDay(),
-                        Carbon::parse($endDate)->endOfDay()
+                        Carbon::parse($endDate)->endOfDay(),
                     ]);
                 } elseif ($range === 'week') {
                     return $q->where('created_at', '>=', Carbon::now()->subWeek());
@@ -385,7 +388,7 @@ class StudentResourceController extends Controller
         return inertia('Dashboard/Students/Show', [
             'student' => [
                 'id' => $student->id,
-                'name' => $student->first_name . ' ' . $student->last_name,
+                'name' => $student->first_name.' '.$student->last_name,
                 'first_name' => $student->first_name,
                 'last_name' => $student->last_name,
                 'birthdate' => $student->birthdate,
@@ -413,7 +416,6 @@ class StudentResourceController extends Controller
         ]);
     }
 
-
     /**
      * Show the form for editing the specified resource.
      */
@@ -428,7 +430,7 @@ class StudentResourceController extends Controller
                 'student' => $student,
                 'siblings' => $siblings,
                 'clubs' => Auth::user()->accessibleClubs(),
-                'categories' => Category::all()
+                'categories' => Category::all(),
             ]
         );
     }
@@ -451,6 +453,7 @@ class StudentResourceController extends Controller
         $student->ahzab_up = $request->ahzab_up;
         $student->ahzab_down = $request->ahzab_down;
         $student->save();
+
         return back()->with('success', 'تم تحديث الأحزاب بنجاح');
     }
 
@@ -484,8 +487,8 @@ class StudentResourceController extends Controller
             'birthdate' => [
                 'required',
                 'date',
-                'before:' . now()->subYears(3)->format('Y-m-d'),
-                'after:' . now()->subYears(100)->format('Y-m-d'),
+                'before:'.now()->subYears(3)->format('Y-m-d'),
+                'after:'.now()->subYears(100)->format('Y-m-d'),
             ],
             'socialStatus' => 'required|in:good,mid,low',
             'hasCronicDisease' => 'required|in:yes,no',
@@ -499,6 +502,7 @@ class StudentResourceController extends Controller
             'subscription' => 'required|numeric',
             'club' => 'required|exists:clubs,id',
             'category' => 'required|exists:categories,id',
+            'group_id' => 'nullable|exists:groups,id',
             'picture' => ['nullable', new FileOrString],
             'file' => ['nullable', new FileOrString],
         ]);
@@ -509,30 +513,30 @@ class StudentResourceController extends Controller
         $mother = Guardian::find($student->mother_id);
         if ($father) {
             $father->update([
-                'phone' => $request->father["phone"],
-                'name' => $request->father["name"],
-                'job' => $request->father["job"],
+                'phone' => $request->father['phone'],
+                'name' => $request->father['name'],
+                'job' => $request->father['job'],
             ]);
         } else {
             $father = Guardian::create([
-                'phone' => $request->father["phone"],
-                'name' => $request->father["name"],
-                'job' => $request->father["job"],
+                'phone' => $request->father['phone'],
+                'name' => $request->father['name'],
+                'job' => $request->father['job'],
                 'gender' => 'male',
             ]);
             $student->father_id = $father->id;
         }
         if ($mother) {
             $mother->update([
-                'phone' => $request->mother["phone"],
-                'name' => $request->mother["name"],
-                'job' => $request->mother["job"],
+                'phone' => $request->mother['phone'],
+                'name' => $request->mother['name'],
+                'job' => $request->mother['job'],
             ]);
         } else {
             $mother = Guardian::create([
-                'phone' => $request->mother["phone"],
-                'name' => $request->mother["name"],
-                'job' => $request->mother["job"],
+                'phone' => $request->mother['phone'],
+                'name' => $request->mother['name'],
+                'job' => $request->mother['job'],
                 'gender' => 'female',
             ]);
             $student->mother_id = $mother->id;
@@ -548,6 +552,7 @@ class StudentResourceController extends Controller
         // Redirect with a success message
         return redirect()->route('students.index')->with('success', 'تم تحديث الطالب بنجاح');
     }
+
     /**
      * Remove the specified resource from storage.
      */
@@ -559,6 +564,7 @@ class StudentResourceController extends Controller
 
         return redirect()->route('students.index')->with('success', 'تم حذف الطالب بنجاح');
     }
+
     /**
      * Remove the specified resource from storage.
      */

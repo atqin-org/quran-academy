@@ -194,6 +194,7 @@ class ProgramController extends Controller
                 'subject_id' => $program->subject_id,
                 'club_id' => $program->club_id,
                 'category_id' => $program->category_id,
+                'group_id' => $program->group_id,
                 'days_of_week' => $formattedDays,
                 'is_active' => (bool) $program->is_active,
                 'start_date' => $program->start_date?->format('Y-m-d'),
@@ -216,7 +217,7 @@ class ProgramController extends Controller
             ->toArray();
 
         $request->merge(['days_of_week' => $days]);
-        $program->update($request->only(['name', 'subject_id', 'club_id', 'category_id', 'days_of_week', 'start_date', 'end_date']));
+        $program->update($request->only(['name', 'subject_id', 'club_id', 'category_id', 'group_id', 'days_of_week', 'start_date', 'end_date']));
 
         // Check if custom sessions are provided
         $customSessions = $request->input('sessions', []);

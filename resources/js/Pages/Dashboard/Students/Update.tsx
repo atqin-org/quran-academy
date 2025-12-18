@@ -51,6 +51,7 @@ export default function Update({
         },
         club: student.club_id.toString(),
         category: student.category_id.toString(),
+        group_id: student.group_id?.toString(),
         subscription: student.subscription,
         picture: student.picture || undefined,
         file: student.file || undefined,

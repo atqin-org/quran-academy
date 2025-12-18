@@ -1,20 +1,20 @@
 <?php
 
-use App\Http\Controllers\ProfileController;
-use Illuminate\Foundation\Application;
-use Illuminate\Support\Facades\Route;
-use Inertia\Inertia;
-use App\Http\Controllers\StudentResourceController;
+use App\Http\Controllers\BackupController;
+use App\Http\Controllers\ClubCategorySessionController;
+use App\Http\Controllers\ClubController;
+use App\Http\Controllers\GroupController;
+use App\Http\Controllers\LogController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PersonnelController;
-use App\Http\Controllers\BackupController;
-use App\Http\Controllers\LogController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProgramController;
 use App\Http\Controllers\ProgramSessionController;
-use App\Http\Controllers\ClubController;
-use App\Http\Controllers\ClubCategorySessionController;
 use App\Http\Controllers\StatisticsController;
+use App\Http\Controllers\StudentResourceController;
 use App\Http\Middleware\AdminMiddleware;
+use Illuminate\Support\Facades\Route;
+use Inertia\Inertia;
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('/students', StudentResourceController::class);
@@ -86,14 +86,26 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
 
     // ---------------------------
+    // Groups Routes
+    // ---------------------------
+    Route::prefix('groups')->name('groups.')->group(function () {
+        Route::get('/api', [GroupController::class, 'getGroups'])->name('index');
+        Route::get('/club/{club}/{category?}', [GroupController::class, 'clubGroups'])->name('clubGroups');
+        Route::get('/manage/{club}/{category}', [GroupController::class, 'manage'])->name('manage');
+        Route::post('/', [GroupController::class, 'store'])->name('store');
+        Route::delete('/{group}', [GroupController::class, 'destroy'])->name('destroy');
+        Route::post('/merge', [GroupController::class, 'merge'])->name('merge');
+        Route::post('/transfer-student', [GroupController::class, 'transferStudent'])->name('transferStudent');
+        Route::post('/bulk-transfer', [GroupController::class, 'bulkTransfer'])->name('bulkTransfer');
+    });
+
+    // ---------------------------
     // Programs Routes
     // ---------------------------
     Route::prefix('programs')->name('programs.')->group(function () {
 
-
-         // Update program
+        // Update program
         Route::post('/{program}', [ProgramController::class, 'update'])->name('update');
-
 
         // List all programs
         Route::get('/', [ProgramController::class, 'index'])->name('index');
@@ -110,7 +122,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // Edit program form
         Route::get('/{program}/edit', [ProgramController::class, 'edit'])->name('edit');
 
-       
         // Delete program
         Route::delete('/{program}', [ProgramController::class, 'destroy'])->name('destroy');
 
@@ -137,6 +148,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         // Record attendance
         Route::post('/{session}/attendance', [ProgramSessionController::class, 'recordAttendance'])->name('recordAttendance');
+        Route::post('/{session}/attendance-bulk', [ProgramSessionController::class, 'recordAttendanceBulk'])->name('recordAttendanceBulk');
     });
 });
 
@@ -144,11 +156,9 @@ Route::get('/dashboard/{any}', function () {
     return Inertia::render('Dashboard/Tmp');
 })->where('any', '.*');
 
-
 Route::get('/', function () {
     return redirect()->route('login');
 });
-
 
 Route::get('/dashboard', function () {
     return redirect()->route('students.index');
@@ -156,4 +166,4 @@ Route::get('/dashboard', function () {
 
 Route::middleware(['auth', 'verified'])->group(function () {})->middleware(\App\Http\Middleware\AdminMiddleware::class);
 
-require __DIR__ . '/auth.php';
+require __DIR__.'/auth.php';

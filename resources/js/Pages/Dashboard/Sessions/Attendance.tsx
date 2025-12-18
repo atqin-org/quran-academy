@@ -18,7 +18,9 @@ import {
 } from "@/Components/ui/tooltip";
 import { Switch } from "@/Components/ui/switch";
 import { Label } from "@/Components/ui/label";
+import { Button } from "@/Components/ui/button";
 import { useState, useMemo } from "react";
+import { Save, AlertCircle, Loader2 } from "lucide-react";
 
 interface Hizb {
     id: number;
@@ -449,6 +451,8 @@ export default function Attendance({
     // Track students locally to update direction immediately
     const [students, setStudents] = useState(initialStudents);
     const [isOptional, setIsOptional] = useState(session.is_optional ?? false);
+    const [isSaving, setIsSaving] = useState(false);
+    const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
     const [attendance, setAttendance] = useState<Record<number, any>>(() =>
         initialStudents.reduce((acc, s) => {
@@ -461,6 +465,24 @@ export default function Attendance({
             return acc;
         }, {} as Record<number, any>)
     );
+
+    // Validation: Check if all present/late_excused students have thoman selected
+    const validationErrors = useMemo(() => {
+        const errors: { studentId: number; studentName: string; error: string }[] = [];
+        students.forEach((student) => {
+            const data = attendance[student.id];
+            if ((data.status === "present" || data.status === "late_excused") && !data.thoman_id) {
+                errors.push({
+                    studentId: student.id,
+                    studentName: `${student.first_name} ${student.last_name}`,
+                    error: "يجب اختيار الثمن",
+                });
+            }
+        });
+        return errors;
+    }, [attendance, students]);
+
+    const canSave = hasUnsavedChanges && validationErrors.length === 0;
 
     // Handle direction change for a student
     const handleDirectionChange = (
@@ -492,25 +514,37 @@ export default function Attendance({
                 [field]: value,
             },
         }));
+        setHasUnsavedChanges(true);
+    };
+
+    // Save all attendance records at once
+    const saveAll = () => {
+        if (!canSave) return;
+
+        setIsSaving(true);
+
+        // Collect all attendance data to save
+        const attendanceData = Object.entries(attendance).map(([studentId, data]) => ({
+            student_id: parseInt(studentId),
+            status: data.status,
+            hizb_id: data.hizb_id || null,
+            thoman_id: data.thoman_id || null,
+            reason: data.excusedReason || null,
+        }));
 
         router.post(
-            route("sessions.recordAttendance", session.id),
+            route("sessions.recordAttendanceBulk", session.id),
+            { attendance: attendanceData },
             {
-                student_id: studentId,
-                status:
-                    field === "status" ? value : attendance[studentId].status,
-                hizb_id:
-                    field === "hizb_id" ? value : attendance[studentId].hizb_id,
-                thoman_id:
-                    field === "thoman_id"
-                        ? value
-                        : attendance[studentId].thoman_id,
-                reason:
-                    field === "excusedReason"
-                        ? value
-                        : attendance[studentId].excusedReason,
-            },
-            { preserveScroll: true }
+                preserveScroll: true,
+                onSuccess: () => {
+                    setHasUnsavedChanges(false);
+                    setIsSaving(false);
+                },
+                onError: () => {
+                    setIsSaving(false);
+                },
+            }
         );
     };
 
@@ -545,9 +579,48 @@ export default function Attendance({
             <Head title="تسجيل الحضور" />
 
             <div className="flex flex-col gap-8">
-                <h1 className="text-3xl font-bold text-gray-900">
-                    تسجيل الحضور - الجلسة {session.id}
-                </h1>
+                <div className="flex items-center justify-between">
+                    <h1 className="text-3xl font-bold text-gray-900">
+                        تسجيل الحضور - الجلسة {session.id}
+                    </h1>
+                    <div className="flex items-center gap-3">
+                        {hasUnsavedChanges && (
+                            <span className="text-sm text-amber-600 flex items-center gap-1">
+                                <AlertCircle className="h-4 w-4" />
+                                تغييرات غير محفوظة
+                            </span>
+                        )}
+                        <Button
+                            onClick={saveAll}
+                            disabled={!canSave || isSaving}
+                            className="flex items-center gap-2"
+                        >
+                            {isSaving ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                                <Save className="h-4 w-4" />
+                            )}
+                            حفظ التغييرات
+                        </Button>
+                    </div>
+                </div>
+
+                {/* Validation Errors */}
+                {validationErrors.length > 0 && hasUnsavedChanges && (
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                        <div className="flex items-center gap-2 text-red-700 font-medium mb-2">
+                            <AlertCircle className="h-5 w-5" />
+                            يجب تصحيح الأخطاء التالية قبل الحفظ:
+                        </div>
+                        <ul className="list-disc list-inside text-sm text-red-600 space-y-1">
+                            {validationErrors.map((err) => (
+                                <li key={err.studentId}>
+                                    {err.studentName}: {err.error}
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                )}
 
                 {/* Stats Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -717,20 +790,6 @@ export default function Attendance({
                                                             e.target.value
                                                         )
                                                     }
-                                                    onBlur={() =>
-                                                        router.post(
-                                                            route(
-                                                                "sessions.recordAttendance",
-                                                                session.id
-                                                            ),
-                                                            {
-                                                                student_id: student.id,
-                                                                status,
-                                                                excusedReason: excusedReason,
-                                                            },
-                                                            { preserveScroll: true }
-                                                        )
-                                                    }
                                                 />
                                             )}
 
@@ -761,8 +820,8 @@ export default function Attendance({
                                                                 )
                                                             }
                                                         >
-                                                            <SelectTrigger className="w-full">
-                                                                <SelectValue placeholder="الثمن" />
+                                                            <SelectTrigger className={`w-full ${!thoman_id ? 'border-red-500 ring-1 ring-red-500' : ''}`}>
+                                                                <SelectValue placeholder="الثمن *" />
                                                             </SelectTrigger>
                                                             <SelectContent>
                                                                 <SelectGroup>
@@ -783,6 +842,9 @@ export default function Attendance({
                                                                 </SelectGroup>
                                                             </SelectContent>
                                                         </Select>
+                                                        {!thoman_id && (
+                                                            <span className="text-xs text-red-500">مطلوب</span>
+                                                        )}
                                                     </div>
                                                 </div>
                                             )}
