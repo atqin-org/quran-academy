@@ -31,6 +31,11 @@ class Category extends Model
         return $this->hasMany(Student::class, 'category_id');
     }
 
+    public function groups()
+    {
+        return $this->hasMany(Group::class, 'category_id');
+    }
+
     /**
      * Get category names that have duplicates (same name, different gender).
      */

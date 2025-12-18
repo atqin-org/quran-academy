@@ -59,6 +59,7 @@ import {
     LayoutGrid,
 } from "lucide-react";
 import { useState, useMemo, useEffect } from "react";
+import axios from "axios";
 import { format, addDays, isBefore, isAfter, isSameDay, parse } from "date-fns";
 import { ar } from "date-fns/locale";
 import { DateRange } from "react-day-picker";
@@ -85,6 +86,12 @@ interface SessionPreview {
     existingId?: number;
 }
 
+interface Group {
+    id: number;
+    name: string;
+    students_count: number;
+}
+
 interface Program {
     id: number;
     name: string;
@@ -92,6 +99,7 @@ interface Program {
     subject_id: number;
     club_id: number;
     category_id: number;
+    group_id: number | null;
     days_of_week: { value: string; label: string }[];
     is_active: boolean;
     start_date: string;
@@ -162,12 +170,14 @@ export default function ProgramEdit({
     const [sessionsViewMode, setSessionsViewMode] = useState<"table" | "calendar">("table");
     const [addSessionDialogOpen, setAddSessionDialogOpen] = useState(false);
     const [newSessionDate, setNewSessionDate] = useState<Date | undefined>();
+    const [groups, setGroups] = useState<Group[]>([]);
 
     const { data, setData, post, processing, errors } = useForm({
         name: program.name || "",
         subject_id: program.subject_id?.toString() || "",
         club_id: program.club_id?.toString() || "",
         category_id: program.category_id?.toString() || "",
+        group_id: program.group_id?.toString() || "all",
         days_of_week: [] as { value: string; label: string }[],
         start_date: program.start_date || "",
         end_date: program.end_date || "",
@@ -208,6 +218,32 @@ export default function ProgramEdit({
             generateSessions();
         }
     }, [dateRange, selectedDays, isInitialized]);
+
+    // Fetch groups when club or category changes
+    useEffect(() => {
+        if (data.club_id && data.category_id) {
+            axios
+                .get(route("groups.index"), {
+                    params: {
+                        club_id: data.club_id,
+                        category_id: data.category_id,
+                    },
+                })
+                .then((response) => {
+                    setGroups(response.data.groups || []);
+                    // If current group_id is not in the new groups list, clear it
+                    const groupIds = (response.data.groups || []).map((g: Group) => String(g.id));
+                    if (data.group_id && data.group_id !== "all" && !groupIds.includes(data.group_id)) {
+                        setData("group_id", "all");
+                    }
+                })
+                .catch(() => {
+                    setGroups([]);
+                });
+        } else {
+            setGroups([]);
+        }
+    }, [data.club_id, data.category_id]);
 
     const generateSessions = () => {
         if (!dateRange?.from || !dateRange?.to) return;
@@ -339,6 +375,7 @@ export default function ProgramEdit({
             subject_id: data.subject_id,
             club_id: data.club_id,
             category_id: data.category_id,
+            group_id: data.group_id === "all" ? null : data.group_id,
             days_of_week: daysData,
             start_date: dateRange?.from ? format(dateRange.from, "yyyy-MM-dd") : "",
             end_date: dateRange?.to ? format(dateRange.to, "yyyy-MM-dd") : "",
@@ -470,6 +507,33 @@ export default function ProgramEdit({
                                     </Select>
                                 </div>
                             </div>
+
+                            {/* Group Selection - only show if groups exist */}
+                            {groups.length > 0 && (
+                                <div className="flex flex-col gap-2">
+                                    <Label>الفوج (اختياري)</Label>
+                                    <Select
+                                        value={data.group_id}
+                                        onValueChange={(val) => setData("group_id", val)}
+                                        dir="rtl"
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="جميع الطلاب" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">جميع الطلاب</SelectItem>
+                                            {groups.map((group) => (
+                                                <SelectItem key={group.id} value={String(group.id)}>
+                                                    فوج {group.name} ({group.students_count} طالب)
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <p className="text-sm text-muted-foreground">
+                                        اختر فوجاً محدداً أو اترك الحقل فارغاً لتشمل جميع طلاب الفصل
+                                    </p>
+                                </div>
+                            )}
 
                             <div className="flex justify-end pt-4">
                                 <Button
@@ -790,6 +854,18 @@ export default function ProgramEdit({
                                         </p>
                                     </div>
                                 </div>
+
+                                {/* Group Info */}
+                                {groups.length > 0 && (
+                                    <div className="mt-4">
+                                        <p className="text-sm text-muted-foreground">الفوج</p>
+                                        <p className="font-medium">
+                                            {data.group_id
+                                                ? `فوج ${groups.find((g) => String(g.id) === data.group_id)?.name}`
+                                                : "جميع الطلاب"}
+                                        </p>
+                                    </div>
+                                )}
 
                                 <div className="border-t pt-4">
                                     <div className="grid grid-cols-2 md:grid-cols-3 gap-4">

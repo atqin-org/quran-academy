@@ -2,19 +2,18 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Spatie\Activitylog\Traits\LogsActivity;
-use Spatie\Activitylog\LogOptions;
-use Spatie\Activitylog\Models\Activity;
-use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
 
 class Student extends Model
 {
-    use HasFactory, SoftDeletes, LogsActivity;
+    use HasFactory, LogsActivity, SoftDeletes;
 
     // Define the fillable properties
     protected $fillable = [
@@ -29,6 +28,7 @@ class Student extends Model
         'father_id',
         'mother_id',
         'category_id',
+        'group_id',
         'ahzab',
         'ahzab_up',
         'ahzab_down',
@@ -52,26 +52,36 @@ class Student extends Model
         'last_hizb_descending' => 'integer',
         'sessions_credit' => 'integer',
     ];
+
     // Relationship students has father_id and mother_id are guardians
     public function father()
     {
         return $this->belongsTo(Guardian::class, 'father_id');
     }
+
     public function mother()
     {
         return $this->belongsTo(Guardian::class, 'mother_id');
     }
+
     public function payments()
     {
         return $this->hasMany(Payment::class, 'student_id');
     }
+
     public function club()
     {
         return $this->belongsTo(Club::class, 'club_id');
     }
+
     public function category()
     {
         return $this->belongsTo(Category::class, 'category_id');
+    }
+
+    public function group()
+    {
+        return $this->belongsTo(Group::class, 'group_id');
     }
 
     /**
@@ -86,7 +96,7 @@ class Student extends Model
      * Deduct session credit
      * Only deducts if student doesn't have infinite sessions
      *
-     * @param int $amount Number of credits to deduct (default 1)
+     * @param  int  $amount  Number of credits to deduct (default 1)
      * @return bool Whether deduction was performed
      */
     public function deductCredit(int $amount = 1): bool
@@ -104,7 +114,7 @@ class Student extends Model
     /**
      * Add session credits
      *
-     * @param int $amount Number of credits to add
+     * @param  int  $amount  Number of credits to add
      */
     public function addCredit(int $amount): void
     {
@@ -159,7 +169,7 @@ class Student extends Model
                     $sharedGuardian = 'both';
                 }
             }
-            $sibling->shared_guardian =  $sharedGuardian;
+            $sibling->shared_guardian = $sharedGuardian;
         }
 
         return $siblings;
@@ -196,7 +206,7 @@ class Student extends Model
             $nextOctober31->addYear();
         }
 
-        $student = new Student();
+        $student = new Student;
 
         $student->club_id = $attributes['club'];
         $student->first_name = $attributes['firstName'];
@@ -207,6 +217,7 @@ class Student extends Model
         $student->cronic_disease = $attributes['cronicDisease'];
         $student->family_status = $attributes['familyStatus'];
         $student->category_id = $attributes['category'];
+        $student->group_id = $attributes['group_id'] ?? null;
         $student->subscription = $attributes['subscription'];
         $student->father_id = $attributes['father_id'];
         $student->mother_id = $attributes['mother_id'];
@@ -230,7 +241,7 @@ class Student extends Model
                 'end_at' => $nextOctober31,
                 'user_id' => Auth::id(),
                 'student_id' => $student->id,
-                'status' => "in_time",
+                'status' => 'in_time',
             ]);
             $paymentInsurance->save();
         }
@@ -256,6 +267,7 @@ class Student extends Model
             'cronic_disease' => $attributes['cronicDisease'] ?? null,
             'family_status' => $attributes['familyStatus'] ?? null,
             'category_id' => $attributes['category'],
+            'group_id' => $attributes['group_id'] ?? null,
             'subscription' => $attributes['subscription'],
             'memorization_direction' => $attributes['memorizationDirection'] ?? $this->memorization_direction,
         ]);
@@ -265,7 +277,7 @@ class Student extends Model
 
     private function handleFileAttribute(array &$attributes, string $attributeName, string $storagePath)
     {
-        if (!isset($attributes[$attributeName]) || $attributes[$attributeName] === null) {
+        if (! isset($attributes[$attributeName]) || $attributes[$attributeName] === null) {
             if ($this->$attributeName) {
                 Storage::disk('public')->delete($this->$attributeName);
                 $this->$attributeName = null;
@@ -301,8 +313,9 @@ class Student extends Model
                 'sessions_credit',
                 'club_id',
                 'category_id',
+                'group_id',
                 'father_id',
-                'mother_id'
+                'mother_id',
             ])
             ->logOnlyDirty()
             ->setDescriptionForEvent(function (string $eventName) {
@@ -311,6 +324,7 @@ class Student extends Model
                     'updated' => 'تم تحديث الطالب',
                     'deleted' => 'تم حذف الطالب',
                 ];
+
                 return $events[$eventName] ?? "تم {$eventName} الطالب";
             })
             ->useLogName('student');
@@ -341,7 +355,7 @@ class Student extends Model
         return $this->hasOne(Attendance::class)
             ->where('status', 'present')
             ->whereNotNull('hizb_id')
-            ->latest() ;// يأخذ آخر واحد فقط
+            ->latest(); // يأخذ آخر واحد فقط
     }
 
     public function lastThomanAttendance()
@@ -370,7 +384,7 @@ class Student extends Model
      * Update last hizb for the current direction
      * Called when attendance is recorded
      *
-     * @param int $hizbNumber The hizb number (1-60)
+     * @param  int  $hizbNumber  The hizb number (1-60)
      */
     public function updateLastHizbForCurrentDirection(int $hizbNumber): void
     {
@@ -390,8 +404,6 @@ class Student extends Model
 
     /**
      * Get the last hizb for the current direction
-     *
-     * @return int|null
      */
     public function getLastHizbForCurrentDirection(): ?int
     {

@@ -19,14 +19,14 @@ class ClubController extends Controller
         $usersWithNoClubsCount = $usersWithNoClubs->count();
         $usersWithNoClubsByRole = $usersWithNoClubs->groupBy('role')->map->count()->toArray();
 
-        // Get all categories ordered by ID for consistent ordering
+        // Get all categories ordered by ID for consistent ordering (used for tooltips)
         $allCategories = \App\Models\Category::orderBy('id')->get()->keyBy('id');
 
         $clubs = Club::withTrashed()
             ->with([
                 'users:id,role',
                 'students:id,club_id,category_id',
-                'students.category:id,name,gender'
+                'students.category:id,name,gender',
             ])
             ->withCount(['students', 'users'])
             ->latest()
@@ -75,7 +75,7 @@ class ClubController extends Controller
             });
 
         return Inertia::render('Dashboard/Clubs/Index', [
-            'clubs' => $clubs
+            'clubs' => $clubs,
         ]);
     }
 
@@ -115,7 +115,7 @@ class ClubController extends Controller
         $club->load(['students', 'users']);
 
         return Inertia::render('Dashboard/Clubs/Show', [
-            'club' => $club
+            'club' => $club,
         ]);
     }
 
@@ -127,7 +127,7 @@ class ClubController extends Controller
         $club = Club::withTrashed()->findOrFail($id);
 
         return Inertia::render('Dashboard/Clubs/Edit', [
-            'club' => $club
+            'club' => $club,
         ]);
     }
 

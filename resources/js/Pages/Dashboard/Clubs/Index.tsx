@@ -22,6 +22,7 @@ import {
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuTrigger,
+    DropdownMenuSeparator,
 } from "@/Components/ui/dropdown-menu";
 import {
     Dialog,
@@ -53,6 +54,7 @@ import {
     XCircle,
     Calendar,
     GraduationCap,
+    UsersRound,
 } from "lucide-react";
 import { useState, useMemo, useEffect } from "react";
 import { toast } from "sonner";
@@ -341,6 +343,21 @@ function ClubActions({ club }: { club: Club }) {
                                     إعدادات الحصص
                                 </Link>
                             </DropdownMenuItem>
+
+                            {/* Groups Management Link */}
+                            {!club.deleted_at && (
+                                <DropdownMenuItem asChild>
+                                    <Link
+                                        href={route("groups.clubGroups", { club: club.id })}
+                                        className="flex items-center gap-2 cursor-pointer"
+                                    >
+                                        <UsersRound className="h-4 w-4" />
+                                        إدارة الأفواج
+                                    </Link>
+                                </DropdownMenuItem>
+                            )}
+
+                            <DropdownMenuSeparator />
 
                             {club.deleted_at ? (
                                 <DropdownMenuItem

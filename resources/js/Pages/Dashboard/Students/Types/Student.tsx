@@ -19,6 +19,7 @@ export interface TStudentForm {
     };
     club: string | undefined;
     category: string | undefined;
+    group_id?: string;
     subscription: string | undefined;
     insurance?: boolean;
     picture?: File | string;
@@ -51,6 +52,7 @@ export interface TStudentFormDB {
     file?: string;
     club_id: number;
     category_id: number;
+    group_id?: number;
     memorization_direction?: "ascending" | "descending";
 }
 export interface TSiblings {
