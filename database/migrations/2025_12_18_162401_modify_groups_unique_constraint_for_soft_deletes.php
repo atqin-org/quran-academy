@@ -16,12 +16,20 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('groups', function (Blueprint $table) {
+            // For MySQL: Drop foreign keys first (they depend on the unique index)
+            $table->dropForeign(['club_id']);
+            $table->dropForeign(['category_id']);
+
             // Drop the existing unique constraint
             $table->dropUnique(['club_id', 'category_id', 'name']);
 
             // Add new unique constraint that includes deleted_at
             // This allows reusing names of soft-deleted groups
             $table->unique(['club_id', 'category_id', 'name', 'deleted_at'], 'groups_unique_active_name');
+
+            // Recreate foreign keys
+            $table->foreign('club_id')->references('id')->on('clubs')->onDelete('cascade');
+            $table->foreign('category_id')->references('id')->on('categories')->onDelete('cascade');
         });
     }
 
@@ -31,8 +39,16 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('groups', function (Blueprint $table) {
+            // Drop foreign keys first
+            $table->dropForeign(['club_id']);
+            $table->dropForeign(['category_id']);
+
             $table->dropUnique('groups_unique_active_name');
             $table->unique(['club_id', 'category_id', 'name']);
+
+            // Recreate foreign keys
+            $table->foreign('club_id')->references('id')->on('clubs')->onDelete('cascade');
+            $table->foreign('category_id')->references('id')->on('categories')->onDelete('cascade');
         });
     }
 };
