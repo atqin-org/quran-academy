@@ -1,24 +1,17 @@
-import DashboardLayout from "@/Layouts/DashboardLayout";
-import { PageProps } from "@/types";
-import { Head, useForm as useInertiaForm } from "@inertiajs/react";
-import StudentForm from "./Components/StudentForm";
-import { TStudentForm, TStudentFormDB, TSiblings } from "./Types/Student";
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from "@/Components/ui/card";
 import { Badge } from "@/Components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
 import {
     Table,
     TableBody,
-    TableCaption,
     TableHead,
     TableHeader,
     TableRow,
 } from "@/Components/ui/table";
+import DashboardLayout from "@/Layouts/DashboardLayout";
+import { PageProps } from "@/types";
+import { Head, useForm as useInertiaForm } from "@inertiajs/react";
+import StudentForm from "./Components/StudentForm";
+import { TSiblings, TStudentForm, TStudentFormDB } from "./Types/Student";
 
 interface DashboardProps extends PageProps {
     student: TStudentFormDB;
@@ -35,33 +28,35 @@ export default function Update({
     categories,
 }: DashboardProps) {
     console.log(siblings);
-    const { data, setData, post, processing, errors } =
-        useInertiaForm<TStudentForm & { [key: string]: any }>({
-            firstName: student.first_name,
-            lastName: student.last_name,
-            gender: student.gender,
-            birthdate: student.birthdate,
-            socialStatus: student.social_status,
-            hasCronicDisease: student.cronic_disease ? "yes" : "no",
-            cronicDisease: student.cronic_disease || "",
-            familyStatus: student.family_status || "",
-            father: {
-                name: student.father?.name || "",
-                job: student.father?.job || "",
-                phone: student.father?.phone || "",
-            },
-            mother: {
-                name: student.mother?.name || "",
-                job: student.mother?.job || "",
-                phone: student.mother?.phone || "",
-            },
-            club: student.club_id.toString(),
-            category: student.category_id.toString(),
-            subscription: student.subscription,
-            picture: student.picture || undefined,
-            file: student.file || undefined,
-            memorizationDirection: student.memorization_direction || "descending",
-        });
+    const { data, setData, post, processing, errors } = useInertiaForm<
+        TStudentForm & { [key: string]: any }
+    >({
+        firstName: student.first_name,
+        lastName: student.last_name,
+        gender: student.gender,
+        birthdate: student.birthdate,
+        socialStatus: student.social_status,
+        hasCronicDisease: student.cronic_disease ? "yes" : "no",
+        cronicDisease: student.cronic_disease || "",
+        familyStatus: student.family_status || "",
+        father: {
+            name: student.father?.name || "",
+            job: student.father?.job || "",
+            phone: student.father?.phone || "",
+        },
+        mother: {
+            name: student.mother?.name || "",
+            job: student.mother?.job || "",
+            phone: student.mother?.phone || "",
+        },
+        club: student.club_id.toString(),
+        category: student.category_id.toString(),
+        group_id: student.group_id?.toString(),
+        subscription: student.subscription,
+        picture: student.picture || undefined,
+        file: student.file || undefined,
+        memorizationDirection: student.memorization_direction || "descending",
+    });
 
     const url = window.location.href;
     const from = url.split("/");
@@ -113,7 +108,7 @@ export default function Update({
             <Head title="Update Student" />
 
             <div className="flex flex-col gap-10">
-                <h1 className="text-4xl font-bold text-gray-900">
+                <h1 className="text-2xl font-bold text-gray-900">
                     تحديث بيانات الطالب
                 </h1>
                 <StudentForm

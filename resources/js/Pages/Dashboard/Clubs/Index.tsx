@@ -22,6 +22,7 @@ import {
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuTrigger,
+    DropdownMenuSeparator,
 } from "@/Components/ui/dropdown-menu";
 import {
     Dialog,
@@ -32,6 +33,12 @@ import {
     DialogTitle,
     DialogClose,
 } from "@/Components/ui/dialog";
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from "@/Components/ui/tooltip";
 import {
     MoreHorizontal,
     Pencil,
@@ -46,6 +53,8 @@ import {
     CheckCircle,
     XCircle,
     Calendar,
+    GraduationCap,
+    UsersRound,
 } from "lucide-react";
 import { useState, useMemo, useEffect } from "react";
 import { toast } from "sonner";
@@ -56,10 +65,19 @@ interface Club {
     location: string;
     students_count: number;
     users_count: number;
+    users_by_role?: Record<string, number>;
+    students_by_category?: Record<string, number>;
     deleted_at: string | null;
     created_at: string;
     updated_at: string;
 }
+
+const roleLabels: Record<string, string> = {
+    admin: "مسؤول",
+    moderator: "مشرف",
+    staff: "إداري",
+    teacher: "معلم",
+};
 
 interface DashboardProps extends PageProps {
     clubs: Club[];
@@ -114,7 +132,7 @@ export default function Index({ auth, clubs }: DashboardProps) {
             <div className="flex flex-col gap-6">
                 {/* Header */}
                 <div className="flex items-center justify-between">
-                    <h1 className="text-3xl font-bold text-gray-900">النوادي</h1>
+                    <h1 className="text-2xl font-bold text-gray-900">النوادي</h1>
                     <Link href="/clubs/create">
                         <Button className="gap-2">
                             <Plus className="h-4 w-4" />
@@ -195,14 +213,66 @@ export default function Index({ auth, clubs }: DashboardProps) {
                                                     </div>
                                                 </TableCell>
                                                 <TableCell className="text-center">
-                                                    <Badge variant="secondary">
-                                                        {club.students_count}
-                                                    </Badge>
+                                                    <TooltipProvider>
+                                                        <Tooltip>
+                                                            <TooltipTrigger asChild>
+                                                                <span className="inline-flex cursor-help">
+                                                                    <Badge variant="secondary">
+                                                                        <GraduationCap className="h-3 w-3 ml-1" />
+                                                                        {club.students_count}
+                                                                    </Badge>
+                                                                </span>
+                                                            </TooltipTrigger>
+                                                            <TooltipContent dir="rtl" className="p-3">
+                                                                <div className="space-y-2">
+                                                                    <p className="font-semibold text-sm border-b pb-1">الطلاب حسب الفئة</p>
+                                                                    {club.students_by_category && Object.keys(club.students_by_category).length > 0 ? (
+                                                                        <div className="space-y-1">
+                                                                            {Object.entries(club.students_by_category).map(([category, count]) => (
+                                                                                <div key={category} className="flex justify-between gap-4 text-sm">
+                                                                                    <span className="text-muted-foreground">{category}</span>
+                                                                                    <span className="font-medium">{count}</span>
+                                                                                </div>
+                                                                            ))}
+                                                                        </div>
+                                                                    ) : (
+                                                                        <p className="text-sm text-muted-foreground">لا يوجد طلاب</p>
+                                                                    )}
+                                                                </div>
+                                                            </TooltipContent>
+                                                        </Tooltip>
+                                                    </TooltipProvider>
                                                 </TableCell>
                                                 <TableCell className="text-center">
-                                                    <Badge variant="outline">
-                                                        {club.users_count}
-                                                    </Badge>
+                                                    <TooltipProvider>
+                                                        <Tooltip>
+                                                            <TooltipTrigger asChild>
+                                                                <span className="inline-flex cursor-help">
+                                                                    <Badge variant="outline">
+                                                                        <Users className="h-3 w-3 ml-1" />
+                                                                        {club.users_count}
+                                                                    </Badge>
+                                                                </span>
+                                                            </TooltipTrigger>
+                                                            <TooltipContent dir="rtl" className="p-3">
+                                                                <div className="space-y-2">
+                                                                    <p className="font-semibold text-sm border-b pb-1">الموظفين حسب الدور</p>
+                                                                    {club.users_by_role && Object.keys(club.users_by_role).length > 0 ? (
+                                                                        <div className="space-y-1">
+                                                                            {Object.entries(club.users_by_role).map(([role, count]) => (
+                                                                                <div key={role} className="flex justify-between gap-4 text-sm">
+                                                                                    <span className="text-muted-foreground">{roleLabels[role] || role}</span>
+                                                                                    <span className="font-medium">{count}</span>
+                                                                                </div>
+                                                                            ))}
+                                                                        </div>
+                                                                    ) : (
+                                                                        <p className="text-sm text-muted-foreground">لا يوجد موظفين</p>
+                                                                    )}
+                                                                </div>
+                                                            </TooltipContent>
+                                                        </Tooltip>
+                                                    </TooltipProvider>
                                                 </TableCell>
                                                 <TableCell className="text-center">
                                                     {club.deleted_at ? (
@@ -273,6 +343,21 @@ function ClubActions({ club }: { club: Club }) {
                                     إعدادات الحصص
                                 </Link>
                             </DropdownMenuItem>
+
+                            {/* Groups Management Link */}
+                            {!club.deleted_at && (
+                                <DropdownMenuItem asChild>
+                                    <Link
+                                        href={route("groups.clubGroups", { club: club.id })}
+                                        className="flex items-center gap-2 cursor-pointer"
+                                    >
+                                        <UsersRound className="h-4 w-4" />
+                                        إدارة الأفواج
+                                    </Link>
+                                </DropdownMenuItem>
+                            )}
+
+                            <DropdownMenuSeparator />
 
                             {club.deleted_at ? (
                                 <DropdownMenuItem

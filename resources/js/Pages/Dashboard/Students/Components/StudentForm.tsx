@@ -31,11 +31,17 @@ import { cn } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import axios from "axios";
 import { format, parse } from "date-fns";
-import { CalendarIcon } from "lucide-react";
-import { useState } from "react";
+import { CalendarIcon, Loader2 } from "lucide-react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { TStudentForm } from "../Types/Student";
+
+interface Group {
+    id: number;
+    name: string;
+    students_count: number;
+}
 
 interface StudentFormProps {
     data: TStudentForm;
@@ -70,6 +76,44 @@ const StudentForm = ({
     const [tmpDate, setTmpDate] = useState<string>(
         data.birthdate?.toString() || ""
     );
+    const [groups, setGroups] = useState<Group[]>([]);
+    const [loadingGroups, setLoadingGroups] = useState(false);
+
+    // Fetch groups when club and category are selected
+    useEffect(() => {
+        if (data.club && data.category) {
+            setLoadingGroups(true);
+            axios
+                .get(route("groups.index"), {
+                    params: {
+                        club_id: data.club,
+                        category_id: data.category,
+                    },
+                })
+                .then((response) => {
+                    const fetchedGroups = response.data.groups || [];
+                    setGroups(fetchedGroups);
+                    // Auto-select first group if groups exist and no group selected
+                    if (fetchedGroups.length > 0 && !data.group_id) {
+                        setData("group_id", String(fetchedGroups[0].id));
+                    }
+                    // Clear group_id if no groups exist
+                    if (fetchedGroups.length === 0) {
+                        setData("group_id", undefined);
+                    }
+                })
+                .catch(() => {
+                    setGroups([]);
+                    setData("group_id", undefined);
+                })
+                .finally(() => {
+                    setLoadingGroups(false);
+                });
+        } else {
+            setGroups([]);
+            setData("group_id", undefined);
+        }
+    }, [data.club, data.category]);
 
     const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setTmpDate(e.target.value);
@@ -537,6 +581,45 @@ const StudentForm = ({
                         errors={errors.category}
                     />
                 </div>
+                {/* Group selection - only shows when groups exist */}
+                {groups.length > 0 && (
+                    <div className="w-full">
+                        <Label>الفوج</Label>
+                        <Select
+                            value={data.group_id}
+                            onValueChange={(value) => setData("group_id", value)}
+                            dir="rtl"
+                            disabled={loadingGroups}
+                        >
+                            <SelectTrigger
+                                className={data.group_id ? "" : "text-neutral-500"}
+                            >
+                                {loadingGroups ? (
+                                    <div className="flex items-center gap-2">
+                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                        <span>جاري التحميل...</span>
+                                    </div>
+                                ) : (
+                                    <SelectValue placeholder="اختر الفوج ..." />
+                                )}
+                            </SelectTrigger>
+                            <SelectContent>
+                                {groups.map((group) => (
+                                    <SelectItem
+                                        key={group.id}
+                                        value={String(group.id)}
+                                    >
+                                        فوج {group.name} ({group.students_count} طالب)
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                        <FormErrorMessage
+                            formStateErrors={undefined}
+                            errors={errors.group_id}
+                        />
+                    </div>
+                )}
                 <div className="w-full">
                     <Label className="truncate">الاشتراك الشهري</Label>
                     <Input

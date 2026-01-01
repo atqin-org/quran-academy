@@ -13,7 +13,11 @@ import {
     SelectValue,
 } from "@/Components/ui/select";
 import { cn } from "@/lib/utils";
-import { Category, Club, StatisticsFilters as TStatisticsFilters } from "@/types";
+import {
+    Category,
+    Club,
+    StatisticsFilters as TStatisticsFilters,
+} from "@/types";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
 import { CalendarIcon, Loader2 } from "lucide-react";
@@ -81,7 +85,10 @@ export default function StatisticsFilters({
         });
     };
 
-    const handleDateChange = (type: "start" | "end", date: Date | undefined) => {
+    const handleDateChange = (
+        type: "start" | "end",
+        date: Date | undefined
+    ) => {
         if (type === "start") {
             setStartDate(date);
             if (date && endDate) {
@@ -112,7 +119,11 @@ export default function StatisticsFilters({
             )}
 
             {/* Time Range Filter */}
-            <Select value={filters.range} onValueChange={handleRangeChange}>
+            <Select
+                dir="rtl"
+                value={filters.range}
+                onValueChange={handleRangeChange}
+            >
                 <SelectTrigger className="w-[150px]">
                     <SelectValue placeholder="الفترة الزمنية" />
                 </SelectTrigger>
@@ -149,7 +160,9 @@ export default function StatisticsFilters({
                             <Calendar
                                 mode="single"
                                 selected={startDate}
-                                onSelect={(date) => handleDateChange("start", date)}
+                                onSelect={(date) =>
+                                    handleDateChange("start", date)
+                                }
                                 locale={ar}
                                 initialFocus
                             />
@@ -177,7 +190,9 @@ export default function StatisticsFilters({
                             <Calendar
                                 mode="single"
                                 selected={endDate}
-                                onSelect={(date) => handleDateChange("end", date)}
+                                onSelect={(date) =>
+                                    handleDateChange("end", date)
+                                }
                                 locale={ar}
                                 initialFocus
                             />
@@ -188,6 +203,7 @@ export default function StatisticsFilters({
 
             {/* Club Filter */}
             <Select
+                dir="rtl"
                 value={filters.club_id ? String(filters.club_id) : "all"}
                 onValueChange={handleClubChange}
             >
@@ -206,7 +222,10 @@ export default function StatisticsFilters({
 
             {/* Category Filter */}
             <Select
-                value={filters.category_id ? String(filters.category_id) : "all"}
+                dir="rtl"
+                value={
+                    filters.category_id ? String(filters.category_id) : "all"
+                }
                 onValueChange={handleCategoryChange}
             >
                 <SelectTrigger className="w-[150px]">
@@ -215,8 +234,11 @@ export default function StatisticsFilters({
                 <SelectContent>
                     <SelectItem value="all">جميع الفئات</SelectItem>
                     {categories.map((category) => (
-                        <SelectItem key={category.id} value={String(category.id)}>
-                            {category.name}
+                        <SelectItem
+                            key={category.id}
+                            value={String(category.id)}
+                        >
+                            {category.display_name}
                         </SelectItem>
                     ))}
                 </SelectContent>

@@ -16,6 +16,7 @@ class CreateProgramAction
             'subject_id' => 'required|exists:subjects,id',
             'club_id' => 'required|exists:clubs,id',
             'category_id' => 'required|exists:categories,id',
+            'group_id' => 'nullable|exists:groups,id',
             'section_id' => 'nullable|exists:sections,id',
             'start_date' => 'required|date',
             'end_date' => 'required|date|after_or_equal:start_date',
@@ -25,13 +26,14 @@ class CreateProgramAction
         if ($validator->fails()) {
             throw new ValidationException($validator);
         }
-        
+
         // إنشاء البرنامج
         return Program::create([
             'name' => $data['name'],
             'subject_id' => $data['subject_id'],
             'club_id' => $data['club_id'],
             'category_id' => $data['category_id'],
+            'group_id' => $data['group_id'] ?? null,
             'section_id' => $data['section_id'] ?? null,
             'start_date' => $data['start_date'],
             'end_date' => $data['end_date'],

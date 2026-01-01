@@ -33,10 +33,11 @@ class RecordAttendanceAction
             $attendance = $session->attendances()->updateOrCreate(
                 ['student_id' => $student->id],
                 [
-                    'status'    => $status,
-                    'hizb_id'   => $hizb_id,
+                    'status' => $status,
+                    'hizb_id' => $hizb_id,
                     'thoman_id' => $thoman_id,
-                    'excusedReason'    => $excusedReason,
+                    'excusedReason' => $excusedReason,
+                    'group_id' => $student->group_id,
                 ]
             );
 
@@ -91,14 +92,15 @@ class RecordAttendanceAction
         $wasDeducting = $previousStatus && in_array($previousStatus, self::CREDIT_DEDUCTING_STATUSES);
         $shouldDeduct = in_array($newStatus, self::CREDIT_DEDUCTING_STATUSES);
 
-        if ($shouldDeduct && !$wasDeducting) {
+        if ($shouldDeduct && ! $wasDeducting) {
             // New deducting status - deduct credit
             return $student->deductCredit(1);
-        } elseif (!$shouldDeduct && $wasDeducting) {
+        } elseif (! $shouldDeduct && $wasDeducting) {
             // Changed from deducting to non-deducting - refund credit
             // Only refund if student doesn't have infinite sessions
-            if (!$student->hasInfiniteSessions()) {
+            if (! $student->hasInfiniteSessions()) {
                 $student->addCredit(1);
+
                 return true;
             }
         }

@@ -1,23 +1,5 @@
-import DashboardLayout from "@/Layouts/DashboardLayout";
-import { Head, Link, router } from "@inertiajs/react";
-import {
-    Table,
-    TableHeader,
-    TableRow,
-    TableHead,
-    TableBody,
-    TableCell,
-} from "@/Components/ui/table";
-import { Button } from "@/Components/ui/button";
-import { Input } from "@/Components/ui/input";
 import { Badge } from "@/Components/ui/badge";
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-    DropdownMenuCheckboxItem,
-} from "@/Components/ui/dropdown-menu";
+import { Button } from "@/Components/ui/button";
 import {
     Dialog,
     DialogContent,
@@ -26,18 +8,37 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/Components/ui/dialog";
+import {
+    DropdownMenu,
+    DropdownMenuCheckboxItem,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "@/Components/ui/dropdown-menu";
+import { Input } from "@/Components/ui/input";
 import { Separator } from "@/Components/ui/separator";
 import {
-    Search,
-    MoreHorizontal,
-    Eye,
-    Pencil,
-    Trash2,
-    Calendar,
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/Components/ui/table";
+import DashboardLayout from "@/Layouts/DashboardLayout";
+import { Head, Link, router } from "@inertiajs/react";
+import {
     BookOpen,
+    Calendar,
+    Eye,
+    MoreHorizontal,
+    Pencil,
+    Plus,
+    Search,
+    Trash2,
     Users,
 } from "lucide-react";
-import { useState, useMemo } from "react";
+import { useMemo, useState } from "react";
 
 interface Program {
     id: number;
@@ -63,7 +64,9 @@ export default function Programs({ auth, programs }: ProgramsProps) {
     const [subjectFilter, setSubjectFilter] = useState<string[]>([]);
     const [clubFilter, setClubFilter] = useState<string[]>([]);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-    const [programToDelete, setProgramToDelete] = useState<Program | null>(null);
+    const [programToDelete, setProgramToDelete] = useState<Program | null>(
+        null
+    );
 
     // Get unique subjects and clubs for filters
     const subjects = useMemo(() => {
@@ -87,9 +90,15 @@ export default function Programs({ auth, programs }: ProgramsProps) {
         return programs.data.filter((program) => {
             const matchesSearch =
                 searchQuery === "" ||
-                program.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                program.subject?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                program.club?.name?.toLowerCase().includes(searchQuery.toLowerCase());
+                program.name
+                    ?.toLowerCase()
+                    .includes(searchQuery.toLowerCase()) ||
+                program.subject?.name
+                    ?.toLowerCase()
+                    .includes(searchQuery.toLowerCase()) ||
+                program.club?.name
+                    ?.toLowerCase()
+                    .includes(searchQuery.toLowerCase());
 
             const matchesSubject =
                 subjectFilter.length === 0 ||
@@ -144,14 +153,15 @@ export default function Programs({ auth, programs }: ProgramsProps) {
             <Head title="البرامج" />
             <div className="flex flex-col items-center justify-start h-full">
                 {/* Header */}
-                <div className="flex items-center w-full">
-                    <h1 className="text-4xl font-bold text-gray-900">البرامج</h1>
-                    <div className="flex-1"></div>
-                    <Link
-                        className="text-primary-foreground font-bold text-center bg-primary p-4 rounded-xl select-none"
-                        href={route("programs.create")}
-                    >
-                        سجل برنامج جديد
+                <div className="flex items-center justify-between w-full">
+                    <h1 className="text-2xl font-bold text-gray-900">
+                        البرامج
+                    </h1>
+                    <Link href={route("programs.create")}>
+                        <Button className="gap-2">
+                            <Plus className="h-4 w-4" />
+                            برنامج جديد
+                        </Button>
                     </Link>
                 </div>
 
@@ -179,7 +189,10 @@ export default function Programs({ auth, programs }: ProgramsProps) {
                             <div className="flex items-center gap-2 w-fit rounded-md">
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
-                                        <Button variant="outline" className="flex gap-1">
+                                        <Button
+                                            variant="outline"
+                                            className="flex gap-1"
+                                        >
                                             <BookOpen className="h-4 w-4" />
                                             <span>المادة</span>
                                             <Badge className="px-1.5">
@@ -199,7 +212,9 @@ export default function Programs({ auth, programs }: ProgramsProps) {
                                                 onClick={(e) => {
                                                     e.preventDefault();
                                                     e.stopPropagation();
-                                                    toggleSubjectFilter(subject.id.toString());
+                                                    toggleSubjectFilter(
+                                                        subject.id.toString()
+                                                    );
                                                 }}
                                             >
                                                 {subject.name}
@@ -210,7 +225,10 @@ export default function Programs({ auth, programs }: ProgramsProps) {
 
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
-                                        <Button variant="outline" className="flex gap-1">
+                                        <Button
+                                            variant="outline"
+                                            className="flex gap-1"
+                                        >
                                             <Users className="h-4 w-4" />
                                             <span>النادي</span>
                                             <Badge className="px-1.5">
@@ -224,11 +242,15 @@ export default function Programs({ auth, programs }: ProgramsProps) {
                                                 dir="rtl"
                                                 key={club.id}
                                                 className="capitalize"
-                                                checked={clubFilter.includes(club.id.toString())}
+                                                checked={clubFilter.includes(
+                                                    club.id.toString()
+                                                )}
                                                 onClick={(e) => {
                                                     e.preventDefault();
                                                     e.stopPropagation();
-                                                    toggleClubFilter(club.id.toString());
+                                                    toggleClubFilter(
+                                                        club.id.toString()
+                                                    );
                                                 }}
                                             >
                                                 {club.name}
@@ -245,7 +267,10 @@ export default function Programs({ auth, programs }: ProgramsProps) {
                         <div className="flex items-center gap-2 w-fit rounded-md">
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                    <Button variant="outline" className="flex gap-1">
+                                    <Button
+                                        variant="outline"
+                                        className="flex gap-1"
+                                    >
                                         <BookOpen className="h-4 w-4" />
                                         <span>المادة</span>
                                         <Badge className="px-1.5">
@@ -265,7 +290,9 @@ export default function Programs({ auth, programs }: ProgramsProps) {
                                             onClick={(e) => {
                                                 e.preventDefault();
                                                 e.stopPropagation();
-                                                toggleSubjectFilter(subject.id.toString());
+                                                toggleSubjectFilter(
+                                                    subject.id.toString()
+                                                );
                                             }}
                                         >
                                             {subject.name}
@@ -276,7 +303,10 @@ export default function Programs({ auth, programs }: ProgramsProps) {
 
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                    <Button variant="outline" className="flex gap-1">
+                                    <Button
+                                        variant="outline"
+                                        className="flex gap-1"
+                                    >
                                         <Users className="h-4 w-4" />
                                         <span>النادي</span>
                                         <Badge className="px-1.5">
@@ -290,11 +320,15 @@ export default function Programs({ auth, programs }: ProgramsProps) {
                                             dir="rtl"
                                             key={club.id}
                                             className="capitalize"
-                                            checked={clubFilter.includes(club.id.toString())}
+                                            checked={clubFilter.includes(
+                                                club.id.toString()
+                                            )}
                                             onClick={(e) => {
                                                 e.preventDefault();
                                                 e.stopPropagation();
-                                                toggleClubFilter(club.id.toString());
+                                                toggleClubFilter(
+                                                    club.id.toString()
+                                                );
                                             }}
                                         >
                                             {club.name}
@@ -310,14 +344,30 @@ export default function Programs({ auth, programs }: ProgramsProps) {
                         <Table className="mx-2">
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead className="text-right">#</TableHead>
-                                    <TableHead className="text-right">إسم البرنامج</TableHead>
-                                    <TableHead className="text-right">المادة</TableHead>
-                                    <TableHead className="text-right">النادي</TableHead>
-                                    <TableHead className="text-right">الفئة</TableHead>
-                                    <TableHead className="text-right">تاريخ البداية</TableHead>
-                                    <TableHead className="text-right">تاريخ النهاية</TableHead>
-                                    <TableHead className="text-right">المزيد</TableHead>
+                                    <TableHead className="text-right">
+                                        #
+                                    </TableHead>
+                                    <TableHead className="text-right">
+                                        إسم البرنامج
+                                    </TableHead>
+                                    <TableHead className="text-right">
+                                        المادة
+                                    </TableHead>
+                                    <TableHead className="text-right">
+                                        النادي
+                                    </TableHead>
+                                    <TableHead className="text-right">
+                                        الفئة
+                                    </TableHead>
+                                    <TableHead className="text-right">
+                                        تاريخ البداية
+                                    </TableHead>
+                                    <TableHead className="text-right">
+                                        تاريخ النهاية
+                                    </TableHead>
+                                    <TableHead className="text-right">
+                                        المزيد
+                                    </TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -329,7 +379,10 @@ export default function Programs({ auth, programs }: ProgramsProps) {
                                             </TableCell>
                                             <TableCell className="text-right">
                                                 <Link
-                                                    href={route("programs.show", program.id)}
+                                                    href={route(
+                                                        "programs.show",
+                                                        program.id
+                                                    )}
                                                     className="font-medium hover:underline hover:underline-offset-2"
                                                 >
                                                     {program.name}
@@ -358,7 +411,9 @@ export default function Programs({ auth, programs }: ProgramsProps) {
                                             </TableCell>
                                             <TableCell>
                                                 <DropdownMenu dir="rtl">
-                                                    <DropdownMenuTrigger asChild>
+                                                    <DropdownMenuTrigger
+                                                        asChild
+                                                    >
                                                         <Button
                                                             variant="ghost"
                                                             className="h-8 w-8 p-0"
@@ -379,7 +434,9 @@ export default function Programs({ auth, programs }: ProgramsProps) {
                                                                 )}
                                                             >
                                                                 <Eye className="h-4 w-4" />
-                                                                <span>عرض التفاصيل</span>
+                                                                <span>
+                                                                    عرض التفاصيل
+                                                                </span>
                                                             </Link>
                                                         </DropdownMenuItem>
                                                         <DropdownMenuItem className="p-0 m-0">
@@ -391,14 +448,20 @@ export default function Programs({ auth, programs }: ProgramsProps) {
                                                                 )}
                                                             >
                                                                 <Pencil className="h-4 w-4" />
-                                                                <span>تعديل</span>
+                                                                <span>
+                                                                    تعديل
+                                                                </span>
                                                             </Link>
                                                         </DropdownMenuItem>
                                                         <DropdownMenuItem
                                                             className="p-0 m-0"
                                                             onClick={() => {
-                                                                setProgramToDelete(program);
-                                                                setDeleteDialogOpen(true);
+                                                                setProgramToDelete(
+                                                                    program
+                                                                );
+                                                                setDeleteDialogOpen(
+                                                                    true
+                                                                );
                                                             }}
                                                         >
                                                             <div className="w-full cursor-pointer px-4 py-2 flex items-center gap-2 hover:bg-red-100 rounded-md text-red-600">
@@ -468,10 +531,12 @@ export default function Programs({ auth, programs }: ProgramsProps) {
             <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
                 <DialogContent dir="rtl">
                     <DialogHeader>
-                        <DialogTitle>هل أنت متأكد من حذف هذا البرنامج؟</DialogTitle>
+                        <DialogTitle>
+                            هل أنت متأكد من حذف هذا البرنامج؟
+                        </DialogTitle>
                         <DialogDescription>
-                            سيتم حذف البرنامج "{programToDelete?.name}" وجميع الحصص
-                            المرتبطة به. لا يمكن التراجع عن هذا الإجراء.
+                            سيتم حذف البرنامج "{programToDelete?.name}" وجميع
+                            الحصص المرتبطة به. لا يمكن التراجع عن هذا الإجراء.
                         </DialogDescription>
                     </DialogHeader>
                     <DialogFooter className="gap-2 sm:gap-0">

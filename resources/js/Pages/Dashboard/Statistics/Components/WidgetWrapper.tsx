@@ -4,6 +4,7 @@ import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
+    DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/Components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
@@ -20,6 +21,7 @@ interface Props {
     children: ReactNode;
     onToggleVisibility?: (id: string) => void;
     isLoading?: boolean;
+    menuItems?: ReactNode;
 }
 
 export default function WidgetWrapper({
@@ -29,6 +31,7 @@ export default function WidgetWrapper({
     children,
     onToggleVisibility,
     isLoading,
+    menuItems,
 }: Props) {
     const {
         attributes,
@@ -68,7 +71,7 @@ export default function WidgetWrapper({
                         <GripVertical className="h-4 w-4 text-muted-foreground" />
                     </button>
                     {icon}
-                    <CardTitle className="text-sm font-medium">{title}</CardTitle>
+                    <CardTitle className="text-base font-semibold">{title}</CardTitle>
                 </div>
 
                 <DropdownMenu>
@@ -78,6 +81,12 @@ export default function WidgetWrapper({
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
+                        {menuItems && (
+                            <>
+                                {menuItems}
+                                <DropdownMenuSeparator />
+                            </>
+                        )}
                         <DropdownMenuItem
                             onClick={() => onToggleVisibility?.(widget.id)}
                         >
