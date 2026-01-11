@@ -7,6 +7,10 @@
 
     <title inertia>{{ config('app.name', 'Laravel') }}</title>
 
+    <!-- Favicon (light/dark mode) -->
+    <link rel="icon" type="image/svg+xml" href="/images/athar-logo.svg" media="(prefers-color-scheme: light)">
+    <link rel="icon" type="image/svg+xml" href="/images/athar-logo-dark.svg" media="(prefers-color-scheme: dark)">
+
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link rel="preconnect" href="https://fonts.googleapis.com">

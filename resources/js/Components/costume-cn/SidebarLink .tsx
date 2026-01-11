@@ -13,7 +13,7 @@ interface SidebarLinkProps {
     className?: string;
 }
 
-const SidebarLink: React.FC<SidebarLinkProps> = ({ href, icon, label, isCollapsed, isSelected ,className}) => {
+const SidebarLink: React.FC<SidebarLinkProps> = ({ href, icon, label, isCollapsed, isSelected, className }) => {
     return (
         <Tooltip>
             <TooltipTrigger asChild>

@@ -28,11 +28,33 @@ class ProcessDbBackup implements ShouldQueue
     {
         try {
             $backup_file = $this->performBackup($this->user_id);
-            // notify the user that the backup is completed
-            Log::success("Backup completed for user $this->user_id: $backup_file");
+
+            activity('backup')
+                ->causedBy($this->user_id)
+                ->event('completed')
+                ->withProperties(['filename' => $backup_file])
+                ->log('تم إكمال النسخ الاحتياطي');
+
+            Log::info("Backup completed for user {$this->user_id}: {$backup_file}");
+
         } catch (\Exception $e) {
-            // notify the user that the backup failed
-            Log::error("Backup failed for user $this->user_id: " . $e->getMessage());
+            activity('backup')
+                ->causedBy($this->user_id)
+                ->event('failed')
+                ->withProperties(['error' => $e->getMessage()])
+                ->log('فشل النسخ الاحتياطي');
+
+            Log::error("Backup failed for user {$this->user_id}: " . $e->getMessage());
+
+            throw $e; // Re-throw to mark job as failed
         }
+    }
+
+    /**
+     * Handle a job failure.
+     */
+    public function failed(\Throwable $exception): void
+    {
+        Log::error("Backup job failed completely: " . $exception->getMessage());
     }
 }

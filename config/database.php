@@ -61,7 +61,7 @@ return [
                 PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
             ]) : [],
             'dump' => [
-                'dump_binary_path' => 'C:\laragon\bin\mysql\mysql-8.0.30-winx64\bin', // Use the path from the .env file
+                'dump_binary_path' => env('MYSQL_DUMP_PATH', ''),
             ],
         ],
 

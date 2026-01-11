@@ -8,6 +8,7 @@ export interface TPersonnelForm {
     card?: File | string;
 }
 export interface TPersonnelFormDB {
+    id: number;
     name: string;
     last_name: string;
     email: string;
@@ -17,5 +18,7 @@ export interface TPersonnelFormDB {
         id: number;
         name: string;
     }[];
-    role: number;
+    role: string;
+    deleted_at: string | null;
+    last_activity_at: string | null;
 }

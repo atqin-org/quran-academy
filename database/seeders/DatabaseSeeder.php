@@ -29,9 +29,9 @@ class DatabaseSeeder extends Seeder
             SubjectSeeder::class,
             ClubSeeder::class,
             CategorySeeder::class,
+            AhzabAthmanSeeder::class, // Must run before ProgramSeeder (for attendance hizb/thoman references)
             StudentSeeder::class,
             ProgramSeeder::class,
-            AhzabAthmanSeeder::class,
         ]);
     }
 }

@@ -8,6 +8,9 @@ use Carbon\Carbon;
 
 class GenerateProgramSessionsAction
 {
+    /**
+     * Generate sessions automatically based on days_of_week
+     */
     public function execute(Program $program): void
     {
         $days = $program->days_of_week;
@@ -41,6 +44,29 @@ class GenerateProgramSessionsAction
             if (!in_array($date, $expectedDates) && $session->status !== 'completed') {
                 $session->delete();
             }
+        }
+    }
+
+    /**
+     * Generate sessions from custom session data provided by frontend
+     * Each session includes: date, start_time, end_time
+     */
+    public function executeWithCustomSessions(Program $program, array $customSessions): void
+    {
+        // Delete existing sessions that are not completed
+        ProgramSession::where('program_id', $program->id)
+            ->where('status', '!=', 'completed')
+            ->delete();
+
+        // Create new sessions from custom data
+        foreach ($customSessions as $sessionData) {
+            ProgramSession::create([
+                'program_id'   => $program->id,
+                'session_date' => $sessionData['date'],
+                'start_time'   => $sessionData['start_time'] ?? null,
+                'end_time'     => $sessionData['end_time'] ?? null,
+                'status'       => 'scheduled',
+            ]);
         }
     }
 }

@@ -38,7 +38,14 @@ class Payment extends Model
         return LogOptions::defaults()
             ->logOnly(['type', 'value', 'status', 'discount', 'start_at', 'end_at', 'user_id', 'student_id'])
             ->logOnlyDirty()
-            ->setDescriptionForEvent(fn(string $eventName) => "Payment has been {$eventName}")
+            ->setDescriptionForEvent(function (string $eventName) {
+                $events = [
+                    'created' => 'تم إنشاء الدفعة',
+                    'updated' => 'تم تحديث الدفعة',
+                    'deleted' => 'تم حذف الدفعة',
+                ];
+                return $events[$eventName] ?? "تم {$eventName} الدفعة";
+            })
             ->useLogName('payment');
     }
 

@@ -3,6 +3,8 @@ import { PageProps } from "@/types";
 import { Head, Link } from "@inertiajs/react";
 import { StudentDisplay, columns } from "./Components/Columns";
 import { DataTable } from "./Components/DataTable";
+import { Button } from "@/Components/ui/button";
+import { Plus } from "lucide-react";
 
 interface DashboardProps extends PageProps {
     students: { data: StudentDisplay[]; links: any[] };
@@ -62,14 +64,13 @@ export default function Dashboard({
         <DashboardLayout user={auth.user}>
             <Head title="Students" />
             <div className="flex flex-col items-center justify-start h-full">
-                <div className="flex items-center w-full">
-                    <h1 className="text-4xl font-bold text-gray-900">الطالب</h1>
-                    <div className="flex-1"></div>
-                    <Link
-                        className="text-primary-foreground font-bold text-center bg-primary p-4 rounded-xl select-none"
-                        href="/students/create"
-                    >
-                        سجل طالب جديد
+                <div className="flex items-center justify-between w-full">
+                    <h1 className="text-2xl font-bold text-gray-900">الطالب</h1>
+                    <Link href="/students/create">
+                        <Button className="gap-2">
+                            <Plus className="h-4 w-4" />
+                            طالب جديد
+                        </Button>
                     </Link>
                 </div>
                 <DataTable

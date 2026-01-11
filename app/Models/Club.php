@@ -19,8 +19,27 @@ class Club extends Model
     {
         return $this->hasMany(Student::class, 'club_id');
     }
+
     public function users()
     {
         return $this->belongsToMany(User::class);
+    }
+
+    public function categorySessionConfigs()
+    {
+        return $this->hasMany(ClubCategorySession::class, 'club_id');
+    }
+
+    public function groups()
+    {
+        return $this->hasMany(Group::class, 'club_id');
+    }
+
+    /**
+     * Get sessions per month for a specific category in this club
+     */
+    public function getSessionsPerMonthForCategory(int $categoryId): int
+    {
+        return ClubCategorySession::getSessionsPerMonth($this->id, $categoryId);
     }
 }
