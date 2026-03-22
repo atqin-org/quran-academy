@@ -16,6 +16,7 @@ import { cn } from "@/lib/utils";
 import {
     Category,
     Club,
+    Group,
     StatisticsFilters as TStatisticsFilters,
 } from "@/types";
 import { format } from "date-fns";
@@ -27,6 +28,7 @@ interface Props {
     filters: TStatisticsFilters;
     clubs: Club[];
     categories: Category[];
+    groups: Group[];
     onFilterChange: (filters: TStatisticsFilters) => void;
     isLoading: boolean;
 }
@@ -45,6 +47,7 @@ export default function StatisticsFilters({
     filters,
     clubs,
     categories,
+    groups,
     onFilterChange,
     isLoading,
 }: Props) {
@@ -75,6 +78,7 @@ export default function StatisticsFilters({
         onFilterChange({
             ...filters,
             club_id: value === "all" ? null : Number(value),
+            group_id: null,
         });
     };
 
@@ -82,6 +86,14 @@ export default function StatisticsFilters({
         onFilterChange({
             ...filters,
             category_id: value === "all" ? null : Number(value),
+            group_id: null,
+        });
+    };
+
+    const handleGroupChange = (value: string) => {
+        onFilterChange({
+            ...filters,
+            group_id: value === "all" ? null : Number(value),
         });
     };
 
@@ -243,6 +255,32 @@ export default function StatisticsFilters({
                     ))}
                 </SelectContent>
             </Select>
+
+            {/* Group Filter - only shown when groups exist */}
+            {groups.length > 0 && (
+                <Select
+                    dir="rtl"
+                    value={
+                        filters.group_id ? String(filters.group_id) : "all"
+                    }
+                    onValueChange={handleGroupChange}
+                >
+                    <SelectTrigger className="w-[150px]">
+                        <SelectValue placeholder="الفوج" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">جميع الأفواج</SelectItem>
+                        {groups.map((group) => (
+                            <SelectItem
+                                key={group.id}
+                                value={String(group.id)}
+                            >
+                                {group.name}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+            )}
         </div>
     );
 }

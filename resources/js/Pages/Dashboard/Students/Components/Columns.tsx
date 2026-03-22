@@ -15,7 +15,7 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from "@/Components/ui/dropdown-menu";
-import { Link, useForm } from "@inertiajs/react";
+import { Link, router, useForm } from "@inertiajs/react";
 import { ColumnDef } from "@tanstack/react-table";
 import { Banknote, MoreHorizontal, Trash2, UserPen } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -431,8 +431,25 @@ export const columns: ColumnDef<StudentDisplay>[] = [
         header: () => <div className="text-start">المزيد</div>,
         cell: ({ row }) => {
             const student = row.original;
+            const [dialogOpen, setDialogOpen] = useState(false);
+            const [isDeleting, setIsDeleting] = useState(false);
+
+            const handleDelete = () => {
+                setIsDeleting(true);
+                router.delete(`/students/${student.id}`, {
+                    preserveState: true,
+                    preserveScroll: true,
+                    onSuccess: () => {
+                        setDialogOpen(false);
+                    },
+                    onFinish: () => {
+                        setIsDeleting(false);
+                    },
+                });
+            };
+
             return (
-                <Dialog>
+                <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                     <DropdownMenu dir="rtl">
                         <DropdownMenuTrigger asChild>
                             <Button variant="ghost" className="h-8 w-8 p-0">
@@ -483,16 +500,16 @@ export const columns: ColumnDef<StudentDisplay>[] = [
                                 للطالب
                             </DialogDescription>
                             <DialogFooter>
-                                <Link
-                                    className="px-4 flex items-center gap-2 rounded-md my-0.5 bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                    href={`/students/${student.id}`}
-                                    method="delete"
-                                    preserveState={false}
-                                    as="button"
+                                <button
+                                    className="px-4 flex items-center gap-2 rounded-md my-0.5 bg-destructive text-destructive-foreground hover:bg-destructive/90 py-2 disabled:opacity-50"
+                                    onClick={handleDelete}
+                                    disabled={isDeleting}
                                 >
                                     <Trash2 />
-                                    <span className="w-full">حذف</span>
-                                </Link>
+                                    <span className="w-full">
+                                        {isDeleting ? "جاري الحذف..." : "حذف"}
+                                    </span>
+                                </button>
                             </DialogFooter>
                         </DialogHeader>
                     </DialogContent>

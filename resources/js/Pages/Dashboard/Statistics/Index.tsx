@@ -6,6 +6,7 @@ import {
     StatisticsFilters as TStatisticsFilters,
     Club,
     Category,
+    Group,
     TUser,
 } from "@/types";
 import { useState, useCallback, useMemo } from "react";
@@ -30,6 +31,7 @@ interface Props {
     statistics: Statistics;
     clubs: Club[];
     categories: Category[];
+    groups: Group[];
     filters: TStatisticsFilters;
 }
 
@@ -39,11 +41,13 @@ export default function StatisticsIndex({
     statistics: initialStatistics,
     clubs,
     categories,
+    groups: initialGroups,
     filters: initialFilters,
 }: Props) {
     const [widgets, setWidgets] = useState<Widget[]>(initialLayout);
     const [statistics, setStatistics] = useState<Statistics>(initialStatistics);
     const [filters, setFilters] = useState<TStatisticsFilters>(initialFilters);
+    const [groups, setGroups] = useState<Group[]>(initialGroups);
     const [isLoading, setIsLoading] = useState(false);
 
     // Debounced layout save
@@ -103,9 +107,11 @@ export default function StatisticsIndex({
             if (newFilters.end_date) params.append("end_date", newFilters.end_date);
             if (newFilters.club_id) params.append("club_id", String(newFilters.club_id));
             if (newFilters.category_id) params.append("category_id", String(newFilters.category_id));
+            if (newFilters.group_id) params.append("group_id", String(newFilters.group_id));
 
             const response = await axios.get(`/statistics/data?${params.toString()}`);
-            setStatistics(response.data);
+            setStatistics(response.data.statistics);
+            setGroups(response.data.groups);
         } catch (error) {
             console.error("Failed to fetch statistics:", error);
         } finally {
@@ -172,6 +178,7 @@ export default function StatisticsIndex({
                         filters={filters}
                         clubs={clubs}
                         categories={categories}
+                        groups={groups}
                         onFilterChange={handleFilterChange}
                         isLoading={isLoading}
                     />

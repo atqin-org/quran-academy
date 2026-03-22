@@ -7,7 +7,6 @@ import {
     flexRender,
     getCoreRowModel,
     getFilteredRowModel,
-    getPaginationRowModel,
     useReactTable,
 } from "@tanstack/react-table";
 import {
@@ -28,10 +27,11 @@ import {
 } from "@/Components/ui/table";
 import { Button } from "@/Components/ui/button";
 import { Input } from "@/Components/ui/input";
-import { useForm, router } from "@inertiajs/react";
+import { router } from "@inertiajs/react";
 import { FileSpreadsheet, Search } from "lucide-react";
 import { Separator } from "@/Components/ui/separator";
 import { Badge } from "@/Components/ui/badge";
+import { Skeleton } from "@/Components/ui/skeleton";
 
 interface DataTableProps<TData, TValue> {
     columns: ColumnDef<TData, TValue>[];
@@ -43,6 +43,7 @@ interface DataTableProps<TData, TValue> {
         search: string | null;
         sortBy: string | null;
         sortType: string | null;
+        per_page: string | null;
     };
     dataDependencies: {
         categories: {
@@ -91,6 +92,8 @@ const sortedBy = [
     },
 ];
 
+const perPageOptions = [10, 25, 50, 100];
+
 export function DataTable<TData, TValue>({
     columns,
     data,
@@ -102,11 +105,14 @@ export function DataTable<TData, TValue>({
     const [columnVisibility, setColumnVisibility] =
         React.useState<VisibilityState>({});
     const [rowSelection, setRowSelection] = React.useState({});
+    const [searchTerm, setSearchTerm] = React.useState(
+        searchParams.search ?? ""
+    );
     const [selectedSortBy, setSelectedSortBy] = React.useState(
         searchParams.sortBy ?? sortedBy[0].value
     );
     const [sortTypeIsAsc, setSortTypeIsAsc] = React.useState(
-        searchParams.sortType === "asc" ? true : false
+        searchParams.sortType === "asc"
     );
     const [selectedGender, setSelectedGender] = React.useState<string[]>(
         searchParams.gender ?? []
@@ -117,24 +123,18 @@ export function DataTable<TData, TValue>({
     const [selectedCategory, setSelectedCategory] = React.useState<string[]>(
         searchParams.categories ?? []
     );
-    const {
-        setData,
-        get,
-        data: formData,
-        processing,
-    } = useForm({
-        search: searchParams.search,
-        sortBy: selectedSortBy,
-        sortType: sortTypeIsAsc ? "asc" : "desc",
-        gender: selectedGender,
-        clubs: selectedClub,
-        categories: selectedCategory,
-    });
+    const [selectedPerPage, setSelectedPerPage] = React.useState(
+        searchParams.per_page ? parseInt(searchParams.per_page) : 10
+    );
+    const [isLoading, setIsLoading] = React.useState(false);
+
+    const isInitialMount = React.useRef(true);
+    const debounceTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+
     const table = useReactTable({
         data,
         columns,
         getCoreRowModel: getCoreRowModel(),
-        getPaginationRowModel: getPaginationRowModel(),
         getSortedRowModel: getSortedRowModel(),
         onColumnFiltersChange: setColumnFilters,
         getFilteredRowModel: getFilteredRowModel(),
@@ -147,41 +147,65 @@ export function DataTable<TData, TValue>({
         },
     });
 
+    const buildRequestData = React.useCallback(() => ({
+        search: searchTerm || undefined,
+        sortBy: selectedSortBy,
+        sortType: sortTypeIsAsc ? "asc" : "desc",
+        gender: selectedGender.length > 0 ? selectedGender : undefined,
+        clubs: selectedClub.length > 0 ? selectedClub : undefined,
+        categories: selectedCategory.length > 0 ? selectedCategory : undefined,
+        per_page: selectedPerPage !== 10 ? selectedPerPage : undefined,
+    }), [searchTerm, selectedSortBy, sortTypeIsAsc, selectedGender, selectedClub, selectedCategory, selectedPerPage]);
+
+    const fireRequest = React.useCallback(() => {
+        setIsLoading(true);
+        router.get(route("students.index"), buildRequestData(), {
+            preserveState: true,
+            preserveScroll: true,
+            onFinish: () => setIsLoading(false),
+        });
+    }, [buildRequestData]);
+
+    // Auto-apply filters (sort, gender, category, club, per_page) with debounce
+    React.useEffect(() => {
+        if (isInitialMount.current) {
+            isInitialMount.current = false;
+            return;
+        }
+        if (debounceTimer.current) {
+            clearTimeout(debounceTimer.current);
+        }
+        debounceTimer.current = setTimeout(() => {
+            fireRequest();
+        }, 300);
+        return () => {
+            if (debounceTimer.current) {
+                clearTimeout(debounceTimer.current);
+            }
+        };
+    }, [selectedSortBy, sortTypeIsAsc, selectedGender, selectedClub, selectedCategory, selectedPerPage]);
+
     const handleSearchTermChange = (
         event: React.ChangeEvent<HTMLInputElement>
     ) => {
-        const searchValue = event.target.value;
-        setData("search", searchValue);
+        setSearchTerm(event.target.value);
     };
     const handleSearchRequest = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        get(route("students.index"), {
-            preserveState: true,
-            preserveScroll: true,
-        });
+        fireRequest();
     };
     const handleSortByChange = (value: string) => {
         setSelectedSortBy(value);
-        setData("sortBy", value);
-        //handleSearchRequest((new Event('submit') as unknown) as React.FormEvent<HTMLFormElement>);
     };
     const handleSortTypeChange = (value: boolean) => {
         setSortTypeIsAsc(value);
-        setData("sortType", value ? "asc" : "desc");
-        //handleSearchRequest(new Event('submit') as unknown as React.FormEvent<HTMLFormElement>);
     };
     const handleGenderChange = (gender: string) => {
-        const updatedSelectedGender = (prevSelected: string[]) =>
-            prevSelected.includes(gender)
-                ? prevSelected.filter((item) => item !== gender)
-                : [...prevSelected, gender];
-
-        setSelectedGender((prevSelected) => {
-            const newSelectedGender = updatedSelectedGender(prevSelected);
-            setData("gender", newSelectedGender);
-            return newSelectedGender;
-        });
-        //handleSearchRequest((new Event('submit') as unknown) as React.FormEvent<HTMLFormElement>);
+        setSelectedGender((prev) =>
+            prev.includes(gender)
+                ? prev.filter((item) => item !== gender)
+                : [...prev, gender]
+        );
     };
     const genderTotals: { [key: string]: number } =
         dataDependencies.genders.reduce(
@@ -192,42 +216,31 @@ export function DataTable<TData, TValue>({
             {}
         );
     const handleCategoryChange = (categoryId: string) => {
-        const updatedSelectedCategory = (prevSelected: string[]) =>
-            prevSelected.includes(categoryId)
-                ? prevSelected.filter((item) => item !== categoryId)
-                : [...prevSelected, categoryId];
-
-        setSelectedCategory((prevSelected) => {
-            const newSelectedCategory = updatedSelectedCategory(prevSelected);
-            setData("categories", newSelectedCategory);
-            return newSelectedCategory;
-        });
-        //handleSearchRequest((new Event('submit') as unknown) as React.FormEvent<HTMLFormElement>);
+        setSelectedCategory((prev) =>
+            prev.includes(categoryId)
+                ? prev.filter((item) => item !== categoryId)
+                : [...prev, categoryId]
+        );
     };
     const handleClubChange = (clubId: string) => {
-        const updatedSelectedClub = (prevSelected: string[]) =>
-            prevSelected.includes(clubId)
-                ? prevSelected.filter((item) => item !== clubId)
-                : [...prevSelected, clubId];
-
-        setSelectedClub((prevSelected) => {
-            const newSelectedClub = updatedSelectedClub(prevSelected);
-            setData("clubs", newSelectedClub);
-            return newSelectedClub;
-        });
-        //handleSearchRequest((new Event('submit') as unknown) as React.FormEvent<HTMLFormElement>);
+        setSelectedClub((prev) =>
+            prev.includes(clubId)
+                ? prev.filter((item) => item !== clubId)
+                : [...prev, clubId]
+        );
+    };
+    const handlePerPageChange = (value: string) => {
+        setSelectedPerPage(parseInt(value));
     };
     const handleExport = () => {
-        // amit the _blank target to open the link in a new tab
-        console.log(formData);
         window.open(
             route("students.export", {
-                search: formData.search,
-                sortBy: formData.sortBy,
-                sortType: formData.sortType,
-                categories: formData.categories,
-                clubs: formData.clubs,
-                gender: formData.gender
+                search: searchTerm || undefined,
+                sortBy: selectedSortBy,
+                sortType: sortTypeIsAsc ? "asc" : "desc",
+                categories: selectedCategory.length > 0 ? selectedCategory : undefined,
+                clubs: selectedClub.length > 0 ? selectedClub : undefined,
+                gender: selectedGender.length > 0 ? selectedGender : undefined,
             }),
             "_new"
         );
@@ -242,11 +255,11 @@ export function DataTable<TData, TValue>({
                 >
                     <Input
                         placeholder="ابحث عن طالب.."
-                        value={formData.search || ""}
+                        value={searchTerm}
                         onChange={handleSearchTermChange}
                         className=""
                     />
-                    <Button disabled={processing} type="submit">
+                    <Button type="submit">
                         <Search />
                     </Button>
                 </form>
@@ -263,7 +276,7 @@ export function DataTable<TData, TValue>({
                                     {
                                         sortedBy.find(
                                             (sort) =>
-                                                sort.value === formData.sortBy
+                                                sort.value === selectedSortBy
                                         )?.label
                                     }
                                 </Button>
@@ -271,7 +284,7 @@ export function DataTable<TData, TValue>({
                             <DropdownMenuContent align="end">
                                 <DropdownMenuRadioGroup
                                     dir="rtl"
-                                    value={formData.sortBy}
+                                    value={selectedSortBy}
                                     onValueChange={handleSortByChange}
                                 >
                                     {sortedBy.map((sort) => (
@@ -290,7 +303,7 @@ export function DataTable<TData, TValue>({
                             variant="outline"
                             onClick={() => handleSortTypeChange(!sortTypeIsAsc)}
                         >
-                            {formData.sortType === "asc"
+                            {sortTypeIsAsc
                                 ? "تصاعديا"
                                 : "تنازليا"}
                         </Button>
@@ -308,7 +321,7 @@ export function DataTable<TData, TValue>({
                                 >
                                     <span>الجنس</span>
                                     <Badge className="px-1.5">
-                                        {formData.gender.length}
+                                        {selectedGender.length}
                                     </Badge>
                                 </Button>
                             </DropdownMenuTrigger>
@@ -316,7 +329,7 @@ export function DataTable<TData, TValue>({
                                 <DropdownMenuCheckboxItem
                                     dir="rtl"
                                     className="capitalize"
-                                    checked={formData.gender.includes("male")}
+                                    checked={selectedGender.includes("male")}
                                     onClick={(e) => {
                                         e.preventDefault();
                                         e.stopPropagation();
@@ -328,7 +341,7 @@ export function DataTable<TData, TValue>({
                                 <DropdownMenuCheckboxItem
                                     dir="rtl"
                                     className="capitalize"
-                                    checked={formData.gender.includes("female")}
+                                    checked={selectedGender.includes("female")}
                                     onClick={(e) => {
                                         e.preventDefault();
                                         e.stopPropagation();
@@ -347,7 +360,7 @@ export function DataTable<TData, TValue>({
                                 >
                                     <span>الفئة</span>
                                     <Badge className="px-1.5">
-                                        {formData.categories.length}
+                                        {selectedCategory.length}
                                     </Badge>
                                 </Button>
                             </DropdownMenuTrigger>
@@ -357,7 +370,7 @@ export function DataTable<TData, TValue>({
                                         dir="rtl"
                                         key={category.id}
                                         className="capitalize"
-                                        checked={formData.categories.includes(
+                                        checked={selectedCategory.includes(
                                             category.id.toString()
                                         )}
                                         onClick={(e) => {
@@ -399,7 +412,7 @@ export function DataTable<TData, TValue>({
                                 >
                                     <span>النادي</span>
                                     <Badge className="px-1.5">
-                                        {formData.clubs.length}
+                                        {selectedClub.length}
                                     </Badge>
                                 </Button>
                             </DropdownMenuTrigger>
@@ -409,7 +422,7 @@ export function DataTable<TData, TValue>({
                                         dir="rtl"
                                         key={club.id}
                                         className="capitalize"
-                                        checked={formData.clubs.includes(
+                                        checked={selectedClub.includes(
                                             club.id.toString()
                                         )}
                                         onClick={(e) => {
@@ -486,7 +499,7 @@ export function DataTable<TData, TValue>({
                             <Button variant="outline">
                                 {
                                     sortedBy.find(
-                                        (sort) => sort.value === formData.sortBy
+                                        (sort) => sort.value === selectedSortBy
                                     )?.label
                                 }
                             </Button>
@@ -494,7 +507,7 @@ export function DataTable<TData, TValue>({
                         <DropdownMenuContent align="end">
                             <DropdownMenuRadioGroup
                                 dir="rtl"
-                                value={formData.sortBy}
+                                value={selectedSortBy}
                                 onValueChange={handleSortByChange}
                             >
                                 {sortedBy.map((sort) => (
@@ -513,7 +526,7 @@ export function DataTable<TData, TValue>({
                         variant="outline"
                         onClick={() => handleSortTypeChange(!sortTypeIsAsc)}
                     >
-                        {formData.sortType === "asc" ? "تصاعديا" : "تنازليا"}
+                        {sortTypeIsAsc ? "تصاعديا" : "تنازليا"}
                     </Button>
                 </div>
                 <Separator
@@ -526,7 +539,7 @@ export function DataTable<TData, TValue>({
                             <Button variant="outline" className="flex gap-1">
                                 <span>الجنس</span>
                                 <Badge className="px-1.5">
-                                    {formData.gender.length}
+                                    {selectedGender.length}
                                 </Badge>
                             </Button>
                         </DropdownMenuTrigger>
@@ -534,7 +547,7 @@ export function DataTable<TData, TValue>({
                             <DropdownMenuCheckboxItem
                                 dir="rtl"
                                 className="capitalize"
-                                checked={formData.gender.includes("male")}
+                                checked={selectedGender.includes("male")}
                                 onClick={(e) => {
                                     e.preventDefault();
                                     e.stopPropagation();
@@ -546,7 +559,7 @@ export function DataTable<TData, TValue>({
                             <DropdownMenuCheckboxItem
                                 dir="rtl"
                                 className="capitalize"
-                                checked={formData.gender.includes("female")}
+                                checked={selectedGender.includes("female")}
                                 onClick={(e) => {
                                     e.preventDefault();
                                     e.stopPropagation();
@@ -562,7 +575,7 @@ export function DataTable<TData, TValue>({
                             <Button variant="outline" className="flex gap-1">
                                 <span>الفئة</span>
                                 <Badge className="px-1.5">
-                                    {formData.categories.length}
+                                    {selectedCategory.length}
                                 </Badge>
                             </Button>
                         </DropdownMenuTrigger>
@@ -572,7 +585,7 @@ export function DataTable<TData, TValue>({
                                     dir="rtl"
                                     key={category.id}
                                     className="capitalize"
-                                    checked={formData.categories.includes(
+                                    checked={selectedCategory.includes(
                                         category.id.toString()
                                     )}
                                     onClick={(e) => {
@@ -611,7 +624,7 @@ export function DataTable<TData, TValue>({
                             <Button variant="outline" className="flex gap-1">
                                 <span>النادي</span>
                                 <Badge className="px-1.5">
-                                    {formData.clubs.length}
+                                    {selectedClub.length}
                                 </Badge>
                             </Button>
                         </DropdownMenuTrigger>
@@ -621,7 +634,7 @@ export function DataTable<TData, TValue>({
                                     dir="rtl"
                                     key={club.id}
                                     className="capitalize"
-                                    checked={formData.clubs.includes(
+                                    checked={selectedClub.includes(
                                         club.id.toString()
                                     )}
                                     onClick={(e) => {
@@ -675,7 +688,17 @@ export function DataTable<TData, TValue>({
                         ))}
                     </TableHeader>
                     <TableBody>
-                        {table.getRowModel().rows?.length ? (
+                        {isLoading ? (
+                            Array.from({ length: selectedPerPage > 10 ? 10 : selectedPerPage }).map((_, i) => (
+                                <TableRow key={`skeleton-${i}`}>
+                                    {columns.map((_, colIdx) => (
+                                        <TableCell key={colIdx} className="p-3">
+                                            <Skeleton className="h-5 w-full" />
+                                        </TableCell>
+                                    ))}
+                                </TableRow>
+                            ))
+                        ) : table.getRowModel().rows?.length ? (
                             table.getRowModel().rows.map((row) => (
                                 <TableRow
                                     key={row.id}
@@ -712,3 +735,5 @@ export function DataTable<TData, TValue>({
         </div>
     );
 }
+
+export { perPageOptions };
