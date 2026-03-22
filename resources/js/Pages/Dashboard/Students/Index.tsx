@@ -1,10 +1,17 @@
 import DashboardLayout from "@/Layouts/DashboardLayout";
 import { PageProps } from "@/types";
-import { Head, Link } from "@inertiajs/react";
+import { Head, Link, router } from "@inertiajs/react";
 import { StudentDisplay, columns } from "./Components/Columns";
-import { DataTable } from "./Components/DataTable";
+import { DataTable, perPageOptions } from "./Components/DataTable";
 import { Button } from "@/Components/ui/button";
 import { Plus } from "lucide-react";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuRadioGroup,
+    DropdownMenuRadioItem,
+    DropdownMenuTrigger,
+} from "@/Components/ui/dropdown-menu";
 
 interface DashboardProps extends PageProps {
     students: { data: StudentDisplay[]; links: any[] };
@@ -24,8 +31,6 @@ export default function Dashboard({
     students,
     dataDependencies,
 }: DashboardProps) {
-    //onload check &search= query param
-    // Extract search query parameter
     const urlParams = new URLSearchParams(location.search);
 
     const searchQuery = urlParams.get("search");
@@ -42,6 +47,9 @@ export default function Dashboard({
         return result;
     };
 
+    const perPageQuery = urlParams.get("per_page");
+    const currentPerPage = perPageQuery ? parseInt(perPageQuery) : 10;
+
     const searchParams = {
         categories: getArrayFromParams("categories"),
         clubs: getArrayFromParams("clubs"),
@@ -49,9 +57,25 @@ export default function Dashboard({
         search: searchQuery,
         sortBy: sortByQuery,
         sortType: sortTypeQuery,
+        per_page: perPageQuery,
     };
 
-    // Filter students based on search query
+    const handlePerPageChange = (value: string) => {
+        const params = new URLSearchParams(location.search);
+        if (value === "10") {
+            params.delete("per_page");
+        } else {
+            params.set("per_page", value);
+        }
+        // Reset to page 1 when changing per_page
+        params.delete("page");
+        router.get(
+            `${route("students.index")}?${params.toString()}`,
+            {},
+            { preserveState: true, preserveScroll: true }
+        );
+    };
+
     const translatedLinks = students.links.map((link, index) => {
         if (index === 0) {
             link.label = "&laquo;السابق";
@@ -74,45 +98,74 @@ export default function Dashboard({
                     </Link>
                 </div>
                 <DataTable
+                    key={location.search}
                     columns={columns}
                     data={students.data}
                     searchParams={searchParams}
                     dataDependencies={dataDependencies}
                 />
-                <div className="mt-4 mb-1 flex">
-                    {translatedLinks.map((link) =>
-                        link.url ? (
-                            <Link
-                                preserveState
-                                key={link.label}
-                                href={link.url}
-                                dangerouslySetInnerHTML={{
-                                    __html: link.label,
-                                }}
-                                className={`p-1.5 md:px-2.5 mx-1 rounded-lg select-none ${
-                                    link.active
-                                        ? "text-primary-foreground text-base font-bold bg-primary"
-                                        : "text-neutral-600 hover:text-neutral-950 hover:ring-2 ring-primary"
-                                } ${
-                                    !isNaN(link.label) || link.label === "..."
-                                        ? "lg:inline-block hidden"
-                                        : ""
-                                }`}
-                            />
-                        ) : (
-                            <span
-                                key={link.label}
-                                dangerouslySetInnerHTML={{
-                                    __html: link.label,
-                                }}
-                                className={`p-1.5 mx-1 rounded-lg select-none text-neutral-400 ${
-                                    !isNaN(link.label) || link.label === "..."
-                                        ? "lg:inline-block hidden"
-                                        : ""
-                                }`}
-                            />
-                        )
-                    )}
+                <div className="mt-4 mb-1 flex items-center gap-4">
+                    <div className="flex items-center gap-1.5">
+                        <span className="text-sm text-muted-foreground">عرض</span>
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="outline" size="sm" className="h-8 px-2.5">
+                                    {currentPerPage}
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="center">
+                                <DropdownMenuRadioGroup
+                                    dir="rtl"
+                                    value={String(currentPerPage)}
+                                    onValueChange={handlePerPageChange}
+                                >
+                                    {perPageOptions.map((option) => (
+                                        <DropdownMenuRadioItem
+                                            key={option}
+                                            value={String(option)}
+                                        >
+                                            {option}
+                                        </DropdownMenuRadioItem>
+                                    ))}
+                                </DropdownMenuRadioGroup>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    </div>
+                    <div className="flex">
+                        {translatedLinks.map((link) =>
+                            link.url ? (
+                                <Link
+                                    preserveState
+                                    key={link.label}
+                                    href={link.url}
+                                    dangerouslySetInnerHTML={{
+                                        __html: link.label,
+                                    }}
+                                    className={`p-1.5 md:px-2.5 mx-1 rounded-lg select-none ${
+                                        link.active
+                                            ? "text-primary-foreground text-base font-bold bg-primary"
+                                            : "text-neutral-600 hover:text-neutral-950 hover:ring-2 ring-primary"
+                                    } ${
+                                        !isNaN(link.label) || link.label === "..."
+                                            ? "lg:inline-block hidden"
+                                            : ""
+                                    }`}
+                                />
+                            ) : (
+                                <span
+                                    key={link.label}
+                                    dangerouslySetInnerHTML={{
+                                        __html: link.label,
+                                    }}
+                                    className={`p-1.5 mx-1 rounded-lg select-none text-neutral-400 ${
+                                        !isNaN(link.label) || link.label === "..."
+                                            ? "lg:inline-block hidden"
+                                            : ""
+                                    }`}
+                                />
+                            )
+                        )}
+                    </div>
                 </div>
             </div>
         </DashboardLayout>

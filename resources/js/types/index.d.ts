@@ -215,6 +215,12 @@ export interface StatisticsFilters {
     end_date: string | null;
     club_id: number | null;
     category_id: number | null;
+    group_id: number | null;
+}
+
+export interface Group {
+    id: number;
+    name: string;
 }
 
 export interface Club {

@@ -70,7 +70,8 @@ class StudentResourceController extends Controller
             'lastHizbAttendance.hizb',
             'lastThomanAttendance.thoman',
         ]);
-        $students = $query->paginate(10, ['id', 'first_name', 'last_name', 'birthdate', 'ahzab', 'ahzab_up', 'ahzab_down', 'gender', 'insurance_expire_at', 'subscription', 'subscription_expire_at', 'sessions_credit', 'club_id', 'category_id'])->withQueryString();
+        $perPage = in_array((int) $request->input('per_page'), [10, 25, 50, 100]) ? (int) $request->input('per_page') : 10;
+        $students = $query->paginate($perPage, ['id', 'first_name', 'last_name', 'birthdate', 'ahzab', 'ahzab_up', 'ahzab_down', 'gender', 'insurance_expire_at', 'subscription', 'subscription_expire_at', 'sessions_credit', 'club_id', 'category_id'])->withQueryString();
 
         $students->getCollection()->transform(function ($student) {
             $student->name = $student->first_name.' '.$student->last_name;
@@ -562,7 +563,7 @@ class StudentResourceController extends Controller
 
         $student->delete();
 
-        return redirect()->route('students.index')->with('success', 'تم حذف الطالب بنجاح');
+        return redirect()->back()->with('success', 'تم حذف الطالب بنجاح');
     }
 
     /**

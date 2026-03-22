@@ -6,6 +6,7 @@ use App\Models\Attendance;
 use App\Models\Category;
 use App\Models\Club;
 use App\Models\DashboardLayout;
+use App\Models\Group;
 use App\Models\Payment;
 use App\Models\Student;
 use App\Models\User;
@@ -36,28 +37,34 @@ class StatisticsController extends Controller
         $endDate = $request->input('end_date');
         $clubId = $request->input('club_id');
         $categoryId = $request->input('category_id');
+        $groupId = $request->input('group_id');
 
         // Calculate date range
         $dateRange = $this->calculateDateRange($range, $startDate, $endDate);
 
         // Gather all statistics
-        $statistics = $this->gatherStatistics($dateRange, $clubId, $categoryId);
+        $statistics = $this->gatherStatistics($dateRange, $clubId, $categoryId, $groupId);
 
         // Get clubs for filter
         $clubs = Club::select('id', 'name')->get();
         $categories = Category::select('id', 'name', 'gender')->get();
+
+        // Get groups based on selected club/category
+        $groups = $this->getFilteredGroups($clubId, $categoryId);
 
         return Inertia::render('Dashboard/Statistics/Index', [
             'layout' => $layout->widgets,
             'statistics' => $statistics,
             'clubs' => $clubs,
             'categories' => $categories,
+            'groups' => $groups,
             'filters' => [
                 'range' => $range,
                 'start_date' => $startDate,
                 'end_date' => $endDate,
                 'club_id' => $clubId,
                 'category_id' => $categoryId,
+                'group_id' => $groupId,
             ],
         ]);
     }
@@ -72,11 +79,17 @@ class StatisticsController extends Controller
         $endDate = $request->input('end_date');
         $clubId = $request->input('club_id');
         $categoryId = $request->input('category_id');
+        $groupId = $request->input('group_id');
 
         $dateRange = $this->calculateDateRange($range, $startDate, $endDate);
-        $statistics = $this->gatherStatistics($dateRange, $clubId, $categoryId);
+        $statistics = $this->gatherStatistics($dateRange, $clubId, $categoryId, $groupId);
 
-        return response()->json($statistics);
+        $groups = $this->getFilteredGroups($clubId, $categoryId);
+
+        return response()->json([
+            'statistics' => $statistics,
+            'groups' => $groups,
+        ]);
     }
 
     /**
@@ -157,21 +170,40 @@ class StatisticsController extends Controller
     /**
      * Gather all statistics.
      */
-    private function gatherStatistics(array $dateRange, ?int $clubId, ?int $categoryId = null): array
+    private function gatherStatistics(array $dateRange, ?int $clubId, ?int $categoryId = null, ?int $groupId = null): array
     {
         return [
-            'financial' => $this->getFinancialStats($dateRange, $clubId, $categoryId),
-            'attendance' => $this->getAttendanceStats($dateRange, $clubId, $categoryId),
-            'students' => $this->getStudentStats($dateRange, $clubId, $categoryId),
+            'financial' => $this->getFinancialStats($dateRange, $clubId, $categoryId, $groupId),
+            'attendance' => $this->getAttendanceStats($dateRange, $clubId, $categoryId, $groupId),
+            'students' => $this->getStudentStats($dateRange, $clubId, $categoryId, $groupId),
             'personnel' => $this->getPersonnelStats($clubId),
-            'progress' => $this->getProgressStats($dateRange, $clubId, $categoryId),
+            'progress' => $this->getProgressStats($dateRange, $clubId, $categoryId, $groupId),
         ];
+    }
+
+    /**
+     * Get groups filtered by club and/or category.
+     */
+    private function getFilteredGroups(?int $clubId, ?int $categoryId): array
+    {
+        if (! $clubId && ! $categoryId) {
+            return [];
+        }
+
+        return Group::query()
+            ->when($clubId, fn ($q) => $q->where('club_id', $clubId))
+            ->when($categoryId, fn ($q) => $q->where('category_id', $categoryId))
+            ->where('is_active', true)
+            ->select('id', 'name')
+            ->orderBy('order')
+            ->get()
+            ->toArray();
     }
 
     /**
      * Get financial statistics.
      */
-    private function getFinancialStats(array $dateRange, ?int $clubId, ?int $categoryId = null): array
+    private function getFinancialStats(array $dateRange, ?int $clubId, ?int $categoryId = null, ?int $groupId = null): array
     {
         $query = Payment::query();
 
@@ -188,6 +220,12 @@ class StatisticsController extends Controller
         if ($categoryId) {
             $query->whereHas('student', function ($q) use ($categoryId) {
                 $q->where('category_id', $categoryId);
+            });
+        }
+
+        if ($groupId) {
+            $query->whereHas('student', function ($q) use ($groupId) {
+                $q->where('group_id', $groupId);
             });
         }
 
@@ -222,6 +260,9 @@ class StatisticsController extends Controller
             ->when($categoryId, function ($q) use ($categoryId) {
                 $q->where('students.category_id', $categoryId);
             })
+            ->when($groupId, function ($q) use ($groupId) {
+                $q->where('students.group_id', $groupId);
+            })
             ->select('clubs.name as club_name', 'clubs.id as club_id', DB::raw('SUM(payments.value) as total'))
             ->groupBy('clubs.id', 'clubs.name')
             ->get();
@@ -236,6 +277,9 @@ class StatisticsController extends Controller
                 })
                 ->when($categoryId, function ($q) use ($categoryId) {
                     $q->whereHas('student', fn ($sq) => $sq->where('category_id', $categoryId));
+                })
+                ->when($groupId, function ($q) use ($groupId) {
+                    $q->whereHas('student', fn ($sq) => $sq->where('group_id', $groupId));
                 })
                 ->where('created_at', '>=', Carbon::now()->subMonths(12))
                 ->select(
@@ -262,6 +306,9 @@ class StatisticsController extends Controller
                 })
                 ->when($categoryId, function ($q) use ($categoryId) {
                     $q->whereHas('student', fn ($sq) => $sq->where('category_id', $categoryId));
+                })
+                ->when($groupId, function ($q) use ($groupId) {
+                    $q->whereHas('student', fn ($sq) => $sq->where('group_id', $groupId));
                 })
                 ->where('created_at', '>=', Carbon::now()->subMonths(12))
                 ->select(
@@ -300,7 +347,7 @@ class StatisticsController extends Controller
     /**
      * Get attendance statistics.
      */
-    private function getAttendanceStats(array $dateRange, ?int $clubId, ?int $categoryId = null): array
+    private function getAttendanceStats(array $dateRange, ?int $clubId, ?int $categoryId = null, ?int $groupId = null): array
     {
         $query = Attendance::query();
 
@@ -317,6 +364,12 @@ class StatisticsController extends Controller
         if ($categoryId) {
             $query->whereHas('student', function ($q) use ($categoryId) {
                 $q->where('category_id', $categoryId);
+            });
+        }
+
+        if ($groupId) {
+            $query->whereHas('student', function ($q) use ($groupId) {
+                $q->where('group_id', $groupId);
             });
         }
 
@@ -347,6 +400,9 @@ class StatisticsController extends Controller
             })
             ->when($categoryId, function ($q) use ($categoryId) {
                 $q->where('students.category_id', $categoryId);
+            })
+            ->when($groupId, function ($q) use ($groupId) {
+                $q->where('students.group_id', $groupId);
             })
             ->select(
                 'clubs.name as club_name',
@@ -379,6 +435,9 @@ class StatisticsController extends Controller
             ->when($categoryId, function ($q) use ($categoryId) {
                 $q->where('students.category_id', $categoryId);
             })
+            ->when($groupId, function ($q) use ($groupId) {
+                $q->where('students.group_id', $groupId);
+            })
             ->select(
                 'categories.name as category_name',
                 'categories.id as category_id',
@@ -409,6 +468,9 @@ class StatisticsController extends Controller
             })
             ->when($categoryId, function ($q) use ($categoryId) {
                 $q->where('students.category_id', $categoryId);
+            })
+            ->when($groupId, function ($q) use ($groupId) {
+                $q->where('students.group_id', $groupId);
             })
             ->where('attendances.status', 'absent')
             ->select(
@@ -445,7 +507,7 @@ class StatisticsController extends Controller
     /**
      * Get student statistics.
      */
-    private function getStudentStats(array $dateRange, ?int $clubId, ?int $categoryId = null): array
+    private function getStudentStats(array $dateRange, ?int $clubId, ?int $categoryId = null, ?int $groupId = null): array
     {
         $query = Student::query();
 
@@ -455,6 +517,10 @@ class StatisticsController extends Controller
 
         if ($categoryId) {
             $query->where('category_id', $categoryId);
+        }
+
+        if ($groupId) {
+            $query->where('group_id', $groupId);
         }
 
         // Total counts
@@ -483,6 +549,9 @@ class StatisticsController extends Controller
             ->when($categoryId, function ($q) use ($categoryId) {
                 $q->where('students.category_id', $categoryId);
             })
+            ->when($groupId, function ($q) use ($groupId) {
+                $q->where('students.group_id', $groupId);
+            })
             ->select('clubs.name as club_name', 'clubs.id as club_id', DB::raw('COUNT(*) as count'))
             ->groupBy('clubs.id', 'clubs.name')
             ->get();
@@ -495,6 +564,9 @@ class StatisticsController extends Controller
             })
             ->when($categoryId, function ($q) use ($categoryId) {
                 $q->where('students.category_id', $categoryId);
+            })
+            ->when($groupId, function ($q) use ($groupId) {
+                $q->where('students.group_id', $groupId);
             })
             ->select('categories.name as category_name', 'categories.id as category_id', 'categories.gender as category_gender', DB::raw('COUNT(*) as count'))
             ->groupBy('categories.id', 'categories.name', 'categories.gender')
@@ -516,6 +588,9 @@ class StatisticsController extends Controller
             })
             ->when($categoryId, function ($q) use ($categoryId) {
                 $q->where('students.category_id', $categoryId);
+            })
+            ->when($groupId, function ($q) use ($groupId) {
+                $q->where('students.group_id', $groupId);
             })
             ->select(
                 'clubs.name as club_name',
@@ -556,6 +631,9 @@ class StatisticsController extends Controller
             if ($categoryId) {
                 $newQuery->where('category_id', $categoryId);
             }
+            if ($groupId) {
+                $newQuery->where('group_id', $groupId);
+            }
             $newRegistrations = $newQuery
                 ->whereBetween('created_at', [$dateRange['start'], $dateRange['end']])
                 ->count();
@@ -569,6 +647,9 @@ class StatisticsController extends Controller
         }
         if ($categoryId) {
             $negativeCreditQuery->where('category_id', $categoryId);
+        }
+        if ($groupId) {
+            $negativeCreditQuery->where('group_id', $groupId);
         }
         $negativeCredit = $negativeCreditQuery
             ->select('id', 'first_name', 'last_name', 'sessions_credit')
@@ -587,12 +668,14 @@ class StatisticsController extends Controller
             ->where('sessions_credit', '<', 0)
             ->when($clubId, fn ($q) => $q->where('club_id', $clubId))
             ->when($categoryId, fn ($q) => $q->where('category_id', $categoryId))
+            ->when($groupId, fn ($q) => $q->where('group_id', $groupId))
             ->count();
 
         // Expiring insurance (next 30 days)
         $expiringInsurance = Student::query()
             ->when($clubId, fn ($q) => $q->where('club_id', $clubId))
             ->when($categoryId, fn ($q) => $q->where('category_id', $categoryId))
+            ->when($groupId, fn ($q) => $q->where('group_id', $groupId))
             ->whereNotNull('insurance_expire_at')
             ->whereBetween('insurance_expire_at', [Carbon::now(), Carbon::now()->addDays(30)])
             ->select('id', 'first_name', 'last_name', 'insurance_expire_at')
@@ -610,6 +693,7 @@ class StatisticsController extends Controller
         $expiringInsuranceCount = Student::query()
             ->when($clubId, fn ($q) => $q->where('club_id', $clubId))
             ->when($categoryId, fn ($q) => $q->where('category_id', $categoryId))
+            ->when($groupId, fn ($q) => $q->where('group_id', $groupId))
             ->whereNotNull('insurance_expire_at')
             ->whereBetween('insurance_expire_at', [Carbon::now(), Carbon::now()->addDays(30)])
             ->count();
@@ -756,7 +840,7 @@ class StatisticsController extends Controller
     /**
      * Get progress statistics.
      */
-    private function getProgressStats(array $dateRange, ?int $clubId, ?int $categoryId = null): array
+    private function getProgressStats(array $dateRange, ?int $clubId, ?int $categoryId = null, ?int $groupId = null): array
     {
         $query = Student::query();
 
@@ -766,6 +850,10 @@ class StatisticsController extends Controller
 
         if ($categoryId) {
             $query->where('category_id', $categoryId);
+        }
+
+        if ($groupId) {
+            $query->where('group_id', $groupId);
         }
 
         // Calculate average memorization progress
