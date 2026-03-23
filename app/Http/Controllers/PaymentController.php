@@ -2,13 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StorePaymentRequest;
 use App\Models\ClubCategorySession;
 use App\Models\Payment;
 use App\Models\Student;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
-use Carbon\Carbon;
-use Illuminate\Support\Facades\Validator;
 
 class PaymentController extends Controller
 {
@@ -31,26 +31,9 @@ class PaymentController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(StorePaymentRequest $request)
     {
-        //dd($request->all());
-        $validator = Validator::make($request->all(), [
-            'type' => 'required|string',
-            'value' => 'required|numeric',
-            'status' => 'required|string',
-            'discount' => 'nullable|numeric',
-            'user_id' => 'required|exists:users,id',
-            'student_id' => 'required|exists:students,id',
-            'expect.duration' => 'required|integer',
-            'expect.sessions' => 'required|integer',
-            'expect.change' => 'required|numeric',
-            'expect.start_at' => 'required|date',
-            'expect.end_at' => 'required|date',
-        ]);
-        if ($validator->fails()) {
-            dd($validator->errors());
-        }
-        // re calculate all the expect items
+        // Validation is handled by StorePaymentRequest
 
         // check expact values and the calculated values
 
@@ -108,6 +91,7 @@ class PaymentController extends Controller
             $this->addSessionCredits($student, $expect['duration']);
         }
         $student->save();
+
         return redirect()->route('students.payment.show', $request->student_id);
     }
 
