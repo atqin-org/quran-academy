@@ -160,16 +160,24 @@ export default function Dashboard({ auth, student, payments, sessionsPerMonth }:
         };
     };
 
+    const initialType = student.subscription === 0 ? "ins" : "sub";
+    const initialStartAt = payments[0]?.end_at ?? new Date().toISOString();
+
     const { data, setData, post, errors } = useForm({
         student_id: student.id,
         user_id: auth.user?.id || 1,
-        value: 0,
-        type: student.subscription === 0 ? "ins" : "sub",
+        value: initialType === "ins" ? 200 : 0,
+        type: initialType,
         status: "in_time",
-        expect: calculateExpect(
-            0,
-            payments[0]?.end_at ?? new Date().toISOString()
-        ),
+        expect: initialType === "ins"
+            ? {
+                duration: 33,
+                sessions: 0,
+                change: 0,
+                start_at: formatDate(new Date()),
+                end_at: formatDate(calculateInsuranceEndDate),
+            }
+            : calculateExpect(0, initialStartAt),
     });
 
     // Filter and sort payments
@@ -228,7 +236,31 @@ export default function Dashboard({ auth, student, payments, sessionsPerMonth }:
     };
 
     const handleTypeChange = (newType: string) => {
-        setData("type", newType);
+        if (newType === "ins") {
+            setData({
+                ...data,
+                type: "ins",
+                value: 200,
+                expect: {
+                    duration: 33,
+                    sessions: 0,
+                    change: 0,
+                    start_at: formatDate(new Date()),
+                    end_at: formatDate(calculateInsuranceEndDate),
+                },
+            });
+        } else {
+            const newValue = 0;
+            setData({
+                ...data,
+                type: "sub",
+                value: newValue,
+                expect: calculateExpect(
+                    newValue,
+                    data.expect?.start_at ?? new Date().toISOString()
+                ),
+            });
+        }
     };
 
     const getRoleLabel = (role?: string) => {
@@ -398,6 +430,16 @@ export default function Dashboard({ auth, student, payments, sessionsPerMonth }:
 
                                 <TabsContent value="sub">
                                     <div className="flex flex-col gap-4">
+                                        {Object.keys(errors).length > 0 && data.type === "sub" && (
+                                            <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                                                <p className="text-sm font-medium text-red-700 mb-1">يرجى تصحيح الأخطاء التالية:</p>
+                                                <ul className="list-disc list-inside text-sm text-red-600 space-y-1">
+                                                    {Object.values(errors).map((error, i) => (
+                                                        <li key={i}>{error}</li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                        )}
                                         {/* Quick Select Buttons */}
                                         <div>
                                             <label className="text-sm font-medium text-gray-700 mb-2 block">
@@ -468,6 +510,16 @@ export default function Dashboard({ auth, student, payments, sessionsPerMonth }:
 
                                 <TabsContent value="ins">
                                     <div className="flex flex-col gap-4">
+                                        {Object.keys(errors).length > 0 && data.type === "ins" && (
+                                            <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                                                <p className="text-sm font-medium text-red-700 mb-1">يرجى تصحيح الأخطاء التالية:</p>
+                                                <ul className="list-disc list-inside text-sm text-red-600 space-y-1">
+                                                    {Object.values(errors).map((error, i) => (
+                                                        <li key={i}>{error}</li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                        )}
                                         {!canPayInsurance && (
                                             <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
                                                 <p className="text-sm text-amber-700">
