@@ -3,9 +3,11 @@
 namespace App\Models;
 
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Spatie\Activitylog\LogOptions;
@@ -282,7 +284,7 @@ class Student extends Model
                 Storage::disk('public')->delete($this->$attributeName);
                 $this->$attributeName = null;
             }
-        } elseif (isset($attributes[$attributeName]) && $attributes[$attributeName] instanceof \Illuminate\Http\UploadedFile) {
+        } elseif (isset($attributes[$attributeName]) && $attributes[$attributeName] instanceof UploadedFile) {
             if ($this->$attributeName) {
                 Storage::disk('public')->delete($this->$attributeName);
             }
@@ -322,7 +324,7 @@ class Student extends Model
                 $events = [
                     'created' => 'تم إنشاء الطالب',
                     'updated' => 'تم تحديث الطالب',
-                    'deleted' => 'تم حذف الطالب',
+                    'deleted' => 'تم أرشفة الطالب',
                 ];
 
                 return $events[$eventName] ?? "تم {$eventName} الطالب";
@@ -369,7 +371,7 @@ class Student extends Model
     /**
      * Get hizbs ordered by student's memorization direction
      *
-     * @return \Illuminate\Database\Eloquent\Collection
+     * @return Collection
      */
     public function getOrderedHizbs()
     {

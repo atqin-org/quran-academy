@@ -44,6 +44,7 @@ interface DataTableProps<TData, TValue> {
         sortBy: string | null;
         sortType: string | null;
         per_page: string | null;
+        archived: boolean;
     };
     dataDependencies: {
         categories: {
@@ -155,7 +156,8 @@ export function DataTable<TData, TValue>({
         clubs: selectedClub.length > 0 ? selectedClub : undefined,
         categories: selectedCategory.length > 0 ? selectedCategory : undefined,
         per_page: selectedPerPage !== 10 ? selectedPerPage : undefined,
-    }), [searchTerm, selectedSortBy, sortTypeIsAsc, selectedGender, selectedClub, selectedCategory, selectedPerPage]);
+        archived: searchParams.archived || undefined,
+    }), [searchTerm, selectedSortBy, sortTypeIsAsc, selectedGender, selectedClub, selectedCategory, selectedPerPage, searchParams.archived]);
 
     const fireRequest = React.useCallback(() => {
         setIsLoading(true);

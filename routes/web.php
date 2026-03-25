@@ -22,6 +22,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::put('/students/ahzab/{student}', [StudentResourceController::class, 'ahzab'])->name('students.ahzab');
     Route::put('/students/{student}/direction', [StudentResourceController::class, 'updateDirection'])->name('students.direction');
     Route::get('/studentsExport', [StudentResourceController::class, 'export'])->name('students.export');
+    Route::post('/students/{student}/restore', [StudentResourceController::class, 'restore'])->name('students.restore');
+    Route::delete('/students/{student}/force-delete', [StudentResourceController::class, 'forceDelete'])->name('students.forceDelete');
 
     Route::get('/students/{student}/payment', [PaymentController::class, 'show'])->name('students.payment.show');
     Route::post('/students/{student}/payment', [PaymentController::class, 'store'])->name('students.payment.store');
@@ -56,7 +58,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
-    Route::get('/system/logs', [LogController::class, 'index'])->name('admin.logs.index')->middleware(\App\Http\Middleware\AdminMiddleware::class);
+    Route::get('/system/logs', [LogController::class, 'index'])->name('admin.logs.index')->middleware(AdminMiddleware::class);
 
     // ---------------------------
     // Statistics Routes (Admin Only)
@@ -164,6 +166,6 @@ Route::get('/dashboard', function () {
     return redirect()->route('students.index');
 })->middleware(['auth', 'verified'])->name('dashboard');
 
-Route::middleware(['auth', 'verified'])->group(function () {})->middleware(\App\Http\Middleware\AdminMiddleware::class);
+Route::middleware(['auth', 'verified'])->group(function () {})->middleware(AdminMiddleware::class);
 
 require __DIR__.'/auth.php';

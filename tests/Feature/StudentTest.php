@@ -687,3 +687,265 @@ it('export respects club filter', function () {
     $response->assertOk();
     $response->assertDownload();
 });
+
+// -------------------------------------------------------
+// Archive Filter
+// -------------------------------------------------------
+
+it('index excludes archived students by default', function () {
+    $user = User::factory()->create(['role' => 'admin']);
+    $club = Club::factory()->create();
+    $category = Category::factory()->create();
+
+    Student::factory()->count(3)->create([
+        'club_id' => $club->id,
+        'category_id' => $category->id,
+    ]);
+
+    $archived = Student::factory()->create([
+        'club_id' => $club->id,
+        'category_id' => $category->id,
+    ]);
+    $archived->delete();
+
+    $response = $this->actingAs($user)->get(route('students.index'));
+
+    $response->assertOk();
+    $response->assertInertia(fn ($page) => $page
+        ->has('students.data', 3)
+        ->where('archived', false)
+    );
+});
+
+it('index shows only archived students when archived param is true', function () {
+    $user = User::factory()->create(['role' => 'admin']);
+    $club = Club::factory()->create();
+    $category = Category::factory()->create();
+
+    Student::factory()->count(3)->create([
+        'club_id' => $club->id,
+        'category_id' => $category->id,
+    ]);
+
+    $archived = Student::factory()->count(2)->create([
+        'club_id' => $club->id,
+        'category_id' => $category->id,
+    ]);
+    $archived->each->delete();
+
+    $response = $this->actingAs($user)->get(route('students.index', ['archived' => true]));
+
+    $response->assertOk();
+    $response->assertInertia(fn ($page) => $page
+        ->has('students.data', 2)
+        ->where('archived', true)
+    );
+});
+
+// -------------------------------------------------------
+// Restore
+// -------------------------------------------------------
+
+it('can restore an archived student', function () {
+    $user = User::factory()->create(['role' => 'admin']);
+    $club = Club::factory()->create();
+    $category = Category::factory()->create();
+
+    $student = Student::factory()->create([
+        'club_id' => $club->id,
+        'category_id' => $category->id,
+    ]);
+    $student->delete();
+
+    $this->assertSoftDeleted('students', ['id' => $student->id]);
+
+    $response = $this->actingAs($user)->post(route('students.restore', $student));
+
+    $response->assertRedirect();
+    $response->assertSessionHas('success');
+
+    $this->assertNotSoftDeleted('students', ['id' => $student->id]);
+});
+
+it('restore returns 404 for non-existent student', function () {
+    $user = User::factory()->create(['role' => 'admin']);
+
+    $response = $this->actingAs($user)->post(route('students.restore', 99999));
+
+    $response->assertNotFound();
+});
+
+// -------------------------------------------------------
+// Force Delete
+// -------------------------------------------------------
+
+it('can permanently delete an archived student', function () {
+    $user = User::factory()->create(['role' => 'admin']);
+    $club = Club::factory()->create();
+    $category = Category::factory()->create();
+
+    $student = Student::factory()->create([
+        'club_id' => $club->id,
+        'category_id' => $category->id,
+    ]);
+    $student->delete();
+
+    $response = $this->actingAs($user)->delete(route('students.forceDelete', $student));
+
+    $response->assertRedirect();
+    $response->assertSessionHas('success');
+
+    $this->assertDatabaseMissing('students', ['id' => $student->id]);
+});
+
+it('force delete returns 404 for active student', function () {
+    $user = User::factory()->create(['role' => 'admin']);
+    $club = Club::factory()->create();
+    $category = Category::factory()->create();
+
+    $student = Student::factory()->create([
+        'club_id' => $club->id,
+        'category_id' => $category->id,
+    ]);
+
+    $response = $this->actingAs($user)->delete(route('students.forceDelete', $student));
+
+    $response->assertNotFound();
+});
+
+// -------------------------------------------------------
+// Duplicate Detection
+// -------------------------------------------------------
+
+it('prevents creating a duplicate student with same name and birthdate', function () {
+    $user = User::factory()->create(['role' => 'admin']);
+    $club = Club::factory()->create();
+    $category = Category::factory()->create();
+
+    $birthdate = now()->subYears(10)->format('Y-m-d');
+
+    Student::factory()->create([
+        'club_id' => $club->id,
+        'category_id' => $category->id,
+        'first_name' => 'أحمد',
+        'last_name' => 'بن علي',
+        'birthdate' => $birthdate,
+    ]);
+
+    $payload = validStudentPayload($club, $category, [
+        'firstName' => 'أحمد',
+        'lastName' => 'بن علي',
+        'birthdate' => $birthdate,
+    ]);
+
+    $response = $this->actingAs($user)->post(route('students.store'), $payload);
+
+    $response->assertSessionHasErrors('firstName');
+});
+
+it('detects duplicates with Arabic alef normalization', function () {
+    $user = User::factory()->create(['role' => 'admin']);
+    $club = Club::factory()->create();
+    $category = Category::factory()->create();
+
+    $birthdate = now()->subYears(10)->format('Y-m-d');
+
+    // Create with hamza alef أحمد
+    Student::factory()->create([
+        'club_id' => $club->id,
+        'category_id' => $category->id,
+        'first_name' => 'أحمد',
+        'last_name' => 'بن علي',
+        'birthdate' => $birthdate,
+    ]);
+
+    // Try to create with plain alef احمد
+    $payload = validStudentPayload($club, $category, [
+        'firstName' => 'احمد',
+        'lastName' => 'بن علي',
+        'birthdate' => $birthdate,
+    ]);
+
+    $response = $this->actingAs($user)->post(route('students.store'), $payload);
+
+    $response->assertSessionHasErrors('firstName');
+});
+
+it('detects duplicate against archived student', function () {
+    $user = User::factory()->create(['role' => 'admin']);
+    $club = Club::factory()->create();
+    $category = Category::factory()->create();
+
+    $birthdate = now()->subYears(10)->format('Y-m-d');
+
+    $student = Student::factory()->create([
+        'club_id' => $club->id,
+        'category_id' => $category->id,
+        'first_name' => 'أحمد',
+        'last_name' => 'بن علي',
+        'birthdate' => $birthdate,
+    ]);
+    $student->delete();
+
+    $payload = validStudentPayload($club, $category, [
+        'firstName' => 'أحمد',
+        'lastName' => 'بن علي',
+        'birthdate' => $birthdate,
+    ]);
+
+    $response = $this->actingAs($user)->post(route('students.store'), $payload);
+
+    $response->assertSessionHasErrors('firstName');
+});
+
+it('allows creating student with same name but different birthdate', function () {
+    $user = User::factory()->create(['role' => 'admin']);
+    $club = Club::factory()->create();
+    $category = Category::factory()->create();
+
+    Student::factory()->create([
+        'club_id' => $club->id,
+        'category_id' => $category->id,
+        'first_name' => 'أحمد',
+        'last_name' => 'بن علي',
+        'birthdate' => now()->subYears(10)->format('Y-m-d'),
+    ]);
+
+    $payload = validStudentPayload($club, $category, [
+        'firstName' => 'أحمد',
+        'lastName' => 'بن علي',
+        'birthdate' => now()->subYears(12)->format('Y-m-d'),
+    ]);
+
+    $response = $this->actingAs($user)->post(route('students.store'), $payload);
+
+    $response->assertRedirect(route('students.index'));
+    $response->assertSessionHas('success');
+});
+
+it('allows creating student with same birthdate but different name', function () {
+    $user = User::factory()->create(['role' => 'admin']);
+    $club = Club::factory()->create();
+    $category = Category::factory()->create();
+
+    $birthdate = now()->subYears(10)->format('Y-m-d');
+
+    Student::factory()->create([
+        'club_id' => $club->id,
+        'category_id' => $category->id,
+        'first_name' => 'أحمد',
+        'last_name' => 'بن علي',
+        'birthdate' => $birthdate,
+    ]);
+
+    $payload = validStudentPayload($club, $category, [
+        'firstName' => 'محمد',
+        'lastName' => 'بن علي',
+        'birthdate' => $birthdate,
+    ]);
+
+    $response = $this->actingAs($user)->post(route('students.store'), $payload);
+
+    $response->assertRedirect(route('students.index'));
+    $response->assertSessionHas('success');
+});

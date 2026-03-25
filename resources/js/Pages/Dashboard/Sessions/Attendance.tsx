@@ -466,23 +466,7 @@ export default function Attendance({
         }, {} as Record<number, any>)
     );
 
-    // Validation: Check if all present/late_excused students have thoman selected
-    const validationErrors = useMemo(() => {
-        const errors: { studentId: number; studentName: string; error: string }[] = [];
-        students.forEach((student) => {
-            const data = attendance[student.id];
-            if ((data.status === "present" || data.status === "late_excused") && !data.thoman_id) {
-                errors.push({
-                    studentId: student.id,
-                    studentName: `${student.first_name} ${student.last_name}`,
-                    error: "يجب اختيار الثمن",
-                });
-            }
-        });
-        return errors;
-    }, [attendance, students]);
-
-    const canSave = hasUnsavedChanges && validationErrors.length === 0;
+    const canSave = hasUnsavedChanges;
 
     // Handle direction change for a student
     const handleDirectionChange = (
@@ -604,23 +588,6 @@ export default function Attendance({
                         </Button>
                     </div>
                 </div>
-
-                {/* Validation Errors */}
-                {validationErrors.length > 0 && hasUnsavedChanges && (
-                    <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                        <div className="flex items-center gap-2 text-red-700 font-medium mb-2">
-                            <AlertCircle className="h-5 w-5" />
-                            يجب تصحيح الأخطاء التالية قبل الحفظ:
-                        </div>
-                        <ul className="list-disc list-inside text-sm text-red-600 space-y-1">
-                            {validationErrors.map((err) => (
-                                <li key={err.studentId}>
-                                    {err.studentName}: {err.error}
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-                )}
 
                 {/* Stats Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -820,8 +787,8 @@ export default function Attendance({
                                                                 )
                                                             }
                                                         >
-                                                            <SelectTrigger className={`w-full ${!thoman_id ? 'border-red-500 ring-1 ring-red-500' : ''}`}>
-                                                                <SelectValue placeholder="الثمن *" />
+                                                            <SelectTrigger className="w-full">
+                                                                <SelectValue placeholder="الثمن" />
                                                             </SelectTrigger>
                                                             <SelectContent>
                                                                 <SelectGroup>
@@ -842,9 +809,6 @@ export default function Attendance({
                                                                 </SelectGroup>
                                                             </SelectContent>
                                                         </Select>
-                                                        {!thoman_id && (
-                                                            <span className="text-xs text-red-500">مطلوب</span>
-                                                        )}
                                                     </div>
                                                 </div>
                                             )}

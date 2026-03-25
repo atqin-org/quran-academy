@@ -168,22 +168,7 @@ const StudentForm = ({
         form.setValue("file", data.file);
         form.trigger().then((isValid) => {
             if (isValid) {
-                toast.promise(
-                    new Promise(async (resolve, reject) => {
-                        try {
-                            handleSubmit(e);
-                            resolve("تم التسجيل بنجاح");
-                        } catch (error) {
-                            console.log(error);
-                            reject("حدث خطأ اثناء التسجيل");
-                        }
-                    }),
-                    {
-                        loading: "جاري التسجيل ...",
-                        success: "تم التسجيل بنجاح",
-                        error: "حدث خطأ اثناء التسجيل",
-                    }
-                );
+                handleSubmit(e);
             } else {
                 toast.error("يرجى التحقق من البيانات");
             }
