@@ -42,7 +42,7 @@ export type StudentDisplay = {
     last_thoman_attendance: any;
 };
 
-export const getColumns = (archived: boolean): ColumnDef<StudentDisplay>[] => [
+export const getColumns = (archived: boolean, isAdmin: boolean): ColumnDef<StudentDisplay>[] => [
     {
         id: "select",
         header: ({ table }) => (
@@ -433,6 +433,7 @@ export const getColumns = (archived: boolean): ColumnDef<StudentDisplay>[] => [
             const student = row.original;
 
             if (archived) {
+                if (!isAdmin) return null;
                 return <ArchivedStudentActions student={student} />;
             }
 
