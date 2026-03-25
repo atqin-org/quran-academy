@@ -51,7 +51,8 @@ export default function Dashboard({
         }
     }, [flash]);
 
-    const columns = useMemo(() => getColumns(archived), [archived]);
+    const isAdmin = auth.user.role === "admin";
+    const columns = useMemo(() => getColumns(archived, isAdmin), [archived, isAdmin]);
     const urlParams = new URLSearchParams(location.search);
 
     const searchQuery = urlParams.get("search");
