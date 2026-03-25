@@ -1,10 +1,10 @@
 import DashboardLayout from "@/Layouts/DashboardLayout";
 import { PageProps } from "@/types";
-import { Head, Link, router } from "@inertiajs/react";
-import { StudentDisplay, columns } from "./Components/Columns";
+import { Head, Link, router, usePage } from "@inertiajs/react";
+import { StudentDisplay, getColumns } from "./Components/Columns";
 import { DataTable, perPageOptions } from "./Components/DataTable";
 import { Button } from "@/Components/ui/button";
-import { Plus } from "lucide-react";
+import { Archive, ArrowRight, Plus } from "lucide-react";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -12,9 +12,12 @@ import {
     DropdownMenuRadioItem,
     DropdownMenuTrigger,
 } from "@/Components/ui/dropdown-menu";
+import { useEffect, useMemo } from "react";
+import { toast } from "sonner";
 
 interface DashboardProps extends PageProps {
     students: { data: StudentDisplay[]; links: any[] };
+    archived: boolean;
     dataDependencies: {
         categories: {
             id: number;
@@ -25,12 +28,30 @@ interface DashboardProps extends PageProps {
         clubs: { id: number; name: string; students_count: number }[];
         genders: { gender: string; total: number }[];
     };
+    flash?: {
+        success?: string;
+        error?: string;
+    };
 }
 export default function Dashboard({
     auth,
     students,
+    archived,
     dataDependencies,
 }: DashboardProps) {
+    const { props } = usePage<DashboardProps>();
+    const flash = props.flash;
+
+    useEffect(() => {
+        if (flash?.success) {
+            toast.success(flash.success);
+        }
+        if (flash?.error) {
+            toast.error(flash.error);
+        }
+    }, [flash]);
+
+    const columns = useMemo(() => getColumns(archived), [archived]);
     const urlParams = new URLSearchParams(location.search);
 
     const searchQuery = urlParams.get("search");
@@ -58,6 +79,7 @@ export default function Dashboard({
         sortBy: sortByQuery,
         sortType: sortTypeQuery,
         per_page: perPageQuery,
+        archived,
     };
 
     const handlePerPageChange = (value: string) => {
@@ -89,13 +111,50 @@ export default function Dashboard({
             <Head title="Students" />
             <div className="flex flex-col items-center justify-start h-full">
                 <div className="flex items-center justify-between w-full">
-                    <h1 className="text-2xl font-bold text-gray-900">الطالب</h1>
-                    <Link href="/students/create">
-                        <Button className="gap-2">
-                            <Plus className="h-4 w-4" />
-                            طالب جديد
-                        </Button>
-                    </Link>
+                    <h1 className="text-2xl font-bold text-gray-900">
+                        {archived ? "الأرشيف" : "الطالب"}
+                    </h1>
+                    <div className="flex items-center gap-2">
+                        {archived ? (
+                            <Button
+                                variant="outline"
+                                className="gap-2"
+                                onClick={() =>
+                                    router.get(
+                                        route("students.index"),
+                                        {},
+                                        { preserveState: true }
+                                    )
+                                }
+                            >
+                                <ArrowRight className="h-4 w-4" />
+                                العودة للقائمة
+                            </Button>
+                        ) : (
+                            <>
+                                <Button
+                                    variant="outline"
+                                    className="gap-2"
+                                    onClick={() =>
+                                        router.get(
+                                            route("students.index"),
+                                            { archived: true },
+                                            { preserveState: true }
+                                        )
+                                    }
+                                >
+                                    <Archive className="h-4 w-4" />
+                                    الأرشيف
+                                </Button>
+                                <Link href="/students/create">
+                                    <Button className="gap-2">
+                                        <Plus className="h-4 w-4" />
+                                        طالب جديد
+                                    </Button>
+                                </Link>
+                            </>
+                        )}
+                    </div>
                 </div>
                 <DataTable
                     key={location.search}

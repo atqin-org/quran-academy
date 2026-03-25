@@ -3,9 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Actions\Attendance\RecordAttendanceAction;
+use App\Models\Group;
+use App\Models\Hizb;
 use App\Models\Program;
 use App\Models\ProgramSession;
 use App\Models\Student;
+use App\Models\Thoman;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -109,9 +112,10 @@ class ProgramSessionController extends Controller
                 'lastThomanAttendance',
             ])
             ->where(function ($query) use ($program, $studentsWithAttendance) {
-                // Include current students matching program criteria
+                // Include current ACTIVE students matching program criteria
                 $query->where(function ($q) use ($program) {
-                    $q->where('club_id', $program->club_id)
+                    $q->whereNull('deleted_at')
+                        ->where('club_id', $program->club_id)
                         ->where('category_id', $program->category_id);
 
                     // If program targets a specific group, filter by that group
@@ -121,6 +125,7 @@ class ProgramSessionController extends Controller
                 });
 
                 // Also include any students with existing attendance records (historical)
+                // These may be trashed/moved students — withTrashed() on the outer query allows them through
                 if (! empty($studentsWithAttendance)) {
                     $query->orWhereIn('id', $studentsWithAttendance);
                 }
@@ -129,7 +134,7 @@ class ProgramSessionController extends Controller
         $students = $studentsQuery->orderBy('first_name')->get();
 
         // Get hizb number mapping for converting stored hizb numbers to IDs
-        $hizbNumberToId = \App\Models\Hizb::pluck('id', 'number')->toArray();
+        $hizbNumberToId = Hizb::pluck('id', 'number')->toArray();
 
         return Inertia::render('Dashboard/Sessions/Attendance', [
             'session' => $session,
@@ -158,7 +163,7 @@ class ProgramSessionController extends Controller
                 $historicalGroupId = $attendance?->group_id;
                 $historicalGroupName = null;
                 if ($historicalGroupId && $historicalGroupId !== $s->group_id) {
-                    $historicalGroup = \App\Models\Group::withTrashed()->find($historicalGroupId);
+                    $historicalGroup = Group::withTrashed()->find($historicalGroupId);
                     $historicalGroupName = $historicalGroup?->name;
                 }
 
@@ -183,8 +188,8 @@ class ProgramSessionController extends Controller
                     'last_hizb_descending' => $s->last_hizb_descending,
                 ];
             }),
-            'ahzab' => \App\Models\Hizb::all(),
-            'athman' => \App\Models\Thoman::all(),
+            'ahzab' => Hizb::all(),
+            'athman' => Thoman::all(),
         ]);
     }
 
@@ -406,11 +411,6 @@ class ProgramSessionController extends Controller
                 // Skip records without a status
                 if (empty($record['status'])) {
                     continue;
-                }
-
-                // Validate that present/late_excused students have thoman
-                if (in_array($record['status'], ['present', 'late_excused']) && empty($record['thoman_id'])) {
-                    continue; // Skip invalid records
                 }
 
                 $student = Student::findOrFail($record['student_id']);

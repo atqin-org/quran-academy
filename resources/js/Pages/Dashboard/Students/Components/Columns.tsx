@@ -17,7 +17,7 @@ import {
 } from "@/Components/ui/dropdown-menu";
 import { Link, router, useForm } from "@inertiajs/react";
 import { ColumnDef } from "@tanstack/react-table";
-import { Banknote, MoreHorizontal, Trash2, UserPen } from "lucide-react";
+import { Archive, Banknote, MoreHorizontal, RotateCcw, Trash2, UserPen } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import ThomanCircle from "./ThomanCircle";
@@ -42,7 +42,7 @@ export type StudentDisplay = {
     last_thoman_attendance: any;
 };
 
-export const columns: ColumnDef<StudentDisplay>[] = [
+export const getColumns = (archived: boolean): ColumnDef<StudentDisplay>[] => [
     {
         id: "select",
         header: ({ table }) => (
@@ -431,90 +431,202 @@ export const columns: ColumnDef<StudentDisplay>[] = [
         header: () => <div className="text-start">المزيد</div>,
         cell: ({ row }) => {
             const student = row.original;
-            const [dialogOpen, setDialogOpen] = useState(false);
-            const [isDeleting, setIsDeleting] = useState(false);
 
-            const handleDelete = () => {
-                setIsDeleting(true);
-                router.delete(`/students/${student.id}`, {
-                    preserveState: true,
-                    preserveScroll: true,
-                    onSuccess: () => {
-                        setDialogOpen(false);
-                    },
-                    onFinish: () => {
-                        setIsDeleting(false);
-                    },
-                });
-            };
+            if (archived) {
+                return <ArchivedStudentActions student={student} />;
+            }
 
-            return (
-                <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                    <DropdownMenu dir="rtl">
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="h-8 w-8 p-0">
-                                <span className="sr-only">Open menu</span>
-                                <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                            <DropdownMenuItem className="p-0 m-0">
-                                <Link
-                                    className="w-full px-4 flex items-center gap-2 rounded-md my-0.5"
-                                    href={`/students/${student.id}/edit`}
-                                    as="button"
-                                >
-                                    <UserPen />
-                                    <span className="w-full">تعديل</span>
-                                </Link>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem className="p-0 m-0">
-                                <Link
-                                    className="w-full px-4 flex items-center gap-2 rounded-md my-0.5"
-                                    href={`/students/${student.id}/payment`}
-                                    as="button"
-                                >
-                                    <Banknote />
-                                    <span className="w-full">الدفع</span>
-                                </Link>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem className="p-0 m-0">
-                                <DialogTrigger asChild>
-                                    <div className="w-full cursor-pointer px-4 flex items-center gap-2 hover:bg-red-200 rounded-md my-0.5">
-                                        <Trash2 />
-                                        <span className="w-full text-center">
-                                            حذف
-                                        </span>
-                                    </div>
-                                </DialogTrigger>
-                            </DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                    <DialogContent>
-                        <DialogHeader>
-                            <DialogTitle>
-                                هل انت متأكد من حذف هذا الطالب؟
-                            </DialogTitle>
-                            <DialogDescription>
-                                لا يمكن التراجع عن هذا القرار وسيتم تسجيلك كحذف
-                                للطالب
-                            </DialogDescription>
-                            <DialogFooter>
-                                <button
-                                    className="px-4 flex items-center gap-2 rounded-md my-0.5 bg-destructive text-destructive-foreground hover:bg-destructive/90 py-2 disabled:opacity-50"
-                                    onClick={handleDelete}
-                                    disabled={isDeleting}
-                                >
-                                    <Trash2 />
-                                    <span className="w-full">
-                                        {isDeleting ? "جاري الحذف..." : "حذف"}
-                                    </span>
-                                </button>
-                            </DialogFooter>
-                        </DialogHeader>
-                    </DialogContent>
-                </Dialog>
-            );
+            return <ActiveStudentActions student={student} />;
         },
     },
 ];
+
+function ActiveStudentActions({ student }: { student: StudentDisplay }) {
+    const [dialogOpen, setDialogOpen] = useState(false);
+    const [isArchiving, setIsArchiving] = useState(false);
+
+    const handleArchive = () => {
+        setIsArchiving(true);
+        router.delete(`/students/${student.id}`, {
+            preserveState: true,
+            preserveScroll: true,
+            onSuccess: () => {
+                setDialogOpen(false);
+            },
+            onFinish: () => {
+                setIsArchiving(false);
+            },
+        });
+    };
+
+    return (
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DropdownMenu dir="rtl">
+                <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="h-8 w-8 p-0">
+                        <span className="sr-only">Open menu</span>
+                        <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                    <DropdownMenuItem className="p-0 m-0">
+                        <Link
+                            className="w-full px-4 flex items-center gap-2 rounded-md my-0.5"
+                            href={`/students/${student.id}/edit`}
+                            as="button"
+                        >
+                            <UserPen />
+                            <span className="w-full">تعديل</span>
+                        </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem className="p-0 m-0">
+                        <Link
+                            className="w-full px-4 flex items-center gap-2 rounded-md my-0.5"
+                            href={`/students/${student.id}/payment`}
+                            as="button"
+                        >
+                            <Banknote />
+                            <span className="w-full">الدفع</span>
+                        </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem className="p-0 m-0">
+                        <DialogTrigger asChild>
+                            <div className="w-full cursor-pointer px-4 flex items-center gap-2 hover:bg-orange-200 rounded-md my-0.5">
+                                <Archive />
+                                <span className="w-full text-center">
+                                    أرشفة
+                                </span>
+                            </div>
+                        </DialogTrigger>
+                    </DropdownMenuItem>
+                </DropdownMenuContent>
+            </DropdownMenu>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>
+                        هل انت متأكد من أرشفة هذا الطالب؟
+                    </DialogTitle>
+                    <DialogDescription>
+                        سيتم نقل الطالب إلى الأرشيف ويمكنك استعادته
+                        لاحقاً
+                    </DialogDescription>
+                    <DialogFooter>
+                        <button
+                            className="px-4 flex items-center gap-2 rounded-md my-0.5 bg-orange-500 text-white hover:bg-orange-600 py-2 disabled:opacity-50"
+                            onClick={handleArchive}
+                            disabled={isArchiving}
+                        >
+                            <Archive />
+                            <span className="w-full">
+                                {isArchiving
+                                    ? "جاري الأرشفة..."
+                                    : "أرشفة"}
+                            </span>
+                        </button>
+                    </DialogFooter>
+                </DialogHeader>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
+function ArchivedStudentActions({ student }: { student: StudentDisplay }) {
+    const [restoreDialogOpen, setRestoreDialogOpen] = useState(false);
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [isRestoring, setIsRestoring] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
+
+    const handleRestore = () => {
+        setIsRestoring(true);
+        router.post(`/students/${student.id}/restore`, {}, {
+            preserveState: true,
+            preserveScroll: true,
+            onSuccess: () => {
+                setRestoreDialogOpen(false);
+            },
+            onFinish: () => {
+                setIsRestoring(false);
+            },
+        });
+    };
+
+    const handleForceDelete = () => {
+        setIsDeleting(true);
+        router.delete(`/students/${student.id}/force-delete`, {
+            preserveState: true,
+            preserveScroll: true,
+            onSuccess: () => {
+                setDeleteDialogOpen(false);
+            },
+            onFinish: () => {
+                setIsDeleting(false);
+            },
+        });
+    };
+
+    return (
+        <div className="flex items-center gap-1">
+            <Dialog open={restoreDialogOpen} onOpenChange={setRestoreDialogOpen}>
+                <DialogTrigger asChild>
+                    <Button variant="ghost" size="sm" className="h-8 gap-1 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50">
+                        <RotateCcw className="h-4 w-4" />
+                        <span>استعادة</span>
+                    </Button>
+                </DialogTrigger>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>
+                            هل انت متأكد من استعادة هذا الطالب؟
+                        </DialogTitle>
+                        <DialogDescription>
+                            سيتم استعادة الطالب إلى القائمة الرئيسية
+                        </DialogDescription>
+                        <DialogFooter>
+                            <button
+                                className="px-4 flex items-center gap-2 rounded-md my-0.5 bg-emerald-500 text-white hover:bg-emerald-600 py-2 disabled:opacity-50"
+                                onClick={handleRestore}
+                                disabled={isRestoring}
+                            >
+                                <RotateCcw className="h-4 w-4" />
+                                <span>
+                                    {isRestoring ? "جاري الاستعادة..." : "استعادة"}
+                                </span>
+                            </button>
+                        </DialogFooter>
+                    </DialogHeader>
+                </DialogContent>
+            </Dialog>
+            <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+                <DialogTrigger asChild>
+                    <Button variant="ghost" size="sm" className="h-8 gap-1 text-red-600 hover:text-red-700 hover:bg-red-50">
+                        <Trash2 className="h-4 w-4" />
+                        <span>حذف نهائي</span>
+                    </Button>
+                </DialogTrigger>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>
+                            هل انت متأكد من الحذف النهائي لهذا الطالب؟
+                        </DialogTitle>
+                        <DialogDescription>
+                            لا يمكن التراجع عن هذا القرار وسيتم حذف جميع
+                            بيانات الطالب نهائياً
+                        </DialogDescription>
+                        <DialogFooter>
+                            <button
+                                className="px-4 flex items-center gap-2 rounded-md my-0.5 bg-destructive text-destructive-foreground hover:bg-destructive/90 py-2 disabled:opacity-50"
+                                onClick={handleForceDelete}
+                                disabled={isDeleting}
+                            >
+                                <Trash2 className="h-4 w-4" />
+                                <span>
+                                    {isDeleting ? "جاري الحذف..." : "حذف نهائي"}
+                                </span>
+                            </button>
+                        </DialogFooter>
+                    </DialogHeader>
+                </DialogContent>
+            </Dialog>
+        </div>
+    );
+}

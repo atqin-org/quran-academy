@@ -10,6 +10,7 @@ import {
 import DashboardLayout from "@/Layouts/DashboardLayout";
 import { PageProps } from "@/types";
 import { Head, useForm as useInertiaForm } from "@inertiajs/react";
+import { toast } from "sonner";
 import StudentForm from "./Components/StudentForm";
 import { TSiblings, TStudentForm, TStudentFormDB } from "./Types/Student";
 
@@ -65,7 +66,10 @@ export default function Update({
 
     function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();
-        post(`/students/${id}`);
+        post(`/students/${id}`, {
+            onSuccess: () => toast.success("تم تحديث الطالب بنجاح"),
+            onError: () => toast.error("يرجى التحقق من البيانات"),
+        });
     }
 
     function formatDate(dateString: string) {
