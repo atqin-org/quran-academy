@@ -22,8 +22,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::put('/students/ahzab/{student}', [StudentResourceController::class, 'ahzab'])->name('students.ahzab');
     Route::put('/students/{student}/direction', [StudentResourceController::class, 'updateDirection'])->name('students.direction');
     Route::get('/studentsExport', [StudentResourceController::class, 'export'])->name('students.export');
-    Route::post('/students/{student}/restore', [StudentResourceController::class, 'restore'])->name('students.restore');
-    Route::delete('/students/{student}/force-delete', [StudentResourceController::class, 'forceDelete'])->name('students.forceDelete');
+    Route::post('/students/{student}/restore', [StudentResourceController::class, 'restore'])->name('students.restore')->middleware(AdminMiddleware::class);
+    Route::delete('/students/{student}/force-delete', [StudentResourceController::class, 'forceDelete'])->name('students.forceDelete')->middleware(AdminMiddleware::class);
 
     Route::get('/students/{student}/payment', [PaymentController::class, 'show'])->name('students.payment.show');
     Route::post('/students/{student}/payment', [PaymentController::class, 'store'])->name('students.payment.store');
