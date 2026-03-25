@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Exports\StudentsExport;
+use App\Helpers\ArabicNormalizer;
 use App\Models\Category;
 use App\Models\Club;
 use App\Models\Guardian;
@@ -23,7 +24,8 @@ class StudentResourceController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Student::query();
+        $archived = $request->boolean('archived');
+        $query = $archived ? Student::onlyTrashed() : Student::query();
         $user = Auth::user();
 
         // Apply club restriction first
@@ -88,22 +90,32 @@ class StudentResourceController extends Controller
         });
 
         // Adjust the counts for gender and categories based on accessible clubs
-        $genderCounts = Student::select('gender', DB::raw('count(*) as total'))
-            ->whereIn('club_id', $accessibleClubs)
-            ->groupBy('gender')->get();
+        $genderCountsQuery = Student::select('gender', DB::raw('count(*) as total'))
+            ->whereIn('club_id', $accessibleClubs);
+        if ($archived) {
+            $genderCountsQuery->onlyTrashed();
+        }
+        $genderCounts = $genderCountsQuery->groupBy('gender')->get();
 
-        $categoryCounts = Category::withCount(['students' => function ($query) use ($accessibleClubs) {
+        $categoryCounts = Category::withCount(['students' => function ($query) use ($accessibleClubs, $archived) {
             $query->whereIn('club_id', $accessibleClubs);
+            if ($archived) {
+                $query->onlyTrashed();
+            }
         }])->get();
 
-        $clubCounts = Club::withCount(['students' => function ($query) use ($accessibleClubs) {
+        $clubCounts = Club::withCount(['students' => function ($query) use ($accessibleClubs, $archived) {
             $query->whereIn('club_id', $accessibleClubs);
+            if ($archived) {
+                $query->onlyTrashed();
+            }
         }])->whereIn('id', $accessibleClubs)->get();
 
         return Inertia::render(
             'Dashboard/Students/Index',
             [
                 'students' => $students,
+                'archived' => $archived,
                 'dataDependencies' => [
                     'clubs' => $clubCounts,
                     'categories' => $categoryCounts,
@@ -213,7 +225,27 @@ class StudentResourceController extends Controller
             'file' => 'nullable|mimes:jpg,jpeg,png,pdf|max:6144',    // 6144 KB = 6 MB
         ]);
 
-        // TODO: check if this student was deleted before from the same club
+        // Check for duplicate students (including archived) by normalized name + birthdate
+        $normalizedFirst = ArabicNormalizer::normalize($request->firstName);
+        $normalizedLast = ArabicNormalizer::normalize($request->lastName);
+        $birthdate = $request->birthdate->format('Y-m-d');
+
+        $duplicates = Student::withTrashed()
+            ->whereDate('birthdate', $birthdate)
+            ->get(['id', 'first_name', 'last_name', 'deleted_at'])
+            ->filter(function ($student) use ($normalizedFirst, $normalizedLast) {
+                return ArabicNormalizer::normalize($student->first_name) === $normalizedFirst
+                    && ArabicNormalizer::normalize($student->last_name) === $normalizedLast;
+            });
+
+        if ($duplicates->isNotEmpty()) {
+            $archivedDuplicate = $duplicates->first(fn ($s) => $s->trashed());
+            $message = $archivedDuplicate
+                ? 'يوجد طالب مؤرشف بنفس الاسم وتاريخ الميلاد. يمكنك استعادته من الأرشيف.'
+                : 'يوجد طالب مسجل بالفعل بنفس الاسم وتاريخ الميلاد.';
+
+            return redirect()->back()->withInput()->withErrors(['firstName' => $message]);
+        }
 
         $father_id = Guardian::create([
             'phone' => $request->father['phone'],
@@ -240,7 +272,7 @@ class StudentResourceController extends Controller
      */
     public function show(Request $request, string $id)
     {
-        $student = Student::with([
+        $student = Student::withTrashed()->with([
             'club',
             'category',
             'father',
@@ -563,7 +595,57 @@ class StudentResourceController extends Controller
 
         $student->delete();
 
-        return redirect()->back()->with('success', 'تم حذف الطالب بنجاح');
+        activity('student')
+            ->performedOn($student)
+            ->causedBy(Auth::user())
+            ->event('archived')
+            ->withProperties([
+                'student_name' => $student->first_name.' '.$student->last_name,
+            ])
+            ->log('تم أرشفة الطالب');
+
+        return redirect()->back()->with('success', 'تم أرشفة الطالب بنجاح');
+    }
+
+    /**
+     * Restore an archived student.
+     */
+    public function restore(string $id)
+    {
+        $student = Student::onlyTrashed()->findOrFail($id);
+        $student->restore();
+
+        activity('student')
+            ->performedOn($student)
+            ->causedBy(Auth::user())
+            ->event('restored')
+            ->withProperties([
+                'student_name' => $student->first_name.' '.$student->last_name,
+            ])
+            ->log('تم استعادة الطالب من الأرشيف');
+
+        return redirect()->back()->with('success', 'تم استعادة الطالب بنجاح');
+    }
+
+    /**
+     * Permanently delete an archived student.
+     */
+    public function forceDelete(string $id)
+    {
+        $student = Student::onlyTrashed()->findOrFail($id);
+
+        activity('student')
+            ->performedOn($student)
+            ->causedBy(Auth::user())
+            ->event('force_deleted')
+            ->withProperties([
+                'student_name' => $student->first_name.' '.$student->last_name,
+            ])
+            ->log('تم حذف الطالب نهائياً');
+
+        $student->forceDelete();
+
+        return redirect()->back()->with('success', 'تم حذف الطالب نهائياً');
     }
 
     /**

@@ -1,6 +1,7 @@
 import DashboardLayout from "@/Layouts/DashboardLayout";
 import { PageProps } from "@/types";
 import { Head, useForm as useInertiaForm } from "@inertiajs/react";
+import { toast } from "sonner";
 import StudentForm from "./Components/StudentForm";
 import { TStudentForm } from "./Types/Student";
 
@@ -45,7 +46,10 @@ export default function Dashboard({ auth, clubs, categories }: DashboardProps) {
     function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();
 
-        post("/students");
+        post("/students", {
+            onSuccess: () => toast.success("تم التسجيل بنجاح"),
+            onError: () => toast.error("يرجى التحقق من البيانات"),
+        });
     }
     return (
         <DashboardLayout user={auth.user}>

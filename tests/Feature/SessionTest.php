@@ -3,6 +3,7 @@
 use App\Models\Attendance;
 use App\Models\Category;
 use App\Models\Club;
+use App\Models\Group;
 use App\Models\Program;
 use App\Models\ProgramSession;
 use App\Models\Student;
@@ -273,6 +274,97 @@ it('can toggle session optional status', function () {
 
     $session->refresh();
     expect($session->is_optional)->toBeTrue();
+});
+
+it('attendance page excludes archived students without attendance records', function () {
+    $club = Club::factory()->create();
+    $category = Category::factory()->create();
+    $group = Group::factory()->create([
+        'club_id' => $club->id,
+        'category_id' => $category->id,
+    ]);
+    $user = createAdminWithClub($club);
+
+    $program = Program::factory()->create([
+        'club_id' => $club->id,
+        'category_id' => $category->id,
+        'group_id' => $group->id,
+    ]);
+
+    $session = ProgramSession::factory()->create([
+        'program_id' => $program->id,
+        'status' => 'scheduled',
+    ]);
+
+    // Create 3 active students in the group
+    Student::factory()->count(3)->create([
+        'club_id' => $club->id,
+        'category_id' => $category->id,
+        'group_id' => $group->id,
+    ]);
+
+    // Create 2 archived students in the same group (should NOT appear)
+    $archived = Student::factory()->count(2)->create([
+        'club_id' => $club->id,
+        'category_id' => $category->id,
+        'group_id' => $group->id,
+    ]);
+    $archived->each->delete();
+
+    $response = $this->actingAs($user)->get(route('sessions.attendance', $session));
+
+    $response->assertOk();
+    $response->assertInertia(fn ($page) => $page
+        ->has('students', 3)
+    );
+});
+
+it('attendance page includes archived students that have existing attendance records', function () {
+    $club = Club::factory()->create();
+    $category = Category::factory()->create();
+    $group = Group::factory()->create([
+        'club_id' => $club->id,
+        'category_id' => $category->id,
+    ]);
+    $user = createAdminWithClub($club);
+
+    $program = Program::factory()->create([
+        'club_id' => $club->id,
+        'category_id' => $category->id,
+        'group_id' => $group->id,
+    ]);
+
+    $session = ProgramSession::factory()->create([
+        'program_id' => $program->id,
+        'status' => 'scheduled',
+    ]);
+
+    // Create 3 active students in the group
+    Student::factory()->count(3)->create([
+        'club_id' => $club->id,
+        'category_id' => $category->id,
+        'group_id' => $group->id,
+    ]);
+
+    // Create an archived student with an existing attendance record (SHOULD appear)
+    $archivedWithAttendance = Student::factory()->create([
+        'club_id' => $club->id,
+        'category_id' => $category->id,
+        'group_id' => $group->id,
+    ]);
+    Attendance::create([
+        'session_id' => $session->id,
+        'student_id' => $archivedWithAttendance->id,
+        'status' => 'present',
+    ]);
+    $archivedWithAttendance->delete();
+
+    $response = $this->actingAs($user)->get(route('sessions.attendance', $session));
+
+    $response->assertOk();
+    $response->assertInertia(fn ($page) => $page
+        ->has('students', 4) // 3 active + 1 archived with attendance
+    );
 });
 
 it('toggling optional adjusts credits for present students', function () {
