@@ -79,12 +79,15 @@ export default function UpdateProfileInformation({
 
                     <TextInput
                         id="phone"
-                        className="mt-1 block w-full"
+                        type="tel"
+                        inputMode="tel"
+                        placeholder="0555123456"
+                        className="mt-1 block w-full text-right"
                         value={data.phone}
                         onChange={(e) => setData("phone", e.target.value)}
                         required
                         isFocused
-                        autoComplete="phone"
+                        autoComplete="tel"
                     />
 
                     <InputError className="mt-2" message={errors.phone} />
@@ -96,11 +99,10 @@ export default function UpdateProfileInformation({
                     <TextInput
                         id="email"
                         type="email"
-                        className="mt-1 block w-full disabled:cursor-not-allowed disabled:text-neutral-400"
+                        className="mt-1 block w-full text-right"
                         value={data.email}
                         onChange={(e) => setData("email", e.target.value)}
                         required
-                        disabled
                         autoComplete="username"
                     />
 
