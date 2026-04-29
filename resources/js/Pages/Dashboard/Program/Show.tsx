@@ -59,6 +59,8 @@ interface ProgramSession {
     start_time: string | null;
     end_time: string | null;
     status: "scheduled" | "completed" | "canceled";
+    attendance_count: number;
+    expected_count: number;
 }
 
 interface ProgramDisplay {
@@ -181,6 +183,20 @@ function SessionCard({ session, isPast = false }: { session: ProgramSession; isP
                                 <Badge variant={status.variant} className="text-xs">
                                     {status.label}
                                 </Badge>
+                                {session.expected_count > 0 && (
+                                    session.attendance_count >= session.expected_count ? (
+                                        <Badge variant="outline" className="text-xs bg-green-50 border-green-300 text-green-700 flex items-center gap-1">
+                                            <CheckCircle className="h-3 w-3" />
+                                            تم
+                                        </Badge>
+                                    ) : (
+                                        <Badge variant="outline" className="text-xs">
+                                            <span className="font-mono" dir="ltr">
+                                                {session.attendance_count}/{session.expected_count}
+                                            </span>
+                                        </Badge>
+                                    )
+                                )}
                             </div>
                             <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                 <Clock className="h-3 w-3" />

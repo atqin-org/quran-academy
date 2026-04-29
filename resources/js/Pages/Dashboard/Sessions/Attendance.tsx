@@ -1,5 +1,5 @@
 import DashboardLayout from "@/Layouts/DashboardLayout";
-import { Head, router } from "@inertiajs/react";
+import { Head, Link, router } from "@inertiajs/react";
 import {
     Select,
     SelectTrigger,
@@ -20,7 +20,7 @@ import { Switch } from "@/Components/ui/switch";
 import { Label } from "@/Components/ui/label";
 import { Button } from "@/Components/ui/button";
 import { useState, useMemo } from "react";
-import { Save, AlertCircle, Loader2 } from "lucide-react";
+import { Save, AlertCircle, Loader2, ArrowRight } from "lucide-react";
 
 interface Hizb {
     id: number;
@@ -55,6 +55,11 @@ interface SessionAttendanceProps {
         id: number;
         session_date: string;
         is_optional: boolean;
+    };
+    program: {
+        id: number;
+        group_id?: number | null;
+        group_name?: string | null;
     };
     students: Student[];
     ahzab: Hizb[];
@@ -444,6 +449,7 @@ function SmartHizbSelect({
 export default function Attendance({
     auth,
     session,
+    program,
     students: initialStudents,
     ahzab,
     athman,
@@ -564,9 +570,18 @@ export default function Attendance({
 
             <div className="flex flex-col gap-8">
                 <div className="flex items-center justify-between">
-                    <h1 className="text-3xl font-bold text-gray-900">
-                        تسجيل الحضور - الجلسة {session.id}
-                    </h1>
+                    <div className="flex flex-col gap-2">
+                        <Link
+                            href={route("programs.show", program.id)}
+                            className="inline-flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900 w-fit"
+                        >
+                            <ArrowRight className="h-4 w-4" />
+                            العودة إلى البرنامج
+                        </Link>
+                        <h1 className="text-3xl font-bold text-gray-900">
+                            تسجيل الحضور - الجلسة {session.id}
+                        </h1>
+                    </div>
                     <div className="flex items-center gap-3">
                         {hasUnsavedChanges && (
                             <span className="text-sm text-amber-600 flex items-center gap-1">

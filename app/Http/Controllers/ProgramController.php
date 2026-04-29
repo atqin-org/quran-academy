@@ -7,7 +7,9 @@ use App\Actions\Program\GenerateProgramSessionsAction;
 use App\Models\Category;
 use App\Models\Club;
 use App\Models\Program;
+use App\Models\Student;
 use App\Models\Subject;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
@@ -85,8 +87,19 @@ class ProgramController extends Controller
     // عرض تفاصيل برنامج واحد
     public function show(Program $program)
     {
-        $program->load(['subject', 'club', 'category', 'sessions']);
+        $program->load([
+            'subject',
+            'club',
+            'category',
+            'sessions' => fn ($q) => $q->withCount('attendances'),
+        ]);
         $now = now();
+
+        $expectedStudents = Student::query()
+            ->where('club_id', $program->club_id)
+            ->where('category_id', $program->category_id)
+            ->when($program->group_id, fn ($q) => $q->where('group_id', $program->group_id))
+            ->count();
 
         $futureSessions = $program->sessions
             ->where('session_date', '>=', $now)
@@ -99,6 +112,22 @@ class ProgramController extends Controller
             ->sortByDesc('session_date')
             ->values(); // الماضي بترتيب تنازلي (الأحدث أولاً)
 
+        $mapSession = function ($session) use ($expectedStudents) {
+            return [
+                'id' => $session->id,
+                'session_date' => $session->session_date?->format('d/m/Y'),
+                'start_time' => $session->start_time
+                    ? Carbon::parse($session->start_time)->format('H:i')
+                    : null,
+                'end_time' => $session->end_time
+                    ? Carbon::parse($session->end_time)->format('H:i')
+                    : null,
+                'status' => $session->status,
+                'attendance_count' => (int) ($session->attendances_count ?? 0),
+                'expected_count' => $expectedStudents,
+            ];
+        };
+
         $programData = [
             'id' => $program->id,
             'subject_name' => $program->subject->name,
@@ -109,34 +138,10 @@ class ProgramController extends Controller
             'days_of_week' => $program->days_of_week,
 
             // الجلسات القادمة
-            'future_sessions' => $futureSessions->map(function ($session) {
-                return [
-                    'id' => $session->id,
-                    'session_date' => $session->session_date?->format('d/m/Y'),
-                    'start_time' => $session->start_time
-                        ? \Carbon\Carbon::parse($session->start_time)->format('H:i')
-                        : null,
-                    'end_time' => $session->end_time
-                        ? \Carbon\Carbon::parse($session->end_time)->format('H:i')
-                        : null,
-                    'status' => $session->status,
-                ];
-            }),
+            'future_sessions' => $futureSessions->map($mapSession),
 
             // الجلسات الماضية
-            'old_sessions' => $oldSessions->map(function ($session) {
-                return [
-                    'id' => $session->id,
-                    'session_date' => $session->session_date?->format('d/m/Y'),
-                    'start_time' => $session->start_time
-                        ? \Carbon\Carbon::parse($session->start_time)->format('H:i')
-                        : null,
-                    'end_time' => $session->end_time
-                        ? \Carbon\Carbon::parse($session->end_time)->format('H:i')
-                        : null,
-
-                ];
-            }),
+            'old_sessions' => $oldSessions->map($mapSession),
         ];
 
         return Inertia::render('Dashboard/Program/Show', [
@@ -177,10 +182,10 @@ class ProgramController extends Controller
                 'id' => $session->id,
                 'date' => $session->session_date?->format('Y-m-d'),
                 'start_time' => $session->start_time
-                    ? \Carbon\Carbon::parse($session->start_time)->format('H:i')
+                    ? Carbon::parse($session->start_time)->format('H:i')
                     : null,
                 'end_time' => $session->end_time
-                    ? \Carbon\Carbon::parse($session->end_time)->format('H:i')
+                    ? Carbon::parse($session->end_time)->format('H:i')
                     : null,
                 'status' => $session->status,
             ];
