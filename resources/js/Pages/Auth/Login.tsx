@@ -93,16 +93,7 @@ export default function Login({
                     </label>
                 </div>
 
-                <div className="flex items-center justify-end mt-4">
-                    {/*canResetPassword && (
-                        <Link
-                            href={route('password.request')}
-                            className="underline text-sm text-gray-600 hover:text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                        >
-                            Forgot your password?
-                        </Link>
-                    )*/}
-
+                <div className="mt-4">
                     <Button
                         className="rounded-full w-full flex justify-center items-center"
                         disabled={processing}
@@ -110,6 +101,17 @@ export default function Login({
                         تسجيل الدخول
                     </Button>
                 </div>
+
+                {canResetPassword && (
+                    <div className="flex items-center justify-center mt-4">
+                        <Link
+                            href={route("password.request")}
+                            className="underline text-sm text-gray-600 hover:text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+                        >
+                            نسيت كلمة السر؟
+                        </Link>
+                    </div>
+                )}
             </form>
         </GuestLayout>
     );
