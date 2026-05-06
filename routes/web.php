@@ -17,6 +17,13 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 Route::middleware(['auth', 'verified'])->group(function () {
+    // Merge-and-force-delete flow for duplicate students. Declared before the
+    // resource so the literal `merge-candidates` segment does not get matched
+    // as the `{student}` parameter of `students.show`.
+    Route::get('/students/merge-candidates', [StudentResourceController::class, 'mergeCandidates'])
+        ->name('students.mergeCandidates')
+        ->middleware(AdminMiddleware::class);
+
     Route::resource('/students', StudentResourceController::class);
     Route::post('/students/{student}', [StudentResourceController::class, 'update'])->name('students.update');
     Route::put('/students/ahzab/{student}', [StudentResourceController::class, 'ahzab'])->name('students.ahzab');
@@ -24,6 +31,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/studentsExport', [StudentResourceController::class, 'export'])->name('students.export');
     Route::post('/students/{student}/restore', [StudentResourceController::class, 'restore'])->name('students.restore')->middleware(AdminMiddleware::class);
     Route::delete('/students/{student}/force-delete', [StudentResourceController::class, 'forceDelete'])->name('students.forceDelete')->middleware(AdminMiddleware::class);
+    Route::get('/students/{trashed}/merge-payload/{canonical}', [StudentResourceController::class, 'mergePayload'])
+        ->name('students.mergePayload')
+        ->middleware(AdminMiddleware::class);
+    Route::post('/students/{trashed}/merge-and-delete/{canonical}', [StudentResourceController::class, 'mergeAndDelete'])
+        ->name('students.mergeAndDelete')
+        ->middleware(AdminMiddleware::class);
 
     Route::get('/students/{student}/payment', [PaymentController::class, 'show'])->name('students.payment.show');
     Route::post('/students/{student}/payment', [PaymentController::class, 'store'])->name('students.payment.store');
