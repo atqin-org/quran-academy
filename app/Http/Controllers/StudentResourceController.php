@@ -4,13 +4,16 @@ namespace App\Http\Controllers;
 
 use App\Exports\StudentsExport;
 use App\Helpers\ArabicNormalizer;
+use App\Http\Requests\MergeAndForceDeleteRequest;
 use App\Models\Category;
 use App\Models\Club;
 use App\Models\Guardian;
+use App\Models\Payment;
 use App\Models\Student;
 use App\Rules\AtLeastOnePhone;
 use App\Rules\FileOrString;
 use Carbon\Carbon;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -629,10 +632,21 @@ class StudentResourceController extends Controller
 
     /**
      * Permanently delete an archived student.
+     *
+     * If the student still has payment rows, refuse and ask the admin to use
+     * the merge flow instead. The DB FK is RESTRICT, so cascading here would
+     * silently destroy financial history.
      */
     public function forceDelete(string $id)
     {
         $student = Student::onlyTrashed()->findOrFail($id);
+
+        if ($student->payments()->exists()) {
+            return redirect()->back()->with(
+                'error',
+                'لا يمكن الحذف النهائي مباشرةً لوجود دفعات مرتبطة، استخدم زر الدمج مع الطالب الأصلي.'
+            );
+        }
 
         activity('student')
             ->performedOn($student)
@@ -646,6 +660,228 @@ class StudentResourceController extends Controller
         $student->forceDelete();
 
         return redirect()->back()->with('success', 'تم حذف الطالب نهائياً');
+    }
+
+    /**
+     * Search active (non-trashed) students that could be the canonical profile
+     * for a duplicate being merged. Scoped to clubs the user can access.
+     */
+    public function mergeCandidates(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'q' => ['required', 'string', 'min:2'],
+            'exclude' => ['nullable', 'integer'],
+            'gender' => ['nullable', 'array'],
+            'gender.*' => ['string', 'in:male,female'],
+            'categories' => ['nullable', 'array'],
+            'categories.*' => ['integer'],
+            'clubs' => ['nullable', 'array'],
+            'clubs.*' => ['integer'],
+        ]);
+
+        $user = Auth::user();
+        $accessibleClubs = $user->accessibleClubs()->pluck('id')->toArray();
+
+        $query = Student::query()
+            ->whereIn('club_id', $accessibleClubs)
+            ->with(['club:id,name', 'category:id,name']);
+
+        if (! empty($data['exclude'])) {
+            $query->where('id', '!=', $data['exclude']);
+        }
+
+        if (! empty($data['gender'])) {
+            $query->whereIn('gender', $data['gender']);
+        }
+
+        if (! empty($data['categories'])) {
+            $query->whereIn('category_id', $data['categories']);
+        }
+
+        if (! empty($data['clubs'])) {
+            $query->whereIn('club_id', $data['clubs']);
+        }
+
+        $search = $data['q'];
+        $connectionType = DB::getDriverName();
+        if ($connectionType === 'sqlite') {
+            $query->where(function ($q) use ($search) {
+                $q->whereRaw("(first_name || ' ' || last_name) like ?", ["%{$search}%"])
+                    ->orWhereRaw("(last_name || ' ' || first_name) like ?", ["%{$search}%"]);
+            });
+        } else {
+            $query->where(function ($q) use ($search) {
+                $q->whereRaw("CONCAT(first_name, ' ', last_name) like ?", ["%{$search}%"])
+                    ->orWhereRaw("CONCAT(last_name, ' ', first_name) like ?", ["%{$search}%"]);
+            });
+        }
+
+        $candidates = $query
+            ->orderBy('first_name')
+            ->orderBy('last_name')
+            ->limit(20)
+            ->get([
+                'id',
+                'first_name',
+                'last_name',
+                'gender',
+                'birthdate',
+                'ahzab',
+                'subscription',
+                'subscription_expire_at',
+                'insurance_expire_at',
+                'club_id',
+                'category_id',
+            ])
+            ->map(function (Student $student) {
+                return [
+                    'id' => $student->id,
+                    'first_name' => $student->first_name,
+                    'last_name' => $student->last_name,
+                    'gender' => $student->gender,
+                    'birthdate' => optional($student->birthdate)->toDateString(),
+                    'ahzab' => $student->ahzab,
+                    'subscription' => $student->subscription,
+                    'subscription_expire_at' => optional($student->subscription_expire_at)->toDateString(),
+                    'insurance_expire_at' => optional($student->insurance_expire_at)->toDateString(),
+                    'club_name' => $student->club?->name,
+                    'category_name' => $student->category?->name,
+                ];
+            });
+
+        return response()->json(['candidates' => $candidates]);
+    }
+
+    /**
+     * Return the duplicate's payments alongside the canonical's payments so the
+     * admin can resolve them side-by-side. Each duplicate row carries an
+     * `overlaps_canonical` flag (same type + overlapping date range, or two
+     * insurance rows) to highlight likely conflicts.
+     */
+    public function mergePayload(string $trashedId, string $canonicalId): JsonResponse
+    {
+        $duplicate = Student::onlyTrashed()
+            ->with('payments')
+            ->findOrFail($trashedId);
+
+        $canonical = Student::query()
+            ->with('payments')
+            ->findOrFail($canonicalId);
+
+        $canonicalPayments = $canonical->payments;
+
+        $duplicatePayments = $duplicate->payments->map(function (Payment $payment) use ($canonicalPayments) {
+            $overlaps = $canonicalPayments->contains(function (Payment $other) use ($payment) {
+                if ($other->type !== $payment->type) {
+                    return false;
+                }
+
+                if ($payment->type === 'ins') {
+                    return true;
+                }
+
+                if (! $payment->start_at || ! $payment->end_at || ! $other->start_at || ! $other->end_at) {
+                    return false;
+                }
+
+                $aStart = Carbon::parse($payment->start_at);
+                $aEnd = Carbon::parse($payment->end_at);
+                $bStart = Carbon::parse($other->start_at);
+                $bEnd = Carbon::parse($other->end_at);
+
+                return $aStart->lessThanOrEqualTo($bEnd)
+                    && $bStart->lessThanOrEqualTo($aEnd);
+            });
+
+            return $this->serializePayment($payment) + ['overlaps_canonical' => $overlaps];
+        });
+
+        return response()->json([
+            'duplicate' => [
+                'id' => $duplicate->id,
+                'first_name' => $duplicate->first_name,
+                'last_name' => $duplicate->last_name,
+                'payments' => $duplicatePayments,
+            ],
+            'canonical' => [
+                'id' => $canonical->id,
+                'first_name' => $canonical->first_name,
+                'last_name' => $canonical->last_name,
+                'payments' => $canonicalPayments->map(fn (Payment $p) => $this->serializePayment($p)),
+            ],
+        ]);
+    }
+
+    /**
+     * Reassign the chosen payments from the duplicate to the canonical, delete
+     * the rest, then permanently delete the duplicate. All wrapped in a
+     * transaction so a failure rolls everything back.
+     */
+    public function mergeAndDelete(MergeAndForceDeleteRequest $request, string $trashedId, string $canonicalId)
+    {
+        $duplicate = Student::onlyTrashed()->findOrFail($trashedId);
+        $canonical = Student::query()->findOrFail($canonicalId);
+
+        if ((int) $duplicate->id === (int) $canonical->id) {
+            return redirect()->back()->with(
+                'error',
+                'لا يمكن دمج الطالب مع نفسه.'
+            );
+        }
+
+        $transferIds = array_map('intval', $request->input('transfer_payment_ids', []));
+        $deleteIds = array_map('intval', $request->input('delete_payment_ids', []));
+
+        DB::transaction(function () use ($duplicate, $canonical, $transferIds, $deleteIds): void {
+            if (! empty($transferIds)) {
+                Payment::query()
+                    ->whereIn('id', $transferIds)
+                    ->where('student_id', $duplicate->id)
+                    ->update(['student_id' => $canonical->id]);
+            }
+
+            if (! empty($deleteIds)) {
+                Payment::query()
+                    ->whereIn('id', $deleteIds)
+                    ->where('student_id', $duplicate->id)
+                    ->delete();
+            }
+
+            activity('student')
+                ->performedOn($duplicate)
+                ->causedBy(Auth::user())
+                ->event('merged_and_force_deleted')
+                ->withProperties([
+                    'duplicate_name' => $duplicate->first_name.' '.$duplicate->last_name,
+                    'canonical_id' => $canonical->id,
+                    'canonical_name' => $canonical->first_name.' '.$canonical->last_name,
+                    'transferred_payment_count' => count($transferIds),
+                    'deleted_payment_count' => count($deleteIds),
+                ])
+                ->log('تم دمج الطالب المكرر مع الأصلي وحذفه نهائياً');
+
+            $duplicate->forceDelete();
+        });
+
+        return redirect()
+            ->route('students.index', ['archived' => 1])
+            ->with('success', 'تم دمج الطالب المكرر مع الأصلي وحذفه نهائياً');
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function serializePayment(Payment $payment): array
+    {
+        return [
+            'id' => $payment->id,
+            'type' => $payment->type,
+            'value' => $payment->value,
+            'status' => $payment->status,
+            'discount' => $payment->discount,
+            'start_at' => $payment->start_at ? Carbon::parse($payment->start_at)->toDateTimeString() : null,
+            'end_at' => $payment->end_at ? Carbon::parse($payment->end_at)->toDateTimeString() : null,
+        ];
     }
 
     /**

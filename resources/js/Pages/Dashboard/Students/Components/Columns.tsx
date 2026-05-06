@@ -20,6 +20,7 @@ import { ColumnDef } from "@tanstack/react-table";
 import { Archive, Banknote, MoreHorizontal, RotateCcw, Trash2, UserPen } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import MergeAndForceDeleteDialog from "./MergeAndForceDeleteDialog";
 import ThomanCircle from "./ThomanCircle";
 
 export type StudentDisplay = {
@@ -533,9 +534,8 @@ function ActiveStudentActions({ student }: { student: StudentDisplay }) {
 
 function ArchivedStudentActions({ student }: { student: StudentDisplay }) {
     const [restoreDialogOpen, setRestoreDialogOpen] = useState(false);
-    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [mergeDialogOpen, setMergeDialogOpen] = useState(false);
     const [isRestoring, setIsRestoring] = useState(false);
-    const [isDeleting, setIsDeleting] = useState(false);
 
     const handleRestore = () => {
         setIsRestoring(true);
@@ -547,20 +547,6 @@ function ArchivedStudentActions({ student }: { student: StudentDisplay }) {
             },
             onFinish: () => {
                 setIsRestoring(false);
-            },
-        });
-    };
-
-    const handleForceDelete = () => {
-        setIsDeleting(true);
-        router.delete(`/students/${student.id}/force-delete`, {
-            preserveState: true,
-            preserveScroll: true,
-            onSuccess: () => {
-                setDeleteDialogOpen(false);
-            },
-            onFinish: () => {
-                setIsDeleting(false);
             },
         });
     };
@@ -597,37 +583,20 @@ function ArchivedStudentActions({ student }: { student: StudentDisplay }) {
                     </DialogHeader>
                 </DialogContent>
             </Dialog>
-            <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-                <DialogTrigger asChild>
-                    <Button variant="ghost" size="sm" className="h-8 gap-1 text-red-600 hover:text-red-700 hover:bg-red-50">
-                        <Trash2 className="h-4 w-4" />
-                        <span>حذف نهائي</span>
-                    </Button>
-                </DialogTrigger>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>
-                            هل انت متأكد من الحذف النهائي لهذا الطالب؟
-                        </DialogTitle>
-                        <DialogDescription>
-                            لا يمكن التراجع عن هذا القرار وسيتم حذف جميع
-                            بيانات الطالب نهائياً
-                        </DialogDescription>
-                        <DialogFooter>
-                            <button
-                                className="px-4 flex items-center gap-2 rounded-md my-0.5 bg-destructive text-destructive-foreground hover:bg-destructive/90 py-2 disabled:opacity-50"
-                                onClick={handleForceDelete}
-                                disabled={isDeleting}
-                            >
-                                <Trash2 className="h-4 w-4" />
-                                <span>
-                                    {isDeleting ? "جاري الحذف..." : "حذف نهائي"}
-                                </span>
-                            </button>
-                        </DialogFooter>
-                    </DialogHeader>
-                </DialogContent>
-            </Dialog>
+            <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 gap-1 text-red-600 hover:text-red-700 hover:bg-red-50"
+                onClick={() => setMergeDialogOpen(true)}
+            >
+                <Trash2 className="h-4 w-4" />
+                <span>حذف نهائي</span>
+            </Button>
+            <MergeAndForceDeleteDialog
+                student={{ id: student.id, name: student.name }}
+                open={mergeDialogOpen}
+                onOpenChange={setMergeDialogOpen}
+            />
         </div>
     );
 }
