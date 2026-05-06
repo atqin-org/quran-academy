@@ -3,6 +3,7 @@
 use App\Models\Category;
 use App\Models\Club;
 use App\Models\Guardian;
+use App\Models\Payment;
 use App\Models\Student;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -811,6 +812,241 @@ it('force delete returns 404 for active student', function () {
     $response = $this->actingAs($user)->delete(route('students.forceDelete', $student));
 
     $response->assertNotFound();
+});
+
+it('blocks bare force-delete when student has payments', function () {
+    $user = User::factory()->create(['role' => 'admin']);
+    $club = Club::factory()->create();
+    $category = Category::factory()->create();
+
+    $student = Student::factory()->create([
+        'club_id' => $club->id,
+        'category_id' => $category->id,
+    ]);
+    Payment::factory()->create([
+        'student_id' => $student->id,
+        'user_id' => $user->id,
+    ]);
+    $student->delete();
+
+    $response = $this->actingAs($user)->delete(route('students.forceDelete', $student));
+
+    $response->assertRedirect();
+    $response->assertSessionHas('error');
+    $this->assertSoftDeleted('students', ['id' => $student->id]);
+    $this->assertDatabaseHas('payments', ['student_id' => $student->id]);
+});
+
+// -------------------------------------------------------
+// Merge & Force Delete (duplicate students)
+// -------------------------------------------------------
+
+it('lists merge candidates by name search', function () {
+    $user = User::factory()->create(['role' => 'admin']);
+    $club = Club::factory()->create();
+    $category = Category::factory()->create();
+
+    $match = Student::factory()->create([
+        'club_id' => $club->id,
+        'category_id' => $category->id,
+        'first_name' => 'محمد',
+        'last_name' => 'العلوي',
+    ]);
+    Student::factory()->create([
+        'club_id' => $club->id,
+        'category_id' => $category->id,
+        'first_name' => 'يوسف',
+        'last_name' => 'بن صالح',
+    ]);
+    $trashed = Student::factory()->create([
+        'club_id' => $club->id,
+        'category_id' => $category->id,
+        'first_name' => 'محمد',
+        'last_name' => 'العلوي',
+    ]);
+    $trashed->delete();
+
+    $response = $this->actingAs($user)->getJson(
+        route('students.mergeCandidates', ['q' => 'محمد'])
+    );
+
+    $response->assertOk();
+    $ids = collect($response->json('candidates'))->pluck('id')->all();
+    expect($ids)->toContain($match->id);
+    expect($ids)->not->toContain($trashed->id);
+});
+
+it('returns merge payload with both students payments', function () {
+    $user = User::factory()->create(['role' => 'admin']);
+    $club = Club::factory()->create();
+    $category = Category::factory()->create();
+
+    $duplicate = Student::factory()->create([
+        'club_id' => $club->id,
+        'category_id' => $category->id,
+    ]);
+    $canonical = Student::factory()->create([
+        'club_id' => $club->id,
+        'category_id' => $category->id,
+    ]);
+
+    Payment::factory()->count(2)->create([
+        'student_id' => $duplicate->id,
+        'user_id' => $user->id,
+    ]);
+    Payment::factory()->create([
+        'student_id' => $canonical->id,
+        'user_id' => $user->id,
+    ]);
+    $duplicate->delete();
+
+    $response = $this->actingAs($user)->getJson(
+        route('students.mergePayload', [
+            'trashed' => $duplicate->id,
+            'canonical' => $canonical->id,
+        ])
+    );
+
+    $response->assertOk();
+    expect($response->json('duplicate.payments'))->toHaveCount(2);
+    expect($response->json('canonical.payments'))->toHaveCount(1);
+});
+
+it('merges and force-deletes duplicate, transferring chosen payments and deleting the rest', function () {
+    $user = User::factory()->create(['role' => 'admin']);
+    $club = Club::factory()->create();
+    $category = Category::factory()->create();
+
+    $duplicate = Student::factory()->create([
+        'club_id' => $club->id,
+        'category_id' => $category->id,
+    ]);
+    $canonical = Student::factory()->create([
+        'club_id' => $club->id,
+        'category_id' => $category->id,
+    ]);
+
+    $transferPayment = Payment::factory()->create([
+        'student_id' => $duplicate->id,
+        'user_id' => $user->id,
+        'type' => 'sub',
+    ]);
+    $deletePayment = Payment::factory()->create([
+        'student_id' => $duplicate->id,
+        'user_id' => $user->id,
+        'type' => 'ins',
+    ]);
+    $canonicalPayment = Payment::factory()->create([
+        'student_id' => $canonical->id,
+        'user_id' => $user->id,
+    ]);
+    $duplicate->delete();
+
+    $response = $this->actingAs($user)->post(
+        route('students.mergeAndDelete', [
+            'trashed' => $duplicate->id,
+            'canonical' => $canonical->id,
+        ]),
+        [
+            'transfer_payment_ids' => [$transferPayment->id],
+            'delete_payment_ids' => [$deletePayment->id],
+        ]
+    );
+
+    $response->assertRedirect();
+    $response->assertSessionHas('success');
+
+    $this->assertDatabaseMissing('students', ['id' => $duplicate->id]);
+    $this->assertDatabaseHas('payments', [
+        'id' => $transferPayment->id,
+        'student_id' => $canonical->id,
+    ]);
+    $this->assertDatabaseMissing('payments', ['id' => $deletePayment->id]);
+    $this->assertDatabaseHas('payments', [
+        'id' => $canonicalPayment->id,
+        'student_id' => $canonical->id,
+    ]);
+});
+
+it('rejects merge when payment ids do not cover all duplicate payments', function () {
+    $user = User::factory()->create(['role' => 'admin']);
+    $club = Club::factory()->create();
+    $category = Category::factory()->create();
+
+    $duplicate = Student::factory()->create([
+        'club_id' => $club->id,
+        'category_id' => $category->id,
+    ]);
+    $canonical = Student::factory()->create([
+        'club_id' => $club->id,
+        'category_id' => $category->id,
+    ]);
+
+    $covered = Payment::factory()->create([
+        'student_id' => $duplicate->id,
+        'user_id' => $user->id,
+    ]);
+    Payment::factory()->create([
+        'student_id' => $duplicate->id,
+        'user_id' => $user->id,
+    ]);
+    $duplicate->delete();
+
+    $response = $this->actingAs($user)->post(
+        route('students.mergeAndDelete', [
+            'trashed' => $duplicate->id,
+            'canonical' => $canonical->id,
+        ]),
+        [
+            'transfer_payment_ids' => [$covered->id],
+            'delete_payment_ids' => [],
+        ]
+    );
+
+    $response->assertSessionHasErrors('transfer_payment_ids');
+    $this->assertSoftDeleted('students', ['id' => $duplicate->id]);
+});
+
+it('rejects merge when a payment id does not belong to the duplicate', function () {
+    $user = User::factory()->create(['role' => 'admin']);
+    $club = Club::factory()->create();
+    $category = Category::factory()->create();
+
+    $duplicate = Student::factory()->create([
+        'club_id' => $club->id,
+        'category_id' => $category->id,
+    ]);
+    $canonical = Student::factory()->create([
+        'club_id' => $club->id,
+        'category_id' => $category->id,
+    ]);
+    $other = Student::factory()->create([
+        'club_id' => $club->id,
+        'category_id' => $category->id,
+    ]);
+
+    $foreignPayment = Payment::factory()->create([
+        'student_id' => $other->id,
+        'user_id' => $user->id,
+    ]);
+    $duplicate->delete();
+
+    $response = $this->actingAs($user)->post(
+        route('students.mergeAndDelete', [
+            'trashed' => $duplicate->id,
+            'canonical' => $canonical->id,
+        ]),
+        [
+            'transfer_payment_ids' => [$foreignPayment->id],
+            'delete_payment_ids' => [],
+        ]
+    );
+
+    $response->assertSessionHasErrors('transfer_payment_ids');
+    $this->assertDatabaseHas('payments', [
+        'id' => $foreignPayment->id,
+        'student_id' => $other->id,
+    ]);
 });
 
 // -------------------------------------------------------
