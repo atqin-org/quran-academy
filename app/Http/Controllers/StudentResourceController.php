@@ -27,6 +27,10 @@ class StudentResourceController extends Controller
      */
     public function index(Request $request)
     {
+        // Remember the full URL so create/update/destroy can redirect back
+        // here with the same filters / search / page intact.
+        session(['students_index_url' => $request->fullUrl()]);
+
         $archived = $request->boolean('archived');
         $query = $archived ? Student::onlyTrashed() : Student::query();
         $user = Auth::user();
@@ -266,8 +270,9 @@ class StudentResourceController extends Controller
         $request->merge(['father_id' => $father_id, 'mother_id' => $mother_id]);
         Student::create($request->all());
 
-        // redirect to the students index page
-        return redirect()->route('students.index')->with('success', 'تم إضافة الطالب بنجاح');
+        // redirect back to the index page, preserving any active filters
+        return redirect(session('students_index_url', route('students.index')))
+            ->with('success', 'تم إضافة الطالب بنجاح');
     }
 
     /**
@@ -585,8 +590,9 @@ class StudentResourceController extends Controller
         // Save the updated student
         $student->save();
 
-        // Redirect with a success message
-        return redirect()->route('students.index')->with('success', 'تم تحديث الطالب بنجاح');
+        // Redirect back to the index page, preserving any active filters
+        return redirect(session('students_index_url', route('students.index')))
+            ->with('success', 'تم تحديث الطالب بنجاح');
     }
 
     /**
@@ -893,6 +899,7 @@ class StudentResourceController extends Controller
 
         $student->delete();
 
-        return redirect()->route('students.index')->with('success', 'تم حذف الطالب بنجاح');
+        return redirect(session('students_index_url', route('students.index')))
+            ->with('success', 'تم حذف الطالب بنجاح');
     }
 }
