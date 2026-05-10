@@ -24,6 +24,30 @@
     @viteReactRefresh
     @vite(['resources/js/app.tsx', "resources/js/Pages/{$page['component']}.tsx"])
     @inertiaHead
+
+    @if (filled(config('services.umami.website_id')) && filled(config('services.umami.script_url')))
+        <script
+            defer
+            src="{{ config('services.umami.script_url') }}"
+            data-website-id="{{ config('services.umami.website_id') }}"
+            @if (filled(config('services.umami.host_url'))) data-host-url="{{ config('services.umami.host_url') }}" @endif
+            @if (filled(config('services.umami.domains'))) data-domains="{{ config('services.umami.domains') }}" @endif
+            @if (filled(config('services.umami.tag'))) data-tag="{{ config('services.umami.tag') }}" @endif
+            @if (config('services.umami.performance')) data-performance="true" @endif
+        ></script>
+
+        @if (config('services.umami.replay.enabled') && filled(config('services.umami.replay.recorder_url')))
+            <script
+                defer
+                src="{{ config('services.umami.replay.recorder_url') }}"
+                data-website-id="{{ config('services.umami.website_id') }}"
+                data-sample-rate="{{ config('services.umami.replay.sample_rate') }}"
+                data-mask-level="{{ config('services.umami.replay.mask_level') }}"
+                data-max-duration="{{ config('services.umami.replay.max_duration') }}"
+                @if (filled(config('services.umami.replay.block_selector'))) data-block-selector="{{ config('services.umami.replay.block_selector') }}" @endif
+            ></script>
+        @endif
+    @endif
 </head>
 
 <body class="font-sans antialiased overflow-hidden">
