@@ -4,7 +4,6 @@ import { Head, Link, useForm } from "@inertiajs/react";
 import {
     Card,
     CardContent,
-    CardDescription,
     CardHeader,
     CardTitle,
 } from "@/Components/ui/card";
@@ -12,7 +11,7 @@ import { Button } from "@/Components/ui/button";
 import { Input } from "@/Components/ui/input";
 import { Label } from "@/Components/ui/label";
 import { Badge } from "@/Components/ui/badge";
-import { ArrowRight, Calendar, Loader2, Save } from "lucide-react";
+import { ArrowRight, Calendar, Info, Loader2, Save, Users } from "lucide-react";
 import { useState } from "react";
 
 interface CategoryConfig {
@@ -20,6 +19,8 @@ interface CategoryConfig {
     category_name: string;
     category_gender: string | null;
     sessions_per_month: number;
+    capacity: number | null;
+    has_groups: boolean;
     has_config: boolean;
 }
 
@@ -39,10 +40,12 @@ export default function SessionConfig({ auth, club, categoryConfigs }: SessionCo
         configs: categoryConfigs.map(c => ({
             category_id: c.category_id,
             sessions_per_month: c.sessions_per_month,
+            capacity: c.capacity,
         })),
     });
 
     const [errors, setErrors] = useState<Record<number, string>>({});
+    const [capacityErrors, setCapacityErrors] = useState<Record<number, string>>({});
 
     const validateValue = (value: string, categoryId: number): number | null => {
         const parsed = parseInt(value);
@@ -72,9 +75,35 @@ export default function SessionConfig({ auth, club, categoryConfigs }: SessionCo
         return parsed;
     };
 
+    const validateCapacity = (value: string, categoryId: number): number | null => {
+        if (value === '') {
+            setCapacityErrors(prev => {
+                const next = { ...prev };
+                delete next[categoryId];
+                return next;
+            });
+            return null;
+        }
+
+        const parsed = parseInt(value);
+
+        if (isNaN(parsed) || parsed < 1) {
+            setCapacityErrors(prev => ({ ...prev, [categoryId]: 'الحد الأدنى هو 1' }));
+            return null;
+        }
+
+        setCapacityErrors(prev => {
+            const next = { ...prev };
+            delete next[categoryId];
+            return next;
+        });
+
+        return parsed;
+    };
+
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        if (Object.keys(errors).length > 0) {
+        if (Object.keys(errors).length > 0 || Object.keys(capacityErrors).length > 0) {
             return;
         }
         put(route('clubs.sessions-config.update', club.id));
@@ -91,7 +120,24 @@ export default function SessionConfig({ auth, club, categoryConfigs }: SessionCo
         }
     };
 
-    const hasErrors = Object.keys(errors).length > 0;
+    const updateCapacity = (categoryId: number, value: string) => {
+        if (value === '') {
+            validateCapacity(value, categoryId);
+            setData('configs', data.configs.map(c =>
+                c.category_id === categoryId ? { ...c, capacity: null } : c
+            ));
+            return;
+        }
+
+        const validated = validateCapacity(value, categoryId);
+        if (validated !== null) {
+            setData('configs', data.configs.map(c =>
+                c.category_id === categoryId ? { ...c, capacity: validated } : c
+            ));
+        }
+    };
+
+    const hasErrors = Object.keys(errors).length > 0 || Object.keys(capacityErrors).length > 0;
 
     return (
         <DashboardLayout user={auth.user}>
@@ -109,69 +155,121 @@ export default function SessionConfig({ auth, club, categoryConfigs }: SessionCo
                     </h1>
                 </div>
 
-                {/* Config Card */}
-                <Card className="max-w-2xl">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <Calendar className="h-5 w-5" />
-                            عدد الحصص الشهرية لكل فئة
-                        </CardTitle>
-                        <CardDescription>
-                            حدد عدد الحصص التي يحصل عليها الطالب شهرياً لكل فئة
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <form onSubmit={handleSubmit} className="space-y-6">
-                            {categoryConfigs.map((config, index) => (
-                                <div key={config.category_id} className="space-y-1">
-                                    <div className="flex items-center gap-4">
-                                        <div className="flex-1">
-                                            <Label>{config.category_name}</Label>
-                                            {config.category_gender && (
-                                                <Badge variant="outline" className="mr-2">
-                                                    {config.category_gender === 'male' ? 'ذكور' : 'إناث'}
-                                                </Badge>
-                                            )}
-                                        </div>
-                                        <Input
-                                            type="number"
-                                            min="1"
-                                            max="31"
-                                            className={`w-24 ${errors[config.category_id] ? 'border-red-500' : ''}`}
-                                            value={data.configs[index].sessions_per_month}
-                                            onChange={(e) => updateConfig(
-                                                config.category_id,
-                                                e.target.value
-                                            )}
-                                        />
-                                        <span className="text-sm text-gray-500">حصة/شهر</span>
-                                    </div>
-                                    {errors[config.category_id] && (
-                                        <p className="text-sm text-red-500 text-left">
-                                            {errors[config.category_id]}
-                                        </p>
-                                    )}
-                                </div>
-                            ))}
+                {/* Intro */}
+                <div className="flex items-start gap-2 text-gray-600">
+                    <Calendar className="h-5 w-5 mt-0.5 flex-shrink-0" />
+                    <div>
+                        <h2 className="text-lg font-semibold text-gray-900">
+                            عدد الحصص الشهرية والسعة الاستيعابية لكل فئة
+                        </h2>
+                        <p className="text-sm">
+                            حدد عدد الحصص التي يحصل عليها الطالب شهرياً والسعة الاستيعابية القصوى لكل فئة
+                        </p>
+                    </div>
+                </div>
 
-                            <div className="flex gap-3 pt-4">
-                                <Button type="submit" disabled={processing || hasErrors} className="gap-2">
-                                    {processing ? (
-                                        <Loader2 className="h-4 w-4 animate-spin" />
-                                    ) : (
-                                        <Save className="h-4 w-4" />
-                                    )}
-                                    {processing ? "جاري الحفظ..." : "حفظ الإعدادات"}
-                                </Button>
-                                <Link href={route('clubs.index')}>
-                                    <Button type="button" variant="outline">
-                                        إلغاء
-                                    </Button>
-                                </Link>
-                            </div>
-                        </form>
-                    </CardContent>
-                </Card>
+                <form onSubmit={handleSubmit} className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {categoryConfigs.map((config, index) => (
+                            <Card key={config.category_id}>
+                                <CardHeader className="pb-3">
+                                    <CardTitle className="text-base flex items-center justify-between gap-2">
+                                        <span>{config.category_name}</span>
+                                        {config.category_gender && (
+                                            <Badge variant="outline">
+                                                {config.category_gender === 'male' ? 'ذكور' : 'إناث'}
+                                            </Badge>
+                                        )}
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent className="space-y-4">
+                                    <div>
+                                        <Label className="flex items-center gap-2 text-sm text-gray-600 mb-1.5">
+                                            <Calendar className="h-4 w-4" />
+                                            <span>عدد الحصص الشهرية</span>
+                                        </Label>
+                                        <div className="flex items-center gap-2">
+                                            <Input
+                                                type="number"
+                                                min="1"
+                                                max="31"
+                                                className={`w-24 ${errors[config.category_id] ? 'border-red-500' : ''}`}
+                                                value={data.configs[index].sessions_per_month}
+                                                onChange={(e) => updateConfig(
+                                                    config.category_id,
+                                                    e.target.value
+                                                )}
+                                            />
+                                            <span className="text-sm text-gray-500">حصة/شهر</span>
+                                        </div>
+                                        {errors[config.category_id] && (
+                                            <p className="mt-1 text-sm text-red-500 text-left">
+                                                {errors[config.category_id]}
+                                            </p>
+                                        )}
+                                    </div>
+
+                                    <div>
+                                        <Label className="flex items-center gap-2 text-sm text-gray-600 mb-1.5">
+                                            <Users className="h-4 w-4" />
+                                            <span>السعة الاستيعابية</span>
+                                        </Label>
+                                        {config.has_groups ? (
+                                            <Link
+                                                href={route('groups.manage', {
+                                                    club: club.id,
+                                                    category: config.category_id,
+                                                })}
+                                                className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-primary"
+                                            >
+                                                <Info className="h-4 w-4" />
+                                                <span>تُدار على مستوى الأفواج</span>
+                                            </Link>
+                                        ) : (
+                                            <>
+                                                <div className="flex items-center gap-2">
+                                                    <Input
+                                                        type="number"
+                                                        min="1"
+                                                        placeholder="غير محددة"
+                                                        className={`w-24 ${capacityErrors[config.category_id] ? 'border-red-500' : ''}`}
+                                                        value={data.configs[index].capacity ?? ''}
+                                                        onChange={(e) => updateCapacity(
+                                                            config.category_id,
+                                                            e.target.value
+                                                        )}
+                                                    />
+                                                    <span className="text-sm text-gray-500">طالب</span>
+                                                </div>
+                                                {capacityErrors[config.category_id] && (
+                                                    <p className="mt-1 text-sm text-red-500 text-left">
+                                                        {capacityErrors[config.category_id]}
+                                                    </p>
+                                                )}
+                                            </>
+                                        )}
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </div>
+
+                    <div className="flex gap-3 pt-2">
+                        <Button type="submit" disabled={processing || hasErrors} className="gap-2">
+                            {processing ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                                <Save className="h-4 w-4" />
+                            )}
+                            {processing ? "جاري الحفظ..." : "حفظ الإعدادات"}
+                        </Button>
+                        <Link href={route('clubs.index')}>
+                            <Button type="button" variant="outline">
+                                إلغاء
+                            </Button>
+                        </Link>
+                    </div>
+                </form>
             </div>
         </DashboardLayout>
     );

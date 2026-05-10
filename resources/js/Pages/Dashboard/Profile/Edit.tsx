@@ -1,17 +1,23 @@
 import DashboardLayout from "@/Layouts/DashboardLayout";
 import DeleteUserForm from "./Partials/DeleteUserForm";
+import UpdateNotificationPreferencesForm from "./Partials/UpdateNotificationPreferencesForm";
 import UpdatePasswordForm from "./Partials/UpdatePasswordForm";
 import UpdateProfileInformationForm from "./Partials/UpdateProfileInformationForm";
 import { Head } from "@inertiajs/react";
-import { PageProps } from "@/types";
+import { NotificationPreferenceRow, PageProps } from "@/types";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/Components/ui/tabs";
-import { LockKeyhole, User } from "lucide-react";
+import { Bell, LockKeyhole, User } from "lucide-react";
 
 export default function Edit({
     auth,
     mustVerifyEmail,
     status,
-}: PageProps<{ mustVerifyEmail: boolean; status?: string }>) {
+    preferences,
+}: PageProps<{
+    mustVerifyEmail: boolean;
+    status?: string;
+    preferences: NotificationPreferenceRow[];
+}>) {
     return (
         <DashboardLayout user={auth.user}>
             <Head title="Profile" />
@@ -22,7 +28,7 @@ export default function Edit({
                         className="w-full flex flex-col items-center "
                         dir="rtl"
                     >
-                        <TabsList className="w-[200px] md:w-[400px] grid grid-cols-3">
+                        <TabsList className="w-[260px] md:w-[520px] grid grid-cols-4">
                             <TabsTrigger
                                 value="profile"
                                 className="flex gap-1 items-center "
@@ -36,6 +42,13 @@ export default function Edit({
                             >
                                 <span className="hidden md:inline-block">كلمة المرور</span>
                                 <LockKeyhole className="size-4" />
+                            </TabsTrigger>
+                            <TabsTrigger
+                                value="notifications"
+                                className="flex gap-1 items-center "
+                            >
+                                <span className="hidden md:inline-block">التنبيهات</span>
+                                <Bell className="size-4" />
                             </TabsTrigger>
                             <TabsTrigger
                                 value="delete"
@@ -57,6 +70,14 @@ export default function Edit({
                         <TabsContent value="password" className="w-full">
                             <div className="p-4 sm:p-8 bg-white w-full shadow sm:rounded-lg">
                                 <UpdatePasswordForm className="max-w-xl" />
+                            </div>
+                        </TabsContent>
+                        <TabsContent value="notifications" className="w-full">
+                            <div className="p-4 sm:p-8 bg-white w-full shadow sm:rounded-lg">
+                                <UpdateNotificationPreferencesForm
+                                    preferences={preferences}
+                                    className="max-w-2xl"
+                                />
                             </div>
                         </TabsContent>
                         <TabsContent value="delete" className="w-full">

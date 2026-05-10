@@ -4,16 +4,16 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Illuminate\Database\Eloquent\SoftDeletes;
-use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Activitylog\LogOptions;
-use Spatie\Activitylog\Models\Activity;
+use Spatie\Activitylog\Traits\LogsActivity;
 
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable, SoftDeletes, LogsActivity;
+    use HasFactory, LogsActivity, Notifiable, SoftDeletes;
 
     /**
      * The attributes that are mass assignable.
@@ -81,6 +81,34 @@ class User extends Authenticatable
         return Category::all();
     }
 
+    public function notificationPreferences(): HasMany
+    {
+        return $this->hasMany(NotificationPreference::class);
+    }
+
+    /**
+     * Return the preference row for the given notification type, or an
+     * unsaved default (in_app=true, push=false, email=false) when missing.
+     */
+    public function preferenceFor(string $type): NotificationPreference
+    {
+        $existing = $this->notificationPreferences()
+            ->where('type', $type)
+            ->first();
+
+        if ($existing) {
+            return $existing;
+        }
+
+        return new NotificationPreference([
+            'user_id' => $this->id,
+            'type' => $type,
+            'in_app' => true,
+            'push' => false,
+            'email' => false,
+        ]);
+    }
+
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
@@ -92,6 +120,7 @@ class User extends Authenticatable
                     'updated' => 'تم تحديث المستخدم',
                     'deleted' => 'تم حذف المستخدم',
                 ];
+
                 return $events[$eventName] ?? "تم {$eventName} المستخدم";
             })
             ->useLogName('user');
@@ -101,6 +130,7 @@ class User extends Authenticatable
     {
         return $this->activities()->orderBy('created_at', 'desc')->get();
     }
+
     public static function getActivityLogs()
     {
         return ActivityLog::getLogsByType('user');

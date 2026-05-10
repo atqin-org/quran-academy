@@ -18,8 +18,13 @@ import {
     Users,
     ArrowLeftRight,
     Merge,
+    AlertTriangle,
+    Pencil,
+    Check,
+    X,
 } from "lucide-react";
 import { useState } from "react";
+import { Input } from "@/Components/ui/input";
 import {
     Dialog,
     DialogContent,
@@ -50,6 +55,7 @@ interface Group {
     name: string;
     order: number;
     students_count: number;
+    capacity: number | null;
     students: Student[];
 }
 
@@ -86,6 +92,9 @@ export default function Manage({
     const [sourceGroupForMerge, setSourceGroupForMerge] = useState<string>("");
     const [targetGroupForMerge, setTargetGroupForMerge] = useState<string>("");
     const [targetGroupForTransfer, setTargetGroupForTransfer] = useState<string>("");
+    const [editingCapacityGroupId, setEditingCapacityGroupId] = useState<number | null>(null);
+    const [capacityDraft, setCapacityDraft] = useState<string>("");
+    const [capacitySaving, setCapacitySaving] = useState(false);
 
     const createForm = useForm({
         club_id: club.id,
@@ -202,6 +211,42 @@ export default function Manage({
                     setMergeDialogOpen(false);
                     setSourceGroupForMerge("");
                     setTargetGroupForMerge("");
+                },
+            }
+        );
+    };
+
+    const beginEditCapacity = (group: Group) => {
+        setEditingCapacityGroupId(group.id);
+        setCapacityDraft(group.capacity?.toString() ?? "");
+    };
+
+    const cancelEditCapacity = () => {
+        setEditingCapacityGroupId(null);
+        setCapacityDraft("");
+    };
+
+    const saveCapacity = (group: Group) => {
+        const trimmed = capacityDraft.trim();
+        let value: number | null = null;
+        if (trimmed !== "") {
+            const parsed = parseInt(trimmed, 10);
+            if (isNaN(parsed) || parsed < 1) {
+                return;
+            }
+            value = parsed;
+        }
+
+        setCapacitySaving(true);
+        router.put(
+            route("groups.updateCapacity", group.id),
+            { capacity: value },
+            {
+                preserveScroll: true,
+                onFinish: () => {
+                    setCapacitySaving(false);
+                    setEditingCapacityGroupId(null);
+                    setCapacityDraft("");
                 },
             }
         );
@@ -376,8 +421,18 @@ export default function Manage({
                     </Card>
 
                     {/* Group Cards */}
-                    {groups.map((group) => (
-                        <Card key={group.id}>
+                    {groups.map((group) => {
+                        const isOverCapacity =
+                            group.capacity !== null &&
+                            group.students_count > group.capacity;
+                        const isEditingCapacity =
+                            editingCapacityGroupId === group.id;
+
+                        return (
+                        <Card
+                            key={group.id}
+                            className={isOverCapacity ? "border-red-300" : ""}
+                        >
                             <CardHeader className="pb-3">
                                 <div className="flex items-center justify-between">
                                     <CardTitle className="text-lg flex items-center gap-2">
@@ -387,7 +442,23 @@ export default function Manage({
                                         فوج {group.name}
                                     </CardTitle>
                                     <div className="flex items-center gap-2">
-                                        <Badge>{group.students_count} طالب</Badge>
+                                        <Badge
+                                            variant={
+                                                isOverCapacity
+                                                    ? "destructive"
+                                                    : "default"
+                                            }
+                                            className="flex items-center gap-1"
+                                        >
+                                            {isOverCapacity && (
+                                                <AlertTriangle className="h-3 w-3" />
+                                            )}
+                                            {group.students_count}
+                                            {group.capacity !== null && (
+                                                <span> / {group.capacity}</span>
+                                            )}
+                                            <span> طالب</span>
+                                        </Badge>
                                         <Button
                                             variant="ghost"
                                             size="icon"
@@ -405,6 +476,74 @@ export default function Manage({
                                             <Trash2 className="h-4 w-4" />
                                         </Button>
                                     </div>
+                                </div>
+                                <div className="mt-2 flex items-center justify-between text-sm text-gray-500">
+                                    <span className="flex items-center gap-1">
+                                        <Users className="h-3.5 w-3.5" />
+                                        السعة الاستيعابية:
+                                        {" "}
+                                        {!isEditingCapacity && (
+                                            <span className={isOverCapacity ? "text-red-600 font-medium" : ""}>
+                                                {group.capacity ?? "غير محددة"}
+                                            </span>
+                                        )}
+                                    </span>
+                                    {isEditingCapacity ? (
+                                        <span className="flex items-center gap-1">
+                                            <Input
+                                                type="number"
+                                                min="1"
+                                                placeholder="غير محددة"
+                                                className="h-7 w-24"
+                                                value={capacityDraft}
+                                                onChange={(e) =>
+                                                    setCapacityDraft(
+                                                        e.target.value
+                                                    )
+                                                }
+                                                autoFocus
+                                                disabled={capacitySaving}
+                                            />
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-7 w-7 text-green-600"
+                                                onClick={() =>
+                                                    saveCapacity(group)
+                                                }
+                                                disabled={capacitySaving}
+                                                title="حفظ"
+                                            >
+                                                {capacitySaving ? (
+                                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                                ) : (
+                                                    <Check className="h-4 w-4" />
+                                                )}
+                                            </Button>
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-7 w-7"
+                                                onClick={cancelEditCapacity}
+                                                disabled={capacitySaving}
+                                                title="إلغاء"
+                                            >
+                                                <X className="h-4 w-4" />
+                                            </Button>
+                                        </span>
+                                    ) : (
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-7 w-7"
+                                            onClick={() =>
+                                                beginEditCapacity(group)
+                                            }
+                                            title="تعديل السعة"
+                                        >
+                                            <Pencil className="h-3.5 w-3.5" />
+                                        </Button>
+                                    )}
                                 </div>
                             </CardHeader>
                             <CardContent>
@@ -459,7 +598,8 @@ export default function Manage({
                                 )}
                             </CardContent>
                         </Card>
-                    ))}
+                        );
+                    })}
                 </div>
 
                 {/* Transfer Dialog */}

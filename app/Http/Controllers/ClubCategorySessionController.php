@@ -2,9 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Club;
 use App\Models\Category;
+use App\Models\Club;
 use App\Models\ClubCategorySession;
+use App\Models\Group;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
@@ -19,7 +20,7 @@ class ClubCategorySessionController extends Controller
         $user = Auth::user();
         $accessibleClubIds = $user->accessibleClubs()->pluck('id')->toArray();
 
-        if (!in_array($club->id, $accessibleClubIds)) {
+        if (! in_array($club->id, $accessibleClubIds)) {
             abort(403, 'غير مصرح لك بالوصول إلى إعدادات هذا النادي');
         }
     }
@@ -36,14 +37,23 @@ class ClubCategorySessionController extends Controller
             ->get()
             ->keyBy('category_id');
 
+        $categoryIdsWithGroups = Group::where('club_id', $club->id)
+            ->where('is_active', true)
+            ->distinct()
+            ->pluck('category_id')
+            ->all();
+
         // Build config data with defaults
-        $categoryConfigs = $categories->map(function ($category) use ($configs) {
+        $categoryConfigs = $categories->map(function ($category) use ($configs, $categoryIdsWithGroups) {
             $config = $configs->get($category->id);
+
             return [
                 'category_id' => $category->id,
                 'category_name' => $category->name,
                 'category_gender' => $category->gender,
                 'sessions_per_month' => $config?->sessions_per_month ?? 12,
+                'capacity' => $config?->capacity,
+                'has_groups' => in_array($category->id, $categoryIdsWithGroups, true),
                 'has_config' => $config !== null,
             ];
         });
@@ -65,6 +75,7 @@ class ClubCategorySessionController extends Controller
             'configs' => 'required|array',
             'configs.*.category_id' => 'required|exists:categories,id',
             'configs.*.sessions_per_month' => 'required|integer|min:1|max:31',
+            'configs.*.capacity' => 'nullable|integer|min:1',
         ]);
 
         foreach ($validated['configs'] as $config) {
@@ -75,6 +86,7 @@ class ClubCategorySessionController extends Controller
                 ],
                 [
                     'sessions_per_month' => $config['sessions_per_month'],
+                    'capacity' => $config['capacity'] ?? null,
                 ]
             );
         }
