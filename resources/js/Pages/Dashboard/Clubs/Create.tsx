@@ -12,11 +12,14 @@ import { Button } from "@/Components/ui/button";
 import { Input } from "@/Components/ui/input";
 import { Label } from "@/Components/ui/label";
 import { ArrowRight, House, Loader2, MapPin, Save } from "lucide-react";
+import LocationPicker from "@/Components/LocationPicker";
 
 export default function Create({ auth }: PageProps) {
     const { data, setData, post, processing, errors } = useForm({
         name: "",
         location: "",
+        latitude: null as number | null,
+        longitude: null as number | null,
     });
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -86,6 +89,16 @@ export default function Create({ auth }: PageProps) {
                                     <p className="text-sm text-destructive">{errors.location}</p>
                                 )}
                             </div>
+
+                            <LocationPicker
+                                latitude={data.latitude}
+                                longitude={data.longitude}
+                                onChange={(lat, lng) => {
+                                    setData("latitude", lat);
+                                    setData("longitude", lng);
+                                }}
+                                error={errors.latitude || errors.longitude}
+                            />
 
                             <div className="flex gap-3">
                                 <Button type="submit" disabled={processing} className="gap-2">

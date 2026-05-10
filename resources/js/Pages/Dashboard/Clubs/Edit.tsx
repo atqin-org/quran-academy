@@ -12,11 +12,14 @@ import { Button } from "@/Components/ui/button";
 import { Input } from "@/Components/ui/input";
 import { Label } from "@/Components/ui/label";
 import { ArrowRight, House, Loader2, MapPin, Save } from "lucide-react";
+import LocationPicker from "@/Components/LocationPicker";
 
 interface Club {
     id: number;
     name: string;
     location: string;
+    latitude: number | null;
+    longitude: number | null;
     deleted_at: string | null;
 }
 
@@ -28,6 +31,8 @@ export default function Edit({ auth, club }: EditProps) {
     const { data, setData, post, processing, errors } = useForm({
         name: club.name,
         location: club.location,
+        latitude: club.latitude,
+        longitude: club.longitude,
     });
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -97,6 +102,16 @@ export default function Edit({ auth, club }: EditProps) {
                                     <p className="text-sm text-destructive">{errors.location}</p>
                                 )}
                             </div>
+
+                            <LocationPicker
+                                latitude={data.latitude}
+                                longitude={data.longitude}
+                                onChange={(lat, lng) => {
+                                    setData("latitude", lat);
+                                    setData("longitude", lng);
+                                }}
+                                error={errors.latitude || errors.longitude}
+                            />
 
                             <div className="flex gap-3">
                                 <Button type="submit" disabled={processing} className="gap-2">
