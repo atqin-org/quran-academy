@@ -1,6 +1,6 @@
 import DashboardLayout from "@/Layouts/DashboardLayout";
 import { PageProps } from "@/types";
-import { Head, Link, useForm, router } from "@inertiajs/react";
+import { Head, useForm, router } from "@inertiajs/react";
 import {
     Card,
     CardContent,
@@ -263,11 +263,15 @@ export default function Manage({
                 {/* Header */}
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
-                        <Link href={route("clubs.index")}>
-                            <Button variant="outline" size="icon">
-                                <ArrowRight className="h-4 w-4" />
-                            </Button>
-                        </Link>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            onClick={() => window.history.back()}
+                            title="رجوع"
+                        >
+                            <ArrowRight className="h-4 w-4" />
+                        </Button>
                         <div>
                             <h1 className="text-3xl font-bold text-gray-900">
                                 إدارة الأفواج

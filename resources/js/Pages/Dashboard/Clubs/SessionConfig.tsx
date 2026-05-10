@@ -141,17 +141,21 @@ export default function SessionConfig({ auth, club, categoryConfigs }: SessionCo
 
     return (
         <DashboardLayout user={auth.user}>
-            <Head title={`إعدادات الحصص - ${club.name}`} />
+            <Head title={`إعدادات الفئات - ${club.name}`} />
             <div className="flex flex-col gap-6">
                 {/* Header */}
                 <div className="flex items-center gap-4">
-                    <Link href={route('clubs.index')}>
-                        <Button variant="outline" size="icon">
-                            <ArrowRight className="h-4 w-4" />
-                        </Button>
-                    </Link>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        onClick={() => window.history.back()}
+                        title="رجوع"
+                    >
+                        <ArrowRight className="h-4 w-4" />
+                    </Button>
                     <h1 className="text-3xl font-bold text-gray-900">
-                        إعدادات الحصص - {club.name}
+                        إعدادات الفئات - {club.name}
                     </h1>
                 </div>
 
