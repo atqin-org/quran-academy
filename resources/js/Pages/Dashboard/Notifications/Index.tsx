@@ -1,5 +1,5 @@
 import DashboardLayout from "@/Layouts/DashboardLayout";
-import { Head, Link, router } from "@inertiajs/react";
+import { Head, InfiniteScroll, Link, router } from "@inertiajs/react";
 import {
     Card,
     CardContent,
@@ -7,7 +7,7 @@ import {
 import { Button } from "@/Components/ui/button";
 import { Badge } from "@/Components/ui/badge";
 import { AlertTriangle, Bell, CalendarClock, Check, CreditCard, Settings2, X } from "lucide-react";
-import { AppNotification, CapacityOverflow, PageProps } from "@/types";
+import { AppNotification, CapacityOverflow, TUser } from "@/types";
 
 const CAPACITY_TYPE = "class_over_capacity";
 const SESSION_ATTENDANCE_TYPE = "session_attendance_pending";
@@ -15,14 +15,11 @@ const PAYMENT_OVERDUE_TYPE = "payment_overdue";
 
 interface PaginatedNotifications {
     data: AppNotification[];
-    current_page: number;
-    last_page: number;
-    next_page_url: string | null;
-    prev_page_url: string | null;
     total: number;
 }
 
-interface NotificationsIndexProps extends PageProps {
+interface NotificationsIndexProps {
+    auth: { user: TUser };
     notifications: PaginatedNotifications;
     filter: "unread" | "all";
 }
@@ -122,47 +119,29 @@ export default function Index({
                         </CardContent>
                     </Card>
                 ) : (
-                    <div className="flex flex-col gap-2">
-                        {items.map((notification) => (
-                            <NotificationCard
-                                key={notification.id}
-                                notification={notification}
-                                onMarkRead={markRead}
-                                onDismiss={dismiss}
-                            />
-                        ))}
-                    </div>
-                )}
-
-                {(notifications.prev_page_url || notifications.next_page_url) && (
-                    <div className="flex items-center justify-between gap-2">
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            disabled={!notifications.prev_page_url}
-                            onClick={() =>
-                                notifications.prev_page_url &&
-                                router.get(notifications.prev_page_url)
-                            }
-                        >
-                            السابق
-                        </Button>
-                        <span className="text-sm text-gray-500">
-                            صفحة {notifications.current_page} من{" "}
-                            {notifications.last_page}
-                        </span>
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            disabled={!notifications.next_page_url}
-                            onClick={() =>
-                                notifications.next_page_url &&
-                                router.get(notifications.next_page_url)
-                            }
-                        >
-                            التالي
-                        </Button>
-                    </div>
+                    <InfiniteScroll
+                        data="notifications"
+                        preserveUrl
+                        loading={() => (
+                            <div className="flex items-center justify-center py-3">
+                                <div className="size-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                                <span className="ms-2 text-xs text-muted-foreground">
+                                    جاري التحميل...
+                                </span>
+                            </div>
+                        )}
+                    >
+                        <div className="flex flex-col gap-2">
+                            {items.map((notification) => (
+                                <NotificationCard
+                                    key={notification.id}
+                                    notification={notification}
+                                    onMarkRead={markRead}
+                                    onDismiss={dismiss}
+                                />
+                            ))}
+                        </div>
+                    </InfiniteScroll>
                 )}
             </div>
         </DashboardLayout>

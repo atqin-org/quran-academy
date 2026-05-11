@@ -14,25 +14,27 @@ class NotificationController extends Controller
     {
         $filter = $request->query('filter') === 'all' ? 'all' : 'unread';
 
-        $query = $request->user()->notifications();
-        if ($filter === 'unread') {
-            $query->whereNull('read_at');
-        }
-
-        $dismissableMap = Registry::dismissableMap();
-
-        $notifications = $query->latest()->paginate(20)->withQueryString();
-        $notifications->getCollection()->transform(fn ($n) => [
-            'id' => $n->id,
-            'type' => $n->type,
-            'data' => $n->data,
-            'dismissable' => $dismissableMap[$n->type] ?? true,
-            'read_at' => $n->read_at?->toIso8601String(),
-            'created_at' => $n->created_at?->toIso8601String(),
-        ]);
-
         return Inertia::render('Dashboard/Notifications/Index', [
-            'notifications' => $notifications,
+            'notifications' => Inertia::scroll(function () use ($request, $filter) {
+                $query = $request->user()->notifications();
+                if ($filter === 'unread') {
+                    $query->whereNull('read_at');
+                }
+
+                $dismissableMap = Registry::dismissableMap();
+
+                $paginator = $query->latest()->paginate(20)->withQueryString();
+                $paginator->getCollection()->transform(fn ($n) => [
+                    'id' => $n->id,
+                    'type' => $n->type,
+                    'data' => $n->data,
+                    'dismissable' => $dismissableMap[$n->type] ?? true,
+                    'read_at' => $n->read_at?->toIso8601String(),
+                    'created_at' => $n->created_at?->toIso8601String(),
+                ]);
+
+                return $paginator;
+            }),
             'filter' => $filter,
         ]);
     }

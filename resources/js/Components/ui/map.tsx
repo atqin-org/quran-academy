@@ -13,18 +13,30 @@ import {
 
 import { cn } from "@/lib/utils";
 
-// Leaflet's default marker icons reference image files relative to the
-// package URL, which Vite breaks. Re-bind the icon paths so markers render.
-delete (L.Icon.Default.prototype as unknown as { _getIconUrl?: unknown })
-    ._getIconUrl;
-L.Icon.Default.mergeOptions({
-    iconRetinaUrl:
-        "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
-    iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-    shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
-});
-
 type LatLng = [number, number];
+
+// Custom shadcn-themed pin: a teardrop with the primary fill, dark stroke and
+// a small white dot at the bottom, drawn as a Leaflet `divIcon` so it inherits
+// the app's CSS variables (primary, border, shadow).
+const PIN_SVG = `
+<svg xmlns="http://www.w3.org/2000/svg" width="36" height="42" viewBox="0 0 36 42" fill="none">
+    <path d="M18 1c-9.389 0-17 7.611-17 17 0 12.75 17 23 17 23s17-10.25 17-23c0-9.389-7.611-17-17-17z"
+        fill="hsl(var(--primary))"
+        stroke="hsl(var(--background))"
+        stroke-width="2"
+        stroke-linejoin="round"
+    />
+    <circle cx="18" cy="17" r="6" fill="hsl(var(--background))" />
+</svg>
+`.trim();
+
+const shadcnPinIcon = L.divIcon({
+    className: "shadcn-map-pin",
+    html: `<div style="filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));">${PIN_SVG}</div>`,
+    iconSize: [36, 42],
+    iconAnchor: [18, 42],
+    popupAnchor: [0, -38],
+});
 
 interface MapProps {
     center: LatLng;
@@ -48,7 +60,26 @@ export function Map({
             zoomControl={false}
             scrollWheelZoom
             className={cn(
-                "h-72 w-full rounded-md border bg-muted [&_.leaflet-control]:!font-sans",
+                // shadcn-aligned container styling
+                "h-80 w-full rounded-lg border bg-muted shadow-sm overflow-hidden",
+                "[&_.leaflet-control]:!font-sans",
+                // zoom buttons — small rounded shadcn-style outline buttons
+                "[&_.leaflet-control-zoom]:!border-0 [&_.leaflet-control-zoom]:!shadow-none [&_.leaflet-control-zoom]:!rounded-md",
+                "[&_.leaflet-control-zoom_a]:!bg-background [&_.leaflet-control-zoom_a]:!text-foreground",
+                "[&_.leaflet-control-zoom_a]:!border [&_.leaflet-control-zoom_a]:!border-border",
+                "[&_.leaflet-control-zoom_a]:!w-8 [&_.leaflet-control-zoom_a]:!h-8",
+                "[&_.leaflet-control-zoom_a]:!leading-8 [&_.leaflet-control-zoom_a]:!text-base",
+                "[&_.leaflet-control-zoom_a:first-child]:!rounded-t-md [&_.leaflet-control-zoom_a:last-child]:!rounded-b-md",
+                "[&_.leaflet-control-zoom_a:hover]:!bg-muted",
+                // popup styling — match shadcn popover
+                "[&_.leaflet-popup-content-wrapper]:!bg-popover [&_.leaflet-popup-content-wrapper]:!text-popover-foreground",
+                "[&_.leaflet-popup-content-wrapper]:!rounded-md [&_.leaflet-popup-content-wrapper]:!shadow-md",
+                "[&_.leaflet-popup-content-wrapper]:!border [&_.leaflet-popup-content-wrapper]:!border-border",
+                "[&_.leaflet-popup-tip]:!bg-popover [&_.leaflet-popup-tip]:!shadow-none",
+                "[&_.leaflet-popup-content]:!my-2 [&_.leaflet-popup-content]:!mx-3 [&_.leaflet-popup-content]:!text-sm",
+                "[&_.leaflet-popup-close-button]:!text-muted-foreground [&_.leaflet-popup-close-button:hover]:!text-foreground",
+                // attribution bar — quieter
+                "[&_.leaflet-control-attribution]:!bg-background/80 [&_.leaflet-control-attribution]:!text-[10px] [&_.leaflet-control-attribution]:!px-1.5",
                 className,
             )}
         >
@@ -135,6 +166,7 @@ export function MapMarker({
         <Marker
             position={position}
             draggable={!!draggable}
+            icon={shadcnPinIcon}
             eventHandlers={draggable ? eventHandlers : undefined}
         >
             {children}
