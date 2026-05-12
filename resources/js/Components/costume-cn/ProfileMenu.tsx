@@ -1,5 +1,5 @@
-import { Link } from "@inertiajs/react";
-import { TUser } from "@/types";
+import { Link, usePage } from "@inertiajs/react";
+import { PageProps, TUser } from "@/types";
 import { profileMenuLinks } from "@/Data/Routes";
 import { cn } from "@/lib/utils";
 import {
@@ -35,9 +35,24 @@ const ProfileMenu: React.FC<ProfileMenuProps> = ({
     isCollapsed,
     mobile,
 }) => {
+    const { version } = usePage<PageProps>().props;
     const filteredLinks = profileMenuLinks.filter(
         (link) => !link.visibleFor || link.visibleFor.includes(auth.role)
     );
+
+    const dotClass =
+        version?.is_latest === true
+            ? "bg-emerald-500"
+            : version?.is_latest === false
+            ? "bg-amber-500"
+            : "bg-gray-300";
+
+    const versionTooltip =
+        version?.is_latest === true
+            ? "أحدث إصدار"
+            : version?.is_latest === false && version.latest
+            ? `إصدار جديد متوفر: v${version.latest}`
+            : "تعذّر التحقق من الإصدار";
 
     return (
         <Popover>
@@ -115,6 +130,38 @@ const ProfileMenu: React.FC<ProfileMenuProps> = ({
                         );
                     })}
                 </div>
+
+                {version?.current && (
+                    <div className="border-t border-gray-100 mt-1 pt-2">
+                        <a
+                            href={
+                                version.is_latest === false && version.latest_url
+                                    ? version.latest_url
+                                    : version.releases_url
+                            }
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            title={versionTooltip}
+                            className="flex items-center justify-between px-3 py-1.5 text-[11px] text-gray-400 hover:text-gray-600 transition-colors"
+                        >
+                            <span className="flex items-center gap-1.5">
+                                <span
+                                    className={cn(
+                                        "h-1.5 w-1.5 rounded-full",
+                                        dotClass
+                                    )}
+                                    aria-hidden
+                                />
+                                v{version.current}
+                            </span>
+                            {version.is_latest === false && version.latest && (
+                                <span className="text-amber-600">
+                                    تحديث متاح
+                                </span>
+                            )}
+                        </a>
+                    </div>
+                )}
             </PopoverContent>
         </Popover>
     );

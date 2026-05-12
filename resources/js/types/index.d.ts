@@ -88,6 +88,13 @@ export type PageProps<T extends Record<string, unknown> = Record<string, unknown
         unread: AppNotification[];
         unread_count: number;
     };
+    version: {
+        current: string | null;
+        latest: string | null;
+        latest_url: string | null;
+        is_latest: boolean | null;
+        releases_url: string;
+    };
 };
 
 // Statistics Types

@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Notifications\Registry;
+use App\Services\VersionChecker;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -36,6 +37,7 @@ class HandleInertiaRequests extends Middleware
                 'user' => $request->user(),
             ],
             'notifications' => fn () => $this->buildNotifications($request),
+            'version' => fn () => app(VersionChecker::class)->summary(),
         ];
     }
 
