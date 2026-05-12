@@ -1,3 +1,8 @@
+export type AvatarStyle = "initials" | "hashvatar" | "boring";
+export type BoringVariant = "beam" | "marble" | "pixel" | "sunset" | "ring" | "bauhaus";
+export type HashvatarMode = "gradient" | "dither";
+export type HashvatarTones = "auto" | "ocean" | "sunset" | "forest" | "candy" | "warm" | "mono";
+
 export interface TUser {
     id: number;
     name: string;
@@ -6,6 +11,12 @@ export interface TUser {
     email: string;
     email_verified_at: string;
     role: string;
+    avatar_style?: AvatarStyle | null;
+    avatar_color?: string | null;
+    avatar_variant?: BoringVariant | null;
+    hashvatar_mode?: HashvatarMode | null;
+    hashvatar_animated?: boolean | null;
+    hashvatar_tones?: HashvatarTones | null;
 }
 
 export interface DatabaseBackup {

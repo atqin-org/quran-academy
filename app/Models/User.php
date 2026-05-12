@@ -27,6 +27,12 @@ class User extends Authenticatable
         'role',
         'email',
         'password',
+        'avatar_style',
+        'avatar_color',
+        'avatar_variant',
+        'hashvatar_mode',
+        'hashvatar_animated',
+        'hashvatar_tones',
     ];
 
     /**
@@ -47,6 +53,7 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
+        'hashvatar_animated' => 'boolean',
     ];
 
     /**

@@ -120,7 +120,7 @@ class PaymentController extends Controller
      */
     public function show(Student $student)
     {
-        $payments = Payment::with('user:id,name,last_name,phone,role')
+        $payments = Payment::with('user:id,name,last_name,phone,role,avatar_style,avatar_color,avatar_variant,hashvatar_mode,hashvatar_animated,hashvatar_tones')
             ->where('student_id', $student->id)
             ->latest()
             ->get();
