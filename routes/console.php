@@ -4,6 +4,7 @@ use App\Jobs\ProcessScheduledBackup;
 use App\Models\BackupSetting;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schedule;
 
 Artisan::command('inspire', function () {
@@ -13,7 +14,7 @@ Artisan::command('inspire', function () {
 // Scheduled backup - runs every minute and checks if it should execute
 Schedule::call(function () {
     $enabled = BackupSetting::get('schedule_enabled', false);
-    if (!$enabled) {
+    if (! $enabled) {
         return;
     }
 
@@ -49,11 +50,22 @@ Schedule::call(function () {
         ProcessScheduledBackup::dispatch();
     }
 })->everyMinute()
-  ->name('scheduled-backup')
-  ->withoutOverlapping();
+    ->name('scheduled-backup')
+    ->withoutOverlapping();
 
 // Cleanup old backups using spatie's built-in command
 Schedule::command('backup:clean')->daily()->at('03:00');
 
 // Monitor backup health
 Schedule::command('backup:monitor')->daily()->at('04:00');
+
+// Targeted notification reconciliation - hourly backstop on top of model observers
+Schedule::command('notifications:scan')->hourly();
+
+// Delete read notifications older than 30 days (retention policy)
+Schedule::call(function () {
+    DB::table('notifications')
+        ->whereNotNull('read_at')
+        ->where('read_at', '<', now()->subDays(30))
+        ->delete();
+})->daily()->at('05:00')->name('notifications-retention')->withoutOverlapping();

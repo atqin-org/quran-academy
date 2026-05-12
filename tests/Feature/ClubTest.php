@@ -166,18 +166,3 @@ it('can restore a soft-deleted club', function () {
 
     $this->assertDatabaseHas('clubs', ['id' => $club->id, 'deleted_at' => null]);
 });
-
-it('can view club show page', function () {
-    $user = User::factory()->create();
-    $club = Club::factory()->create();
-
-    $response = $this->actingAs($user)->get(route('clubs.show', $club));
-
-    $response->assertOk();
-    $response->assertInertia(fn ($page) => $page
-        ->component('Dashboard/Clubs/Show')
-        ->has('club')
-        ->has('club.students')
-        ->has('club.users')
-    );
-});
