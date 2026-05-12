@@ -244,6 +244,33 @@ it('does not notify personnel with no club attachments', function () {
     expect($orphanTeacher->fresh()->notifications()->count())->toBe(0);
 });
 
+it('ClassOverCapacity toMail renders the capacity-overflow view with the right data', function () {
+    $admin = User::factory()->create(['role' => 'admin']);
+
+    $notification = new ClassOverCapacity([
+        'kind' => 'group',
+        'id' => 42,
+        'club_name' => 'نادي الفردوس',
+        'category_name' => 'الكبار',
+        'group_name' => 'الفوج 1',
+        'current' => 17,
+        'capacity' => 15,
+        'manage_url' => '/groups/manage/1/2',
+        'club_id' => 1,
+        'category_id' => 2,
+    ]);
+
+    $mail = $notification->toMail($admin);
+
+    expect($mail->subject)->toBe('تجاوز السعة الاستيعابية');
+    expect($mail->view)->toBe('emails.capacity-overflow');
+    expect($mail->viewData['title'])->toContain('نادي الفردوس')
+        ->and($mail->viewData['title'])->toContain('فوج');
+    expect($mail->viewData['current'])->toBe(17);
+    expect($mail->viewData['capacity'])->toBe(15);
+    expect($mail->viewData['manageUrl'])->toBe('/groups/manage/1/2');
+});
+
 it('auto-resolves all recipients when overflow clears', function () {
     $admin = User::factory()->create(['role' => 'admin']);
     $teacher = User::factory()->create(['role' => 'teacher']);

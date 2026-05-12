@@ -142,3 +142,25 @@ it('auto-resolves all recipients when the credit clears', function () {
     expect($admin->fresh()->unreadNotifications()->count())->toBe(0)
         ->and($teacher->fresh()->unreadNotifications()->count())->toBe(0);
 });
+
+it('PaymentOverdue toMail renders the payment-overdue view', function () {
+    $admin = User::factory()->create(['role' => 'admin']);
+
+    $notification = new PaymentOverdue([
+        'student_id' => 12,
+        'student_name' => 'محمد بن أحمد',
+        'club_name' => 'نادي الفردوس',
+        'category_name' => 'الكبار',
+        'sessions_credit' => -3,
+        'manage_url' => '/students/12',
+    ]);
+
+    $mail = $notification->toMail($admin);
+
+    expect($mail->subject)->toBe('دفع متأخر');
+    expect($mail->view)->toBe('emails.payment-overdue');
+    expect($mail->viewData['studentName'])->toBe('محمد بن أحمد');
+    expect($mail->viewData['clubName'])->toBe('نادي الفردوس');
+    expect($mail->viewData['sessionsCredit'])->toBe(-3);
+    expect($mail->viewData['manageUrl'])->toBe('/students/12');
+});

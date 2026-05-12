@@ -169,3 +169,26 @@ it('auto-resolves both admin and teacher when one of them records attendance', f
     expect($admin->fresh()->unreadNotifications()->count())->toBe(0)
         ->and($teacher->fresh()->unreadNotifications()->count())->toBe(0);
 });
+
+it('SessionAttendancePending toMail renders the session-attendance-pending view', function () {
+    $admin = User::factory()->create(['role' => 'admin']);
+
+    $notification = new SessionAttendancePending([
+        'id' => 99,
+        'program_name' => 'برنامج النصف الأول',
+        'club_name' => 'نادي الفردوس',
+        'category_name' => 'الكبار',
+        'session_date' => '2026-05-10',
+        'start_time' => '17:00',
+        'manage_url' => '/program-sessions/99/attendance',
+    ]);
+
+    $mail = $notification->toMail($admin);
+
+    expect($mail->subject)->toBe('حضور غير مسجّل');
+    expect($mail->view)->toBe('emails.session-attendance-pending');
+    expect($mail->viewData['programName'])->toBe('برنامج النصف الأول');
+    expect($mail->viewData['clubName'])->toBe('نادي الفردوس');
+    expect($mail->viewData['sessionDate'])->toBe('2026-05-10');
+    expect($mail->viewData['manageUrl'])->toBe('/program-sessions/99/attendance');
+});

@@ -423,4 +423,41 @@ class ProgramTest extends TestCase
         $student->refresh();
         $this->assertEquals(10, $student->sessions_credit);
     }
+
+    public function test_execute_with_custom_sessions_replaces_non_completed_sessions_and_keeps_completed_ones()
+    {
+        $program = Program::factory()->create();
+        $completed = ProgramSession::factory()->create([
+            'program_id' => $program->id,
+            'session_date' => '2026-04-01',
+            'status' => 'completed',
+        ]);
+        $scheduled = ProgramSession::factory()->create([
+            'program_id' => $program->id,
+            'session_date' => '2026-04-02',
+            'status' => 'scheduled',
+        ]);
+
+        $customSessions = [
+            ['date' => '2026-05-10', 'start_time' => '17:00', 'end_time' => '18:30'],
+            ['date' => '2026-05-12', 'start_time' => '17:00', 'end_time' => '18:30'],
+            ['date' => '2026-05-14'],
+        ];
+
+        (new GenerateProgramSessionsAction)->executeWithCustomSessions($program, $customSessions);
+
+        $this->assertDatabaseHas('program_sessions', ['id' => $completed->id]);
+        $this->assertDatabaseMissing('program_sessions', ['id' => $scheduled->id]);
+
+        $sessions = ProgramSession::where('program_id', $program->id)
+            ->where('status', 'scheduled')
+            ->orderBy('session_date')
+            ->get();
+
+        $this->assertCount(3, $sessions);
+        $this->assertEquals('2026-05-10', $sessions[0]->session_date->toDateString());
+        $this->assertEquals('17:00', $sessions[0]->start_time->format('H:i'));
+        $this->assertEquals('18:30', $sessions[0]->end_time->format('H:i'));
+        $this->assertNull($sessions[2]->start_time);
+    }
 }
