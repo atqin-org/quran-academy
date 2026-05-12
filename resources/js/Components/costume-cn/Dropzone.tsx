@@ -2,7 +2,9 @@
 import React, { useState } from "react";
 import { useDropzone } from "react-dropzone";
 import { cn } from "@/lib/utils";
-import truncate from "truncate";
+
+const truncate = (input: string, length: number): string =>
+    input.length > length ? `${input.slice(0, length)}…` : input;
 
 // Typescript:
 import {

@@ -176,7 +176,7 @@ export default function StatisticsFilters({
                                     handleDateChange("start", date)
                                 }
                                 locale={ar}
-                                initialFocus
+                                autoFocus
                             />
                         </PopoverContent>
                     </Popover>
@@ -206,7 +206,7 @@ export default function StatisticsFilters({
                                     handleDateChange("end", date)
                                 }
                                 locale={ar}
-                                initialFocus
+                                autoFocus
                             />
                         </PopoverContent>
                     </Popover>
