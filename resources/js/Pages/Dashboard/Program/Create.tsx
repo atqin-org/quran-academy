@@ -513,7 +513,7 @@ export default function ProgramCreate({
                                         </PopoverTrigger>
                                         <PopoverContent className="w-auto p-0" align="start">
                                             <Calendar
-                                                initialFocus
+                                                autoFocus
                                                 mode="range"
                                                 defaultMonth={dateRange?.from}
                                                 selected={dateRange}
@@ -706,7 +706,7 @@ export default function ProgramCreate({
                                                 }
                                             }}
                                             classNames={{
-                                                day_selected: "bg-primary text-primary-foreground hover:bg-primary/90",
+                                                selected: "bg-primary text-primary-foreground hover:bg-primary/90",
                                             }}
                                         />
                                     </div>
@@ -946,7 +946,7 @@ export default function ProgramCreate({
                                             selected={newSessionDate}
                                             onSelect={setNewSessionDate}
                                             locale={ar}
-                                            initialFocus
+                                            autoFocus
                                         />
                                     </PopoverContent>
                                 </Popover>

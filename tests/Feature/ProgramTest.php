@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Feature\Actions;
+namespace Tests\Feature;
 
 use App\Actions\Attendance\RecordAttendanceAction;
 use App\Actions\Program\CreateProgramAction;
