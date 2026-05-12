@@ -304,15 +304,15 @@ const StudentForm = ({
                                     onSelect={(date) =>
                                         setData("birthdate", date)
                                     }
-                                    fromYear={1900}
-                                    toYear={new Date().getFullYear()}
+                                    startMonth={new Date(1900, 0)}
+                                    endMonth={new Date(new Date().getFullYear(), 11)}
                                     fixedWeeks
-                                    captionLayout="dropdown-buttons"
+                                    captionLayout="dropdown"
                                     disabled={(date) =>
                                         date > new Date() ||
                                         date < new Date("1900-01-01")
                                     }
-                                    initialFocus
+                                    autoFocus
                                 />
                             </PopoverContent>
                         </Popover>

@@ -62,7 +62,7 @@ import {
 } from "lucide-react";
 import { useState, useMemo, useEffect } from "react";
 import { toast } from "sonner";
-import UserAvatar from "@/Components/costume-cn/UserAvatar";
+import Avatar from "@/Components/costume-cn/Avatar";
 
 interface DashboardProps extends PageProps {
     personnels: TPersonnelFormDB[];
@@ -304,9 +304,8 @@ export default function Dashboard({
                                             >
                                                 <TableCell className="font-medium">
                                                     <div className="flex items-center gap-2">
-                                                        <UserAvatar
-                                                            firstName={personnel.name}
-                                                            lastName={personnel.last_name}
+                                                        <Avatar
+                                                            user={personnel}
                                                             size="sm"
                                                         />
                                                         <span>

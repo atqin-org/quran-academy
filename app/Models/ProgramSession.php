@@ -12,7 +12,7 @@ class ProgramSession extends Model
     protected $fillable = ['program_id', 'session_date', 'start_time', 'end_time', 'status', 'is_optional'];
 
     protected $casts = [
-        'session_date' => 'date',
+        'session_date' => 'date:Y-m-d',
         'start_time' => 'datetime:H:i',
         'end_time' => 'datetime:H:i',
         'is_optional' => 'boolean',

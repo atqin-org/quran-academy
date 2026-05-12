@@ -2,13 +2,13 @@
 
 namespace Database\Factories;
 
-use App\Models\Student;
-use App\Models\Club;
 use App\Models\Category;
+use App\Models\Club;
 use App\Models\Guardian;
 use App\Models\Payment;
-use Illuminate\Database\Eloquent\Factories\Factory;
+use App\Models\Student;
 use Faker\Factory as FakerFactory;
+use Illuminate\Database\Eloquent\Factories\Factory;
 
 class StudentFactory extends Factory
 {
@@ -29,11 +29,12 @@ class StudentFactory extends Factory
         $faker = FakerFactory::create('ar_EG');
         // Determine if we should generate a father, mother, or both
         $hasFather = $faker->boolean;
-        $hasMother = !$hasFather || $faker->boolean;
+        $hasMother = ! $hasFather || $faker->boolean;
         $ahzab_up = $faker->numberBetween(0, 30);
         $ahzab_down = $faker->numberBetween(0, 30);
+
         return [
-            'club_id' =>  Club::inRandomOrder()->first()->id,
+            'club_id' => Club::query()->inRandomOrder()->value('id') ?? Club::factory(),
             'first_name' => $faker->firstName,
             'last_name' => $faker->lastName,
             'gender' => $faker->randomElement(['male', 'female']),
@@ -43,11 +44,11 @@ class StudentFactory extends Factory
             'family_status' => $faker->optional()->word,
             'father_id' => $hasFather ? Guardian::factory()->state(['gender' => 'male']) : null,
             'mother_id' => $hasMother ? Guardian::factory()->state(['gender' => 'female']) : null,
-            'category_id' => Category::inRandomOrder()->first()->id,
+            'category_id' => Category::query()->inRandomOrder()->value('id') ?? Category::factory(),
             'ahzab_up' => $ahzab_up,
             'ahzab_down' => $ahzab_down,
             'ahzab' => $ahzab_up + $ahzab_down,
-            'subscription' => $faker->randomElement([0,500,1000, 1500, 2000]),
+            'subscription' => $faker->randomElement([0, 500, 1000, 1500, 2000]),
             'subscription_expire_at' => $faker->optional()->dateTimeBetween('-8 months', '+8 months'),
             'insurance_expire_at' => $faker->optional()->dateTimeBetween('-3 months', '+8 months'),
             'memorization_direction' => $faker->randomElement(['ascending', 'descending', 'descending', 'descending']), // 75% descending
@@ -57,7 +58,7 @@ class StudentFactory extends Factory
     /**
      * Indicate that the model should have payments.
      *
-     * @return \Illuminate\Database\Eloquent\Factories\Factory
+     * @return Factory
      */
     public function withPayments()
     {

@@ -15,10 +15,12 @@ class ClubCategorySession extends Model
         'club_id',
         'category_id',
         'sessions_per_month',
+        'capacity',
     ];
 
     protected $casts = [
         'sessions_per_month' => 'integer',
+        'capacity' => 'integer',
     ];
 
     public function club()

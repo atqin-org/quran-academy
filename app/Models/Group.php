@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Database\Factories\GroupFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -12,7 +13,7 @@ use Spatie\Activitylog\Traits\LogsActivity;
 
 class Group extends Model
 {
-    /** @use HasFactory<\Database\Factories\GroupFactory> */
+    /** @use HasFactory<GroupFactory> */
     use HasFactory, LogsActivity, SoftDeletes;
 
     /**
@@ -30,11 +31,13 @@ class Group extends Model
         'name',
         'order',
         'is_active',
+        'capacity',
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
         'order' => 'integer',
+        'capacity' => 'integer',
     ];
 
     public function club(): BelongsTo

@@ -16,36 +16,47 @@ const fileSchema = z.union([
         }),
     z.string(),
 ]);
-export const FormSchemaP = z.object({
-    firstName: z
-        .string({
-            required_error: "الاسم مطلوب",
-        })
-        .min(1, "الاسم مطلوب"),
-    lastName: z
-        .string({
-            required_error: "اللقب مطلوب",
-        })
-        .min(1, "اللقب مطلوب"),
-    mail: z
-        .string({
-            required_error: "البريد الإلكتروني مطلوب",
-        })
-        .email("البريد الإلكتروني غير صالح") // Built-in email validation
-        .refine((email) => email.includes("@"), {
-            message: "البريد الإلكتروني يجب أن يحتوي على @",
+export const FormSchemaP = z
+    .object({
+        firstName: z
+            .string({
+                required_error: "الاسم مطلوب",
+            })
+            .min(1, "الاسم مطلوب"),
+        lastName: z
+            .string({
+                required_error: "اللقب مطلوب",
+            })
+            .min(1, "اللقب مطلوب"),
+        mail: z
+            .string({
+                required_error: "البريد الإلكتروني مطلوب",
+            })
+            .email("البريد الإلكتروني غير صالح") // Built-in email validation
+            .refine((email) => email.includes("@"), {
+                message: "البريد الإلكتروني يجب أن يحتوي على @",
+            }),
+        phone: z.union([
+            z.string().regex(/^0[567]\d{8}$/, {
+                message: "يرجى ادخال رقم هاتف صحيح",
+            }),
+            z.literal(""),
+        ]),
+        clubs: z.array(z.number()),
+        role: z.string({
+            message: "الدور مطلوب",
         }),
-    phone: z.union([
-        z.string().regex(/^0[567]\d{8}$/, {
-            message: "يرجى ادخال رقم هاتف صحيح",
-        }),
-        z.literal(""),
-    ]),
-    clubs: z.array(z.number()).nonempty({
-        message: "النادي مطلوب",
-    }),
-    role: z.string({
-        message: "الدور مطلوب",
-    }),
-    file: fileSchema.optional(),
-});
+        file: fileSchema.optional(),
+    })
+    .superRefine((data, ctx) => {
+        if (data.role !== "admin" && data.clubs.length === 0) {
+            ctx.addIssue({
+                path: ["clubs"],
+                code: z.ZodIssueCode.too_small,
+                minimum: 1,
+                type: "array",
+                inclusive: true,
+                message: "النادي مطلوب",
+            });
+        }
+    });
