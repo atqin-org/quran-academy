@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Category;
+use App\Models\Club;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
-use App\Models\Club;
-use App\Models\Category;
 use Spatie\Activitylog\Models\Activity;
 
 class PersonnelController extends Controller
@@ -23,6 +23,7 @@ class PersonnelController extends Controller
                 ->first();
 
             $user->last_activity_at = $lastActivity ? $lastActivity->created_at->toISOString() : null;
+
             return $user;
         });
 
@@ -30,7 +31,7 @@ class PersonnelController extends Controller
             'Dashboard/Personnels/Index',
             [
                 'clubs' => Club::all(),
-                'personnels' => $personnels
+                'personnels' => $personnels,
             ]
         );
     }
@@ -44,7 +45,7 @@ class PersonnelController extends Controller
             'Dashboard/Personnels/Create',
             [
                 'clubs' => Club::all(),
-                'categories' => Category::all()
+                'categories' => Category::all(),
             ]
         );
     }
@@ -57,7 +58,7 @@ class PersonnelController extends Controller
         $request->validate([
             'firstName' => 'required',
             'lastName' => 'required',
-            'clubs' => 'required|array',
+            'clubs' => 'array|required_unless:role,admin',
             'role' => 'required',
             'phone' => 'required',
             'mail' => 'required|email',
@@ -98,7 +99,7 @@ class PersonnelController extends Controller
             [
                 'personnel' => $personnel->load('clubs'),
                 'clubs' => Club::all(),
-                'categories' => Category::all()
+                'categories' => Category::all(),
             ]
         );
     }
@@ -111,7 +112,7 @@ class PersonnelController extends Controller
         $request->validate([
             'firstName' => 'required',
             'lastName' => 'required',
-            'clubs' => 'required|array',
+            'clubs' => 'array|required_unless:role,admin',
             'role' => 'required',
             'phone' => 'required',
             'mail' => 'required|email',
@@ -151,7 +152,7 @@ class PersonnelController extends Controller
             ->performedOn($user)
             ->causedBy(auth()->user())
             ->withProperties(['action' => 'deactivated'])
-            ->log("User account deactivated");
+            ->log('User account deactivated');
 
         return redirect()->route('personnels.index')->with('success', 'تم تعطيل الحساب بنجاح');
     }
@@ -169,7 +170,7 @@ class PersonnelController extends Controller
             ->performedOn($user)
             ->causedBy(auth()->user())
             ->withProperties(['action' => 'restored'])
-            ->log("User account restored");
+            ->log('User account restored');
 
         return redirect()->route('personnels.index')->with('success', 'تم تفعيل الحساب بنجاح');
     }
