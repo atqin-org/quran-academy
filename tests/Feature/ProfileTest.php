@@ -1,8 +1,9 @@
 <?php
 
 use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 
-uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
+uses(RefreshDatabase::class);
 
 test('profile page is displayed', function () {
     $user = User::factory()->create();
@@ -21,6 +22,8 @@ test('profile information can be updated', function () {
         ->actingAs($user)
         ->patch('/profile', [
             'name' => 'Test User',
+            'last_name' => 'Family',
+            'phone' => '0555123456',
             'email' => 'test@example.com',
         ]);
 
@@ -42,6 +45,8 @@ test('email verification status is unchanged when the email address is unchanged
         ->actingAs($user)
         ->patch('/profile', [
             'name' => 'Test User',
+            'last_name' => 'Family',
+            'phone' => '0555123456',
             'email' => $user->email,
         ]);
 
@@ -53,7 +58,9 @@ test('email verification status is unchanged when the email address is unchanged
 });
 
 test('user can delete their account', function () {
-    $user = User::factory()->create();
+    // Admins are blocked from self-deleting (see ProfileController::destroy),
+    // so this test uses a non-admin role.
+    $user = User::factory()->create(['role' => 'teacher']);
 
     $response = $this
         ->actingAs($user)
@@ -70,7 +77,7 @@ test('user can delete their account', function () {
 });
 
 test('correct password must be provided to delete account', function () {
-    $user = User::factory()->create();
+    $user = User::factory()->create(['role' => 'teacher']);
 
     $response = $this
         ->actingAs($user)

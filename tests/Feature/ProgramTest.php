@@ -12,6 +12,7 @@ use App\Models\Program;
 use App\Models\ProgramSession;
 use App\Models\Student;
 use App\Models\Subject;
+use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -26,6 +27,7 @@ class ProgramTest extends TestCase
         $category = Category::factory()->create();
 
         $program = (new CreateProgramAction)->execute([
+            'name' => 'Test Program',
             'subject_id' => $subject->id,
             'club_id' => $club->id,
             'category_id' => $category->id,
@@ -44,16 +46,23 @@ class ProgramTest extends TestCase
 
     public function test_it_can_generate_program_sessions_for_each_day()
     {
+        // Pin Carbon so the Mon/Wed/Fri count is deterministic.
+        // Window: Mon 2026-01-05 through Mon 2026-02-02 (29 days, inclusive)
+        // → 5 Mondays + 4 Wednesdays + 4 Fridays = 13 sessions.
+        Carbon::setTestNow('2026-01-05');
+
         $program = Program::factory()->create([
-            'days_of_week' => json_encode(['Mon', 'Wed', 'Fri']),
-            'start_date' => now()->toDateString(),
-            'end_date' => now()->addDays(31)->toDateString(),
+            'days_of_week' => ['Mon', 'Wed', 'Fri'],
+            'start_date' => '2026-01-05',
+            'end_date' => '2026-02-02',
         ]);
 
         (new GenerateProgramSessionsAction)->execute($program);
 
         $sessions = ProgramSession::where('program_id', $program->id)->get();
-        $this->assertCount(13, $sessions); // Mon, Wed, Fri
+        $this->assertCount(13, $sessions); // 5 Mon + 4 Wed + 4 Fri
+
+        Carbon::setTestNow();
     }
 
     public function test_it_can_record_attendance_for_a_student()

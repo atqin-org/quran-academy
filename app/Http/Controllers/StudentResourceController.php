@@ -10,7 +10,6 @@ use App\Models\Club;
 use App\Models\Guardian;
 use App\Models\Payment;
 use App\Models\Student;
-use App\Rules\AtLeastOnePhone;
 use App\Rules\FileOrString;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
@@ -218,8 +217,8 @@ class StudentResourceController extends Controller
             'socialStatus' => 'required|in:good,mid,low',
             'hasCronicDisease' => 'required|in:yes,no',
             'cronicDisease' => 'nullable|string',
-            'father.phone' => ['nullable', 'regex:/^0[567]\d{8}$/', new AtLeastOnePhone('motherPhone')],
-            'mother.phone' => ['nullable', 'regex:/^0[567]\d{8}$/', new AtLeastOnePhone('fatherPhone')],
+            'father.phone' => ['required_without:mother.phone', 'nullable', 'regex:/^0[567]\d{8}$/'],
+            'mother.phone' => ['required_without:father.phone', 'nullable', 'regex:/^0[567]\d{8}$/'],
             'father.name' => 'nullable|string',
             'mother.name' => 'nullable|string',
             'father.job' => 'nullable|string',
@@ -534,8 +533,8 @@ class StudentResourceController extends Controller
             'socialStatus' => 'required|in:good,mid,low',
             'hasCronicDisease' => 'required|in:yes,no',
             'cronicDisease' => 'nullable|string',
-            'father.phone' => ['nullable', 'regex:/^0[567]\d{8}$/', new AtLeastOnePhone('motherPhone')],
-            'mother.phone' => ['nullable', 'regex:/^0[567]\d{8}$/', new AtLeastOnePhone('fatherPhone')],
+            'father.phone' => ['required_without:mother.phone', 'nullable', 'regex:/^0[567]\d{8}$/'],
+            'mother.phone' => ['required_without:father.phone', 'nullable', 'regex:/^0[567]\d{8}$/'],
             'father.name' => 'nullable|string',
             'mother.name' => 'nullable|string',
             'father.job' => 'nullable|string',
