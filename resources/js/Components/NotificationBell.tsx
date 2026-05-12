@@ -16,10 +16,6 @@ export default function NotificationBell() {
     const unread = notifications?.unread ?? [];
     const count = notifications?.unread_count ?? 0;
 
-    if (count === 0) {
-        return null;
-    }
-
     const hasDismissableUnread = unread.some((n) => n.dismissable);
 
     const handleMarkAllRead = () => {
@@ -34,13 +30,15 @@ export default function NotificationBell() {
         <Popover>
             <PopoverTrigger asChild>
                 <button
-                    className="relative h-9 w-9 rounded-full border border-red-200 bg-red-50 hover:bg-red-100 transition-colors text-red-700 flex items-center justify-center flex-shrink-0"
+                    className="relative text-primary hover:text-primary/70 transition-colors flex items-center justify-center flex-shrink-0"
                     title={`${count} تنبيه`}
                 >
-                    <Bell className="h-4 w-4" />
-                    <span className="absolute -top-1 -end-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-bold text-white border-2 border-white">
-                        {count}
-                    </span>
+                    <Bell className="h-7 w-7" />
+                    {count > 0 && (
+                        <span className="absolute -top-1 -end-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-bold text-white border-2 border-white">
+                            {count}
+                        </span>
+                    )}
                 </button>
             </PopoverTrigger>
             <PopoverContent
@@ -63,14 +61,20 @@ export default function NotificationBell() {
                         </button>
                     )}
                 </div>
-                <ul className="max-h-96 overflow-y-auto divide-y divide-gray-100">
-                    {unread.map((notification) => (
-                        <NotificationItem
-                            key={notification.id}
-                            notification={notification}
-                        />
-                    ))}
-                </ul>
+                {unread.length === 0 ? (
+                    <p className="px-4 py-6 text-center text-sm text-gray-500">
+                        لا توجد تنبيهات جديدة
+                    </p>
+                ) : (
+                    <ul className="max-h-96 overflow-y-auto divide-y divide-gray-100">
+                        {unread.map((notification) => (
+                            <NotificationItem
+                                key={notification.id}
+                                notification={notification}
+                            />
+                        ))}
+                    </ul>
+                )}
                 <div className="border-t border-gray-100 px-4 py-2 text-center">
                     <Link
                         href={route("notifications.index")}
