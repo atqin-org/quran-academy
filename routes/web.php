@@ -27,7 +27,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('students.mergeCandidates')
         ->middleware(AdminMiddleware::class);
 
-    Route::resource('/students', StudentResourceController::class);
+    Route::resource('/students', StudentResourceController::class)->except(['update']);
     Route::post('/students/{student}', [StudentResourceController::class, 'update'])->name('students.update');
     Route::put('/students/ahzab/{student}', [StudentResourceController::class, 'ahzab'])->name('students.ahzab');
     Route::put('/students/{student}/direction', [StudentResourceController::class, 'updateDirection'])->name('students.direction');
