@@ -158,7 +158,6 @@ export default function Dashboard({
                     </div>
                 </div>
                 <DataTable
-                    key={location.search}
                     columns={columns}
                     data={students.data}
                     searchParams={searchParams}

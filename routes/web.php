@@ -1,10 +1,13 @@
 <?php
 
+use App\Http\Controllers\AdminNotificationTypeController;
 use App\Http\Controllers\BackupController;
 use App\Http\Controllers\ClubCategorySessionController;
 use App\Http\Controllers\ClubController;
 use App\Http\Controllers\GroupController;
 use App\Http\Controllers\LogController;
+use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\NotificationPreferenceController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PersonnelController;
 use App\Http\Controllers\ProfileController;
@@ -71,6 +74,18 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
+    Route::put('/profile/notifications', [NotificationPreferenceController::class, 'update'])->name('profile.notifications.update');
+
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead'])->name('notifications.readAll');
+    Route::post('/notifications/{id}/read', [NotificationController::class, 'markRead'])->name('notifications.read');
+    Route::delete('/notifications/{id}', [NotificationController::class, 'destroy'])->name('notifications.destroy');
+
+    Route::middleware(AdminMiddleware::class)->group(function () {
+        Route::get('/system/notification-types', [AdminNotificationTypeController::class, 'index'])->name('admin.notificationTypes.index');
+        Route::put('/system/notification-types', [AdminNotificationTypeController::class, 'update'])->name('admin.notificationTypes.update');
+    });
+
     Route::get('/system/logs', [LogController::class, 'index'])->name('admin.logs.index')->middleware(AdminMiddleware::class);
 
     // ---------------------------
@@ -108,6 +123,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/club/{club}/{category?}', [GroupController::class, 'clubGroups'])->name('clubGroups');
         Route::get('/manage/{club}/{category}', [GroupController::class, 'manage'])->name('manage');
         Route::post('/', [GroupController::class, 'store'])->name('store');
+        Route::put('/{group}/capacity', [GroupController::class, 'updateCapacity'])->name('updateCapacity');
         Route::delete('/{group}', [GroupController::class, 'destroy'])->name('destroy');
         Route::post('/merge', [GroupController::class, 'merge'])->name('merge');
         Route::post('/transfer-student', [GroupController::class, 'transferStudent'])->name('transferStudent');

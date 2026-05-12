@@ -7,6 +7,7 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from "@/Components/ui/popover";
+import Avatar from "@/Components/costume-cn/Avatar";
 
 interface ProfileMenuProps {
     auth: TUser;
@@ -29,45 +30,6 @@ const translateRole = (role: string) => {
     }
 };
 
-// Colors with good contrast for white text
-const avatarColors = [
-    "bg-red-600",
-    "bg-orange-600",
-    "bg-amber-600",
-    "bg-green-600",
-    "bg-emerald-600",
-    "bg-teal-600",
-    "bg-cyan-700",
-    "bg-sky-600",
-    "bg-blue-600",
-    "bg-indigo-600",
-    "bg-violet-600",
-    "bg-purple-600",
-    "bg-fuchsia-600",
-    "bg-pink-600",
-    "bg-rose-600",
-];
-
-// Generate a consistent color based on name
-const getAvatarColor = (name: string): string => {
-    // Generate a hash from the name
-    let hash = 0;
-    for (let i = 0; i < name.length; i++) {
-        hash = name.charCodeAt(i) + ((hash << 5) - hash);
-    }
-
-    // Use the hash to pick a color
-    const index = Math.abs(hash) % avatarColors.length;
-    return avatarColors[index];
-};
-
-// Get initials from name with separator
-const getInitials = (firstName: string, lastName: string): string => {
-    const first = firstName.charAt(0).toUpperCase();
-    const last = lastName.charAt(0).toUpperCase();
-    return `${first}.${last}`;
-};
-
 const ProfileMenu: React.FC<ProfileMenuProps> = ({
     auth,
     isCollapsed,
@@ -76,9 +38,6 @@ const ProfileMenu: React.FC<ProfileMenuProps> = ({
     const filteredLinks = profileMenuLinks.filter(
         (link) => !link.visibleFor || link.visibleFor.includes(auth.role)
     );
-
-    const initials = getInitials(auth.name, auth.last_name);
-    const avatarColor = getAvatarColor(`${auth.name} ${auth.last_name}`);
 
     return (
         <Popover>
@@ -93,15 +52,7 @@ const ProfileMenu: React.FC<ProfileMenuProps> = ({
                         }
                     )}
                 >
-                    <div
-                        className={cn(
-                            "flex-shrink-0 flex items-center justify-center rounded-full text-white font-bold shadow-sm",
-                            avatarColor,
-                            "w-9 h-9 text-xs"
-                        )}
-                    >
-                        {initials}
-                    </div>
+                    <Avatar user={auth} size="md" />
                     {(!isCollapsed || mobile) && (
                         <div className="flex flex-col items-start text-sm flex-1 min-w-0">
                             <span className={`truncate font-semibold text-start ${mobile ? "" : "w-[100px]"}`}>

@@ -1,3 +1,8 @@
+export type AvatarStyle = "initials" | "hashvatar" | "boring";
+export type BoringVariant = "beam" | "marble" | "pixel" | "sunset" | "ring" | "bauhaus";
+export type HashvatarMode = "gradient" | "dither";
+export type HashvatarTones = "auto" | "ocean" | "sunset" | "forest" | "candy" | "warm" | "mono";
+
 export interface TUser {
     id: number;
     name: string;
@@ -6,6 +11,12 @@ export interface TUser {
     email: string;
     email_verified_at: string;
     role: string;
+    avatar_style?: AvatarStyle | null;
+    avatar_color?: string | null;
+    avatar_variant?: BoringVariant | null;
+    hashvatar_mode?: HashvatarMode | null;
+    hashvatar_animated?: boolean | null;
+    hashvatar_tones?: HashvatarTones | null;
 }
 
 export interface DatabaseBackup {
@@ -35,9 +46,47 @@ export interface BackupSettings {
     retention_days: number;
 }
 
+export interface CapacityOverflow {
+    kind: 'group' | 'club_category';
+    id?: number;
+    club_id: number;
+    category_id: number;
+    club_name: string;
+    category_name: string;
+    group_name?: string;
+    current: number;
+    capacity: number;
+    manage_url: string;
+    target_key?: string;
+}
+
+export interface AppNotification {
+    id: string;
+    type: string;
+    data: Record<string, unknown>;
+    dismissable: boolean;
+    read_at: string | null;
+    created_at: string | null;
+}
+
+export interface NotificationPreferenceRow {
+    type: string;
+    label: string;
+    description: string;
+    allow_email: boolean;
+    allow_push: boolean;
+    in_app: boolean;
+    push: boolean;
+    email: boolean;
+}
+
 export type PageProps<T extends Record<string, unknown> = Record<string, unknown>> = T & {
     auth: {
         user: TUser;
+    };
+    notifications: {
+        unread: AppNotification[];
+        unread_count: number;
     };
 };
 

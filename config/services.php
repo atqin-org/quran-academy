@@ -35,4 +35,22 @@ return [
         ],
     ],
 
+    'umami' => [
+        'website_id' => env('UMAMI_WEBSITE_ID'),
+        'script_url' => env('UMAMI_SCRIPT_URL'),
+        'host_url' => env('UMAMI_HOST_URL'),
+        'domains' => env('UMAMI_DOMAINS'),
+        'tag' => env('UMAMI_TAG'),
+        'performance' => env('UMAMI_PERFORMANCE', false),
+
+        'replay' => [
+            'enabled' => env('UMAMI_REPLAY', false),
+            'recorder_url' => env('UMAMI_REPLAY_RECORDER_URL'),
+            'sample_rate' => env('UMAMI_REPLAY_SAMPLE_RATE', '0.15'),
+            'mask_level' => env('UMAMI_REPLAY_MASK_LEVEL', 'moderate'),
+            'max_duration' => env('UMAMI_REPLAY_MAX_DURATION', '300000'),
+            'block_selector' => env('UMAMI_REPLAY_BLOCK_SELECTOR'),
+        ],
+    ],
+
 ];

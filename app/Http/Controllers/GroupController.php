@@ -212,6 +212,30 @@ class GroupController extends Controller
     }
 
     /**
+     * Update a group's capacity (admin-set max student count). Null clears it.
+     */
+    public function updateCapacity(Request $request, Group $group): RedirectResponse
+    {
+        $validated = $request->validate([
+            'capacity' => 'nullable|integer|min:1',
+        ]);
+
+        $oldCapacity = $group->capacity;
+        $group->update(['capacity' => $validated['capacity'] ?? null]);
+
+        activity('group')
+            ->performedOn($group)
+            ->causedBy(auth()->user())
+            ->withProperties([
+                'old_capacity' => $oldCapacity,
+                'new_capacity' => $group->capacity,
+            ])
+            ->log("تم تحديث سعة فوج {$group->name}");
+
+        return redirect()->back()->with('success', 'تم تحديث السعة بنجاح');
+    }
+
+    /**
      * Delete a group (only if empty)
      * If only 2 groups exist, delete both and ungroup all students
      */

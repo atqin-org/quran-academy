@@ -340,7 +340,7 @@ function ClubActions({ club }: { club: Club }) {
                                     className="flex items-center gap-2 cursor-pointer"
                                 >
                                     <Calendar className="h-4 w-4" />
-                                    إعدادات الحصص
+                                    إعدادات الفئات
                                 </Link>
                             </DropdownMenuItem>
 

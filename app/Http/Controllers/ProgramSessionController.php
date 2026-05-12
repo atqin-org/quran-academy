@@ -9,6 +9,7 @@ use App\Models\Program;
 use App\Models\ProgramSession;
 use App\Models\Student;
 use App\Models\Thoman;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -58,7 +59,7 @@ class ProgramSessionController extends Controller
 
         $session = ProgramSession::create([
             'program_id' => $program->id,
-            'session_date' => $request->session_date,
+            'session_date' => Carbon::parse($request->session_date)->toDateString(),
             'start_time' => $request->start_time,
             'end_time' => $request->end_time,
             'status' => 'scheduled',
@@ -246,7 +247,7 @@ class ProgramSessionController extends Controller
     {
         $this->authorizeSessionAccess($session);
 
-        $session->update(['status' => 'cancelled']);
+        $session->update(['status' => 'canceled']);
 
         // Log session cancellation
         activity('program_session')
