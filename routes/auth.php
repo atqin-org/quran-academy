@@ -4,9 +4,11 @@ use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\ConfirmablePasswordController;
 use App\Http\Controllers\Auth\EmailVerificationNotificationController;
 use App\Http\Controllers\Auth\EmailVerificationPromptController;
+use App\Http\Controllers\Auth\ForcePasswordChangeController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
+use App\Http\Controllers\Auth\PersonnelInvitationController;
 use App\Http\Controllers\Auth\VerifyEmailController;
 use Illuminate\Support\Facades\Route;
 
@@ -29,9 +31,26 @@ Route::middleware('guest')->group(function () {
     Route::post('reset-password', [NewPasswordController::class, 'store'])
         ->name('password.store');
 
+    Route::get('personnel-invite/{token}', [PersonnelInvitationController::class, 'show'])
+        ->name('personnel-invite.show');
+
+    Route::post('personnel-invite/{token}', [PersonnelInvitationController::class, 'store'])
+        ->name('personnel-invite.store');
+
 });
 
 Route::middleware('auth')->group(function () {
+    Route::get('force-password', [ForcePasswordChangeController::class, 'show'])
+        ->name('force-password.show');
+
+    Route::put('force-password', [ForcePasswordChangeController::class, 'update'])
+        ->name('force-password.update');
+
+    Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])
+        ->name('logout');
+});
+
+Route::middleware(['auth', 'force-password'])->group(function () {
     Route::get('verify-email', EmailVerificationPromptController::class)
         ->name('verification.notice');
 
@@ -49,7 +68,4 @@ Route::middleware('auth')->group(function () {
     Route::post('confirm-password', [ConfirmablePasswordController::class, 'store']);
 
     Route::put('password', [PasswordController::class, 'update'])->name('password.update');
-
-    Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])
-        ->name('logout');
 });

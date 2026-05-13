@@ -10,6 +10,7 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\NotificationPreferenceController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PersonnelController;
+use App\Http\Controllers\PersonnelInviteSettingsController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProgramController;
 use App\Http\Controllers\ProgramSessionController;
@@ -19,7 +20,7 @@ use App\Http\Middleware\AdminMiddleware;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
-Route::middleware(['auth', 'verified'])->group(function () {
+Route::middleware(['auth', 'verified', 'force-password'])->group(function () {
     // Merge-and-force-delete flow for duplicate students. Declared before the
     // resource so the literal `merge-candidates` segment does not get matched
     // as the `{student}` parameter of `students.show`.
@@ -52,6 +53,19 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/personnels/{personnel}/restore', [PersonnelController::class, 'restore'])
         ->name('personnels.restore')
         ->middleware(AdminMiddleware::class);
+    Route::post('/personnels/{personnel}/resend-invite', [PersonnelController::class, 'resendInvite'])
+        ->name('personnels.resend-invite')
+        ->middleware(AdminMiddleware::class);
+    Route::post('/personnels/{personnel}/copy-invite-link', [PersonnelController::class, 'copyInviteLink'])
+        ->name('personnels.copy-invite-link')
+        ->middleware(AdminMiddleware::class);
+
+    Route::middleware(AdminMiddleware::class)->group(function () {
+        Route::get('/settings/personnel-invite', [PersonnelInviteSettingsController::class, 'index'])
+            ->name('settings.personnel-invite.edit');
+        Route::put('/settings/personnel-invite', [PersonnelInviteSettingsController::class, 'update'])
+            ->name('settings.personnel-invite.update');
+    });
 
     Route::get('/system/backup', function () {
         return Inertia::render('Dashboard/System/BackupDatabase');
@@ -193,7 +207,7 @@ Route::get('/', function () {
 
 Route::get('/dashboard', function () {
     return redirect()->route('students.index');
-})->middleware(['auth', 'verified'])->name('dashboard');
+})->middleware(['auth', 'verified', 'force-password'])->name('dashboard');
 
 Route::middleware(['auth', 'verified'])->group(function () {})->middleware(AdminMiddleware::class);
 

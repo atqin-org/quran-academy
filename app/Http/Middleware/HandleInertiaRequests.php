@@ -38,6 +38,14 @@ class HandleInertiaRequests extends Middleware
             ],
             'notifications' => fn () => $this->buildNotifications($request),
             'version' => fn () => app(VersionChecker::class)->summary(),
+            'flash' => fn () => [
+                'success' => $request->session()->get('success'),
+                'error' => $request->session()->get('error'),
+                'warning' => $request->session()->get('warning'),
+                'invite_url' => $request->session()->get('invite_url'),
+                'invite_channel' => $request->session()->get('invite_channel'),
+                'invite_user' => $request->session()->get('invite_user'),
+            ],
         ];
     }
 

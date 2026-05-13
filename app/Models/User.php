@@ -3,6 +3,7 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -27,6 +28,10 @@ class User extends Authenticatable
         'role',
         'email',
         'password',
+        'status',
+        'must_change_password',
+        'invited_at',
+        'password_set_at',
         'avatar_style',
         'avatar_color',
         'avatar_variant',
@@ -53,8 +58,31 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
+        'must_change_password' => 'boolean',
+        'invited_at' => 'datetime',
+        'password_set_at' => 'datetime',
         'hashvatar_animated' => 'boolean',
     ];
+
+    public function scopePending(Builder $query): Builder
+    {
+        return $query->where('status', 'pending');
+    }
+
+    public function scopeActive(Builder $query): Builder
+    {
+        return $query->where('status', 'active');
+    }
+
+    public function isPending(): bool
+    {
+        return $this->status === 'pending';
+    }
+
+    public function invitations(): HasMany
+    {
+        return $this->hasMany(PersonnelInvitation::class);
+    }
 
     /**
      * The clubs that associated with the user.

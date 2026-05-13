@@ -6,5 +6,8 @@
         "claude_code",
         "vscode"
     ],
-    "guidelines": []
+    "packages": [
+        "spatie/laravel-backup",
+        "barryvdh/laravel-debugbar"
+    ]
 }
