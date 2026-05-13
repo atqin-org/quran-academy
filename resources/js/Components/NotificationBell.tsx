@@ -1,5 +1,5 @@
 import { Link, router, usePage } from "@inertiajs/react";
-import { AlertTriangle, Bell, CalendarClock, Check, CreditCard, X } from "lucide-react";
+import { AlertTriangle, Bell, CalendarClock, Check, CreditCard, UserCheck, X } from "lucide-react";
 import {
     Popover,
     PopoverContent,
@@ -10,6 +10,7 @@ import { AppNotification, CapacityOverflow, PageProps } from "@/types";
 const CAPACITY_TYPE = "class_over_capacity";
 const SESSION_ATTENDANCE_TYPE = "session_attendance_pending";
 const PAYMENT_OVERDUE_TYPE = "payment_overdue";
+const PERSONNEL_INVITE_ACCEPTED_TYPE = "personnel_invite_accepted";
 
 export default function NotificationBell() {
     const { notifications } = usePage<PageProps>().props;
@@ -119,7 +120,39 @@ function NotificationItem({ notification }: { notification: AppNotification }) {
         return <PaymentOverdueRow notification={notification} />;
     }
 
+    if (notification.type === PERSONNEL_INVITE_ACCEPTED_TYPE) {
+        return <PersonnelInviteAcceptedRow notification={notification} />;
+    }
+
     return <GenericNotificationRow notification={notification} />;
+}
+
+function PersonnelInviteAcceptedRow({ notification }: { notification: AppNotification }) {
+    const data = notification.data as Record<string, unknown>;
+    const name = (data.personnel_name as string) ?? "";
+    const email = (data.personnel_email as string) ?? "";
+
+    return (
+        <li className="flex items-start gap-1 px-4 py-3 hover:bg-gray-50">
+            <Link href={route("personnels.index")} className="flex-1 min-w-0">
+                <div className="flex items-center gap-1.5 text-xs text-emerald-600 font-semibold mb-1">
+                    <UserCheck className="h-3.5 w-3.5" />
+                    قَبِل الدعوة
+                </div>
+                <p className="text-sm font-medium text-gray-900 truncate">
+                    {name || "موظف جديد"}
+                </p>
+                {email && (
+                    <p className="text-xs text-gray-500 truncate" dir="ltr">
+                        {email}
+                    </p>
+                )}
+            </Link>
+            <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
+                {notification.dismissable && <MarkReadButton id={notification.id} />}
+            </div>
+        </li>
+    );
 }
 
 function SessionAttendanceRow({ notification }: { notification: AppNotification }) {
