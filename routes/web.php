@@ -194,6 +194,9 @@ Route::middleware(['auth', 'verified', 'force-password'])->group(function () {
         // Record attendance
         Route::post('/{session}/attendance', [ProgramSessionController::class, 'recordAttendance'])->name('recordAttendance');
         Route::post('/{session}/attendance-bulk', [ProgramSessionController::class, 'recordAttendanceBulk'])->name('recordAttendanceBulk');
+
+        // Record repetitions (تكرار) for a single student in the session
+        Route::post('/{session}/repetitions-bulk', [ProgramSessionController::class, 'recordRepetitionsBulk'])->name('recordRepetitionsBulk');
     });
 });
 

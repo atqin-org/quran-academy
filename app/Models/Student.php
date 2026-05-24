@@ -368,6 +368,54 @@ class Student extends Model
             ->latest();
     }
 
+    public function repetitions()
+    {
+        return $this->hasMany(Repetition::class, 'student_id');
+    }
+
+    public function repetitionsAsTester()
+    {
+        return $this->hasMany(Repetition::class, 'tester_student_id');
+    }
+
+    /**
+     * Cumulative tested thumns across all sessions for this student.
+     * Later rows overwrite earlier on the frontend via insertion order.
+     *
+     * @return Collection<int, object{hizb_number:int, thoman_number:int, result:string}>
+     */
+    public function testedThumns(): Collection
+    {
+        return RepetitionThumn::query()
+            ->join('repetitions', 'repetition_thumns.repetition_id', '=', 'repetitions.id')
+            ->join('athman', 'repetition_thumns.thoman_id', '=', 'athman.id')
+            ->join('ahzab', 'athman.hizb_id', '=', 'ahzab.id')
+            ->where('repetitions.student_id', $this->id)
+            ->orderBy('repetition_thumns.created_at')
+            ->get(['ahzab.number as hizb_number', 'athman.number as thoman_number', 'repetition_thumns.result']);
+    }
+
+    /**
+     * Cumulative tested hizbs across all sessions with the latest rating per hizb.
+     * Powers the positional RepetitionsBar — each hizb_number is colored by its most recent overall_rating.
+     *
+     * @return \Illuminate\Support\Collection<int, array{hizb_number:int, rating:?string}>
+     */
+    public function testedHizbs(): \Illuminate\Support\Collection
+    {
+        return Repetition::query()
+            ->join('ahzab', 'repetitions.hizb_id', '=', 'ahzab.id')
+            ->where('repetitions.student_id', $this->id)
+            ->orderBy('repetitions.created_at')
+            ->get(['ahzab.number as hizb_number', 'repetitions.overall_rating as rating'])
+            ->groupBy('hizb_number')
+            ->map(fn ($group) => [
+                'hizb_number' => (int) $group->first()->hizb_number,
+                'rating' => $group->last()->rating,
+            ])
+            ->values();
+    }
+
     /**
      * Get hizbs ordered by student's memorization direction
      *

@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 
@@ -31,27 +32,39 @@ class VersionChecker
      */
     public function latest(): ?array
     {
-        return Cache::remember(self::CACHE_KEY, self::CACHE_TTL, function () {
+        $cached = Cache::remember(self::CACHE_KEY, self::CACHE_TTL, fn () => ['result' => $this->fetchLatest()]);
+
+        return $cached['result'] ?? null;
+    }
+
+    /**
+     * @return array{tag: string, url: string}|null
+     */
+    private function fetchLatest(): ?array
+    {
+        try {
             $response = Http::timeout(5)
                 ->withHeaders([
                     'Accept' => 'application/vnd.github+json',
                     'User-Agent' => self::REPO,
                 ])
                 ->get('https://api.github.com/repos/'.self::REPO.'/releases/latest');
+        } catch (ConnectionException) {
+            return null;
+        }
 
-            if (! $response->ok()) {
-                return null;
-            }
+        if (! $response->ok()) {
+            return null;
+        }
 
-            $tag = $response->json('tag_name');
-            $url = $response->json('html_url');
+        $tag = $response->json('tag_name');
+        $url = $response->json('html_url');
 
-            if (! is_string($tag) || ! is_string($url)) {
-                return null;
-            }
+        if (! is_string($tag) || ! is_string($url)) {
+            return null;
+        }
 
-            return ['tag' => $tag, 'url' => $url];
-        });
+        return ['tag' => $tag, 'url' => $url];
     }
 
     /**
