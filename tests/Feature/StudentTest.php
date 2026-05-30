@@ -535,6 +535,192 @@ it('can update a student', function () {
         ->and($student->last_name)->toBe('المختار');
 });
 
+it('store does not create a Guardian when one parent payload is empty', function () {
+    $user = User::factory()->create(['role' => 'admin']);
+    $club = Club::factory()->create();
+    $category = Category::factory()->create();
+
+    $payload = validStudentPayload($club, $category, [
+        // father has the required phone, mother is fully empty.
+        'mother' => [
+            'phone' => null,
+            'name' => null,
+            'job' => null,
+        ],
+    ]);
+
+    $before = Guardian::count();
+
+    $this->actingAs($user)->post(route('students.store'), $payload);
+
+    expect(Guardian::count())->toBe($before + 1);
+
+    $student = Student::query()
+        ->where('first_name', $payload['firstName'])
+        ->where('last_name', $payload['lastName'])
+        ->first();
+
+    expect($student)->not->toBeNull()
+        ->and($student->father_id)->not->toBeNull()
+        ->and($student->mother_id)->toBeNull();
+});
+
+it('store treats blank-string parent fields as empty', function () {
+    $user = User::factory()->create(['role' => 'admin']);
+    $club = Club::factory()->create();
+    $category = Category::factory()->create();
+
+    $payload = validStudentPayload($club, $category, [
+        'mother' => [
+            'phone' => '   ',
+            'name' => '',
+            'job' => null,
+        ],
+    ]);
+
+    $before = Guardian::count();
+
+    $this->actingAs($user)->post(route('students.store'), $payload);
+
+    expect(Guardian::count())->toBe($before + 1);
+});
+
+it('update does not create a placeholder Guardian when the student has no father and the form sends empty data', function () {
+    $user = User::factory()->create(['role' => 'admin']);
+    $club = Club::factory()->create();
+    $category = Category::factory()->create();
+
+    $mother = Guardian::factory()->create(['gender' => 'female']);
+
+    $student = Student::factory()->create([
+        'club_id' => $club->id,
+        'category_id' => $category->id,
+        'father_id' => null,
+        'mother_id' => $mother->id,
+    ]);
+
+    $payload = validStudentPayload($club, $category, [
+        'father' => [
+            'phone' => null,
+            'name' => null,
+            'job' => null,
+        ],
+        'mother' => [
+            'phone' => '0661234567',
+            'name' => 'فاطمة',
+            'job' => null,
+        ],
+    ]);
+
+    $before = Guardian::count();
+
+    $this->actingAs($user)->post(route('students.update', $student), $payload);
+
+    expect(Guardian::count())->toBe($before);
+
+    $student->refresh();
+    expect($student->father_id)->toBeNull()
+        ->and($student->mother_id)->toBe($mother->id);
+});
+
+// -------------------------------------------------------
+// PurgeEmptyGuardians command
+// -------------------------------------------------------
+
+it('purges empty guardians and nulls the matching student FKs', function () {
+    $club = Club::factory()->create();
+    $category = Category::factory()->create();
+
+    $empty = Guardian::factory()->create([
+        'name' => null,
+        'phone' => null,
+        'job' => null,
+        'gender' => 'male',
+    ]);
+
+    $realFather = Guardian::factory()->create([
+        'name' => 'أحمد',
+        'phone' => '0551234567',
+        'gender' => 'male',
+    ]);
+
+    $student = Student::factory()->create([
+        'club_id' => $club->id,
+        'category_id' => $category->id,
+        'father_id' => $empty->id,
+        'mother_id' => null,
+    ]);
+
+    $otherStudent = Student::factory()->create([
+        'club_id' => $club->id,
+        'category_id' => $category->id,
+        'father_id' => $realFather->id,
+        'mother_id' => null,
+    ]);
+
+    $exitCode = $this->artisan('students:purge-empty-guardians')->run();
+
+    expect($exitCode)->toBe(0);
+    expect(Guardian::find($empty->id))->toBeNull();
+    expect(Guardian::find($realFather->id))->not->toBeNull();
+
+    $student->refresh();
+    $otherStudent->refresh();
+    expect($student->father_id)->toBeNull()
+        ->and($otherStudent->father_id)->toBe($realFather->id);
+});
+
+it('purge --dry-run does not change anything', function () {
+    $club = Club::factory()->create();
+    $category = Category::factory()->create();
+
+    $empty = Guardian::factory()->create([
+        'name' => null,
+        'phone' => null,
+        'job' => null,
+        'gender' => 'female',
+    ]);
+
+    $student = Student::factory()->create([
+        'club_id' => $club->id,
+        'category_id' => $category->id,
+        'mother_id' => $empty->id,
+    ]);
+
+    $this->artisan('students:purge-empty-guardians', ['--dry-run' => true])->assertExitCode(0);
+
+    expect(Guardian::find($empty->id))->not->toBeNull();
+
+    $student->refresh();
+    expect($student->mother_id)->toBe($empty->id);
+});
+
+it('purge also handles soft-deleted students linked to empty guardians', function () {
+    $club = Club::factory()->create();
+    $category = Category::factory()->create();
+
+    $empty = Guardian::factory()->create([
+        'name' => '',
+        'phone' => '',
+        'job' => '',
+        'gender' => 'male',
+    ]);
+
+    $student = Student::factory()->create([
+        'club_id' => $club->id,
+        'category_id' => $category->id,
+        'father_id' => $empty->id,
+    ]);
+    $student->delete();
+
+    $this->artisan('students:purge-empty-guardians')->assertExitCode(0);
+
+    expect(Guardian::find($empty->id))->toBeNull();
+
+    $student->refresh();
+    expect($student->father_id)->toBeNull();
+});
+
 // -------------------------------------------------------
 // Soft Delete
 // -------------------------------------------------------

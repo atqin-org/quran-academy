@@ -35,6 +35,9 @@ Route::middleware(['auth', 'verified', 'force-password'])->group(function () {
     Route::get('/studentsExport', [StudentResourceController::class, 'export'])->name('students.export');
     Route::post('/students/{student}/restore', [StudentResourceController::class, 'restore'])->name('students.restore')->middleware(AdminMiddleware::class);
     Route::delete('/students/{student}/force-delete', [StudentResourceController::class, 'forceDelete'])->name('students.forceDelete')->middleware(AdminMiddleware::class);
+    Route::get('/students/{student}/activity-log', [StudentResourceController::class, 'activityLog'])
+        ->name('students.activityLog')
+        ->middleware(AdminMiddleware::class);
     Route::get('/students/{trashed}/merge-payload/{canonical}', [StudentResourceController::class, 'mergePayload'])
         ->name('students.mergePayload')
         ->middleware(AdminMiddleware::class);

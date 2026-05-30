@@ -1,4 +1,6 @@
+import { Button } from "@/Components/ui/button";
 import { Card, CardContent } from "@/Components/ui/card";
+import { Input } from "@/Components/ui/input";
 import {
     Select,
     SelectContent,
@@ -18,10 +20,19 @@ import {
     Clock,
     CreditCard,
     GraduationCap,
+    Search,
+    SlidersHorizontal,
     User,
     Users,
+    X,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import LogFilters, {
+    AdvancedFilters,
+    CauserOption,
+    eventOptions,
+} from "./Components/LogFilters";
+import { DatePreset } from "./Components/DateRangePicker";
 
 export type LogType =
     | "user"
@@ -35,8 +46,12 @@ export type LogType =
 export interface TActivityLog {
     id: number;
     type: LogType;
+    event?: string | null;
+    subject_id?: number | null;
+    subject_type?: string | null;
     description: string;
     causer: {
+        id: number;
         name: string;
         email: string;
     } | null;
@@ -44,15 +59,24 @@ export interface TActivityLog {
     created_at: string;
 }
 
+interface PageFilters {
+    type: "all" | LogType;
+    sort: "asc" | "desc";
+    search: string;
+    causer_id: number | null;
+    event: string | null;
+    date_preset: DatePreset;
+    date_from: string | null;
+    date_to: string | null;
+}
+
 interface Props {
     auth: { user: TUser };
     logs: {
         data: TActivityLog[];
     };
-    filters: {
-        type: "all" | LogType;
-        sort: "asc" | "desc";
-    };
+    filters: PageFilters;
+    causerOptions: CauserOption[];
 }
 
 const getTypeConfig = (type: LogType) => {
@@ -227,13 +251,95 @@ function PropertyDisplay({ properties, showInline = false }: { properties: any; 
     );
 }
 
-export default function Index({ auth, logs, filters }: Props) {
-    const handleFilterChange = (newFilters: Partial<typeof filters>) => {
+const datePresetLabels: Record<DatePreset, string> = {
+    all: "كل الوقت",
+    today: "اليوم",
+    last_7: "آخر 7 أيام",
+    last_30: "آخر 30 يوم",
+    custom: "مخصص",
+};
+
+export default function Index({ auth, logs, filters, causerOptions }: Props) {
+    const [searchInput, setSearchInput] = useState(filters.search ?? "");
+    const [sheetOpen, setSheetOpen] = useState(false);
+    const searchDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    useEffect(() => {
+        setSearchInput(filters.search ?? "");
+    }, [filters.search]);
+
+    const visit = (overrides: Partial<PageFilters>) => {
+        const merged = { ...filters, ...overrides };
         router.visit(route("admin.logs.index"), {
-            data: { ...filters, ...newFilters },
+            data: merged,
             only: ["logs", "filters"],
             reset: ["logs"],
+            preserveState: true,
         });
+    };
+
+    const handleSearchChange = (value: string) => {
+        setSearchInput(value);
+        if (searchDebounce.current) {
+            clearTimeout(searchDebounce.current);
+        }
+        searchDebounce.current = setTimeout(() => {
+            visit({ search: value });
+        }, 300);
+    };
+
+    const handleApplyAdvanced = (next: AdvancedFilters) => {
+        visit(next);
+    };
+
+    const causerLabel = (id: number | null) => {
+        if (!id) {
+            return null;
+        }
+        const match = causerOptions.find((c) => c.id === id);
+        if (!match) {
+            return "مستخدم";
+        }
+        return [match.name, match.last_name].filter(Boolean).join(" ");
+    };
+
+    const eventLabel = (value: string | null) => {
+        if (!value) {
+            return null;
+        }
+        return eventOptions.find((e) => e.value === value)?.label ?? value;
+    };
+
+    const activeChips: { key: keyof PageFilters; label: string }[] = [];
+    if (filters.search) {
+        activeChips.push({ key: "search", label: `بحث: ${filters.search}` });
+    }
+    if (filters.causer_id) {
+        activeChips.push({
+            key: "causer_id",
+            label: `المستخدم: ${causerLabel(filters.causer_id)}`,
+        });
+    }
+    if (filters.event) {
+        activeChips.push({
+            key: "event",
+            label: `الحدث: ${eventLabel(filters.event)}`,
+        });
+    }
+    if (filters.date_preset && filters.date_preset !== "all") {
+        const range =
+            filters.date_preset === "custom"
+                ? `${filters.date_from ?? "?"} ← ${filters.date_to ?? "?"}`
+                : datePresetLabels[filters.date_preset];
+        activeChips.push({ key: "date_preset", label: `الفترة: ${range}` });
+    }
+
+    const clearChip = (key: keyof PageFilters) => {
+        if (key === "date_preset") {
+            visit({ date_preset: "all", date_from: null, date_to: null });
+            return;
+        }
+        visit({ [key]: key === "causer_id" ? null : "" } as Partial<PageFilters>);
     };
 
     return (
@@ -241,15 +347,25 @@ export default function Index({ auth, logs, filters }: Props) {
             <Head title="سجلات النظام" />
 
             <div className="space-y-4">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-2">
                     <h2 className="text-2xl font-bold">سجلات النظام</h2>
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                        <div className="relative">
+                            <Search className="pointer-events-none absolute end-2 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                            <Input
+                                value={searchInput}
+                                onChange={(e) =>
+                                    handleSearchChange(e.target.value)
+                                }
+                                placeholder="بحث في السجلات..."
+                                className="w-[220px] pe-8"
+                            />
+                        </div>
                         <Select
+                            dir="rtl"
                             value={filters.type}
                             onValueChange={(value) =>
-                                handleFilterChange({
-                                    type: value as typeof filters.type,
-                                })
+                                visit({ type: value as PageFilters["type"] })
                             }
                         >
                             <SelectTrigger className="w-[140px]">
@@ -272,11 +388,10 @@ export default function Index({ auth, logs, filters }: Props) {
                         </Select>
 
                         <Select
+                            dir="rtl"
                             value={filters.sort}
                             onValueChange={(value) =>
-                                handleFilterChange({
-                                    sort: value as "asc" | "desc",
-                                })
+                                visit({ sort: value as "asc" | "desc" })
                             }
                         >
                             <SelectTrigger className="w-[120px]">
@@ -287,8 +402,47 @@ export default function Index({ auth, logs, filters }: Props) {
                                 <SelectItem value="asc">الأقدم</SelectItem>
                             </SelectContent>
                         </Select>
+
+                        <Button
+                            variant="outline"
+                            onClick={() => setSheetOpen(true)}
+                            className="gap-2"
+                        >
+                            <SlidersHorizontal className="size-4" />
+                            فلاتر متقدمة
+                        </Button>
                     </div>
                 </div>
+
+                {activeChips.length > 0 && (
+                    <div className="flex flex-wrap items-center gap-2">
+                        {activeChips.map((chip) => (
+                            <button
+                                key={chip.key}
+                                type="button"
+                                onClick={() => clearChip(chip.key)}
+                                className="inline-flex items-center gap-1 rounded-full border bg-muted px-3 py-1 text-xs hover:bg-muted/70"
+                            >
+                                <span>{chip.label}</span>
+                                <X className="size-3" />
+                            </button>
+                        ))}
+                    </div>
+                )}
+
+                <LogFilters
+                    open={sheetOpen}
+                    onOpenChange={setSheetOpen}
+                    filters={{
+                        causer_id: filters.causer_id,
+                        event: filters.event,
+                        date_preset: filters.date_preset,
+                        date_from: filters.date_from,
+                        date_to: filters.date_to,
+                    }}
+                    causerOptions={causerOptions}
+                    onApply={handleApplyAdvanced}
+                />
 
                 {logs.data.length !== 0 ? (
                     <Card>

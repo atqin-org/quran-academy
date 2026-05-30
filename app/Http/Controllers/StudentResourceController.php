@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Exports\StudentsExport;
 use App\Helpers\ArabicNormalizer;
 use App\Http\Requests\MergeAndForceDeleteRequest;
+use App\Http\Resources\ActivityLogResource;
 use App\Models\Category;
 use App\Models\Club;
 use App\Models\Guardian;
@@ -253,18 +254,22 @@ class StudentResourceController extends Controller
             return redirect()->back()->withInput()->withErrors(['firstName' => $message]);
         }
 
-        $father_id = Guardian::create([
-            'phone' => $request->father['phone'],
-            'name' => $request->father['name'],
-            'job' => $request->father['job'],
-            'gender' => 'male',
-        ])->id;
-        $mother_id = Guardian::create([
-            'phone' => $request->mother['phone'],
-            'name' => $request->mother['name'],
-            'job' => $request->mother['job'],
-            'gender' => 'female',
-        ])->id;
+        $father_id = $this->isGuardianDataEmpty($request->father)
+            ? null
+            : Guardian::create([
+                'phone' => $request->father['phone'] ?? null,
+                'name' => $request->father['name'] ?? null,
+                'job' => $request->father['job'] ?? null,
+                'gender' => 'male',
+            ])->id;
+        $mother_id = $this->isGuardianDataEmpty($request->mother)
+            ? null
+            : Guardian::create([
+                'phone' => $request->mother['phone'] ?? null,
+                'name' => $request->mother['name'] ?? null,
+                'job' => $request->mother['job'] ?? null,
+                'gender' => 'female',
+            ])->id;
         // add $father_id and $mother_id to the student
         $request->merge(['father_id' => $father_id, 'mother_id' => $mother_id]);
         Student::create($request->all());
@@ -551,37 +556,45 @@ class StudentResourceController extends Controller
 
         $father = Guardian::find($student->father_id);
         $mother = Guardian::find($student->mother_id);
-        if ($father) {
+        $fatherEmpty = $this->isGuardianDataEmpty($request->father);
+        $motherEmpty = $this->isGuardianDataEmpty($request->mother);
+
+        if ($father && ! $fatherEmpty) {
             $father->update([
-                'phone' => $request->father['phone'],
-                'name' => $request->father['name'],
-                'job' => $request->father['job'],
+                'phone' => $request->father['phone'] ?? null,
+                'name' => $request->father['name'] ?? null,
+                'job' => $request->father['job'] ?? null,
             ]);
-        } else {
+        } elseif (! $father && ! $fatherEmpty) {
             $father = Guardian::create([
-                'phone' => $request->father['phone'],
-                'name' => $request->father['name'],
-                'job' => $request->father['job'],
+                'phone' => $request->father['phone'] ?? null,
+                'name' => $request->father['name'] ?? null,
+                'job' => $request->father['job'] ?? null,
                 'gender' => 'male',
             ]);
             $student->father_id = $father->id;
         }
-        if ($mother) {
+
+        if ($mother && ! $motherEmpty) {
             $mother->update([
-                'phone' => $request->mother['phone'],
-                'name' => $request->mother['name'],
-                'job' => $request->mother['job'],
+                'phone' => $request->mother['phone'] ?? null,
+                'name' => $request->mother['name'] ?? null,
+                'job' => $request->mother['job'] ?? null,
             ]);
-        } else {
+        } elseif (! $mother && ! $motherEmpty) {
             $mother = Guardian::create([
-                'phone' => $request->mother['phone'],
-                'name' => $request->mother['name'],
-                'job' => $request->mother['job'],
+                'phone' => $request->mother['phone'] ?? null,
+                'name' => $request->mother['name'] ?? null,
+                'job' => $request->mother['job'] ?? null,
                 'gender' => 'female',
             ]);
             $student->mother_id = $mother->id;
         }
-        $request->merge(['father_id' => $father->id, 'mother_id' => $mother->id]);
+
+        $request->merge([
+            'father_id' => $father?->id,
+            'mother_id' => $mother?->id,
+        ]);
 
         // Update the student with validated data
         $student->update($request->all());
@@ -874,6 +887,33 @@ class StudentResourceController extends Controller
     }
 
     /**
+     * Treat the request guardian payload as empty when name, phone, and job are
+     * all blank/null. Prevents the controller from creating placeholder
+     * Guardian rows (id + gender + timestamps only) when the form left the
+     * other parent untouched.
+     *
+     * @param  array<string, mixed>|null  $data
+     */
+    private function isGuardianDataEmpty(?array $data): bool
+    {
+        if ($data === null) {
+            return true;
+        }
+
+        foreach (['name', 'phone', 'job'] as $field) {
+            $value = $data[$field] ?? null;
+            if (is_string($value) && trim($value) !== '') {
+                return false;
+            }
+            if (! is_string($value) && $value !== null && $value !== '') {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
      * @return array<string, mixed>
      */
     private function serializePayment(Payment $payment): array
@@ -900,5 +940,24 @@ class StudentResourceController extends Controller
 
         return redirect(session('students_index_url', route('students.index')))
             ->with('success', 'تم حذف الطالب بنجاح');
+    }
+
+    /**
+     * Return the full activity-log timeline for a single student as JSON.
+     * Admin-only via route middleware. Includes soft-deleted students so the
+     * modal works from the archived tab.
+     */
+    public function activityLog(string $id): JsonResponse
+    {
+        $student = Student::withTrashed()->findOrFail($id);
+
+        $logs = $student->activities()
+            ->with('causer')
+            ->latest()
+            ->get();
+
+        return response()->json([
+            'logs' => ActivityLogResource::collection($logs),
+        ]);
     }
 }
