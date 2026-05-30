@@ -1,3 +1,10 @@
+## [0.1.4](https://github.com/atqin-org/quran-academy/compare/v0.1.3...v0.1.4) (2026-05-30)
+
+
+### Features
+
+* update deploy script for improved clarity and local build process ([fa03985](https://github.com/atqin-org/quran-academy/commit/fa03985a210ad61eb7523800a4f51d79b5d24feb))
+
 ## [0.1.3](https://github.com/atqin-org/quran-academy/compare/v0.1.2...v0.1.3) (2026-05-30)
 
 
