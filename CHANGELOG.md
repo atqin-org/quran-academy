@@ -1,3 +1,10 @@
+## [0.1.3](https://github.com/atqin-org/quran-academy/compare/v0.1.2...v0.1.3) (2026-05-30)
+
+
+### Features
+
+* add deploy script for local-build deployment to cPanel via SSH and rsync ([75afe8c](https://github.com/atqin-org/quran-academy/commit/75afe8cc8dc1a4df6d680c16188c4019e3710127))
+
 ## [0.1.2](https://github.com/atqin-org/quran-academy/compare/v0.1.1...v0.1.2) (2026-05-30)
 
 
