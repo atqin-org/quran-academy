@@ -19,6 +19,7 @@ export interface TPersonnelFormDB {
         name: string;
     }[];
     role: string;
+    status?: "pending" | "active";
     deleted_at: string | null;
     last_activity_at: string | null;
 }

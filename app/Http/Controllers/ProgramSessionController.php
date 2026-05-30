@@ -3,20 +3,71 @@
 namespace App\Http\Controllers;
 
 use App\Actions\Attendance\RecordAttendanceAction;
+use App\Actions\Repetition\RecordRepetitionsAction;
+use App\Http\Requests\StoreRepetitionsRequest;
+use App\Models\Attendance;
 use App\Models\Group;
 use App\Models\Hizb;
 use App\Models\Program;
 use App\Models\ProgramSession;
+use App\Models\Repetition;
 use App\Models\Student;
 use App\Models\Thoman;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 
 class ProgramSessionController extends Controller
 {
+    /**
+     * Recent memorization + repetition activities for a student, merged by date.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function recentActivitiesFor(Student $student): array
+    {
+        $memorizations = Attendance::query()
+            ->where('student_id', $student->id)
+            ->whereNotNull('hizb_id')
+            ->with(['session', 'hizb', 'thoman'])
+            ->latest('id')
+            ->limit(5)
+            ->get()
+            ->map(fn ($a) => [
+                'type' => 'memorization',
+                'date' => optional($a->session?->session_date)->format('Y-m-d'),
+                'hizb_number' => $a->hizb?->number,
+                'thoman_number' => $a->thoman?->number,
+                'rating' => $a->memorization_rating,
+                'count' => null,
+            ]);
+
+        $repetitions = Repetition::query()
+            ->where('student_id', $student->id)
+            ->with(['session', 'hizb', 'thumns'])
+            ->latest('id')
+            ->limit(5)
+            ->get()
+            ->map(fn ($r) => [
+                'type' => 'repetition',
+                'date' => optional($r->session?->session_date)->format('Y-m-d'),
+                'hizb_number' => $r->hizb?->number,
+                'thoman_number' => null,
+                'rating' => $r->overall_rating,
+                'count' => $r->thumns->count(),
+            ]);
+
+        return $memorizations
+            ->concat($repetitions)
+            ->sortByDesc('date')
+            ->take(10)
+            ->values()
+            ->all();
+    }
+
     /**
      * Check if user has access to this session's club
      */
@@ -111,6 +162,9 @@ class ProgramSessionController extends Controller
                 },
                 'lastHizbAttendance',
                 'lastThomanAttendance',
+                'repetitions' => function ($q) use ($session) {
+                    $q->where('session_id', $session->id)->with(['hizb', 'thumns.thoman']);
+                },
             ])
             ->where(function ($query) use ($program, $studentsWithAttendance) {
                 // Include current ACTIVE students matching program criteria
@@ -183,12 +237,43 @@ class ProgramSessionController extends Controller
                         ?? optional($s->lastHizbAttendance)->hizb_id,
                     'thoman_id' => $attendance?->thoman_id
                         ?? optional($s->lastThomanAttendance)->thoman_id,
+                    'memorization_rating' => $attendance?->memorization_rating,
+                    'memorization_remark' => $attendance?->memorization_remark,
                     'memorization_direction' => $s->memorization_direction ?? 'descending',
                     'last_hizb_id' => $lastHizbId,
                     'last_hizb_ascending' => $s->last_hizb_ascending,
                     'last_hizb_descending' => $s->last_hizb_descending,
+                    'repetitions' => $s->repetitions->map(fn ($r) => [
+                        'id' => $r->id,
+                        'hizb_id' => $r->hizb_id,
+                        'hizb_number' => $r->hizb?->number,
+                        'tester_user_id' => $r->tester_user_id,
+                        'tester_student_id' => $r->tester_student_id,
+                        'overall_rating' => $r->overall_rating,
+                        'remark' => $r->remark,
+                        'thumns' => $r->thumns->map(fn ($t) => [
+                            'thoman_id' => $t->thoman_id,
+                            'thoman_number' => $t->thoman?->number,
+                            'result' => $t->result,
+                            'mistakes_count' => $t->mistakes_count,
+                            'note' => $t->note,
+                        ])->values(),
+                    ])->values(),
+                    'tested_thumns' => $s->testedThumns()->map(fn ($t) => [
+                        'hizb_number' => (int) $t->hizb_number,
+                        'thoman_number' => (int) $t->thoman_number,
+                        'result' => $t->result,
+                    ])->values(),
+                    'tested_hizbs' => $s->testedHizbs()->all(),
+                    'recent_activities' => $this->recentActivitiesFor($s),
                 ];
             }),
+            'attendees' => $students->map(fn ($s) => [
+                'id' => $s->id,
+                'first_name' => $s->first_name,
+                'last_name' => $s->last_name,
+                'is_deleted' => $s->trashed(),
+            ])->values(),
             'ahzab' => Hizb::all(),
             'athman' => Thoman::all(),
         ]);
@@ -405,6 +490,8 @@ class ProgramSessionController extends Controller
                 'attendance.*.hizb_id' => 'nullable|exists:ahzab,id',
                 'attendance.*.thoman_id' => 'nullable|exists:athman,id',
                 'attendance.*.reason' => 'nullable|string|max:255',
+                'attendance.*.memorization_rating' => 'nullable|in:good,mid,bad',
+                'attendance.*.memorization_remark' => 'nullable|string|max:1000',
             ]);
 
             $savedCount = 0;
@@ -423,6 +510,8 @@ class ProgramSessionController extends Controller
                     $record['hizb_id'] ?? null,
                     $record['thoman_id'] ?? null,
                     $record['reason'] ?? null,
+                    $record['memorization_rating'] ?? null,
+                    $record['memorization_remark'] ?? null,
                 );
 
                 $savedCount++;
@@ -452,6 +541,40 @@ class ProgramSessionController extends Controller
             return redirect()
                 ->back()
                 ->with('error', 'حدث خطأ أثناء حفظ الحضور. الرجاء المحاولة لاحقًا.');
+        }
+    }
+
+    /**
+     * Bulk record repetitions (تكرار) for one student in this session.
+     * Replaces any existing repetition rows for that student.
+     */
+    public function recordRepetitionsBulk(StoreRepetitionsRequest $request, ProgramSession $session)
+    {
+        $this->authorizeSessionAccess($session);
+
+        $data = $request->validated();
+        $student = Student::findOrFail($data['student_id']);
+
+        try {
+            $result = (new RecordRepetitionsAction)->execute($session, $student, $data['sections']);
+
+            return redirect()
+                ->back()
+                ->with('success', "تم حفظ التسميع بنجاح ({$result['saved']} فقرة)");
+        } catch (\Throwable $e) {
+            Log::error('Repetitions recording failed', [
+                'error' => $e->getMessage(),
+                'session_id' => $session->id,
+                'student_id' => $student->id,
+            ]);
+
+            if ($e instanceof ValidationException) {
+                throw $e;
+            }
+
+            return redirect()
+                ->back()
+                ->with('error', 'حدث خطأ أثناء حفظ التسميع. الرجاء المحاولة لاحقًا.');
         }
     }
 }

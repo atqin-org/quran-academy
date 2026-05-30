@@ -12,6 +12,8 @@ class Registry
 
     public const PAYMENT_OVERDUE = 'payment_overdue';
 
+    public const PERSONNEL_INVITE_ACCEPTED = 'personnel_invite_accepted';
+
     /**
      * All known notification types with display metadata.
      *
@@ -46,6 +48,13 @@ class Registry
                 'allow_email' => true,
                 'allow_push' => true,
                 'default_dismissable' => false,
+            ],
+            self::PERSONNEL_INVITE_ACCEPTED => [
+                'label' => 'قَبِل المستخدم الدعوة',
+                'description' => 'تنبيه عند قيام موظف جديد بتفعيل حسابه عبر رابط الدعوة',
+                'allow_email' => true,
+                'allow_push' => true,
+                'default_dismissable' => true,
             ],
         ];
     }

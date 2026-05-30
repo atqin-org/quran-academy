@@ -6,21 +6,25 @@ import {
     SelectValue,
     SelectContent,
     SelectGroup,
-    SelectLabel,
     SelectItem,
 } from "@/Components/ui/select";
 import { Badge } from "@/Components/ui/badge";
-import {
-    Tooltip,
-    TooltipContent,
-    TooltipProvider,
-    TooltipTrigger,
-} from "@/Components/ui/tooltip";
 import { Switch } from "@/Components/ui/switch";
 import { Label } from "@/Components/ui/label";
 import { Button } from "@/Components/ui/button";
-import { useState, useMemo } from "react";
-import { Save, AlertCircle, Loader2, ArrowRight } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Save, AlertCircle, Loader2, ArrowRight, BookOpenCheck, RotateCcw, ArrowRightLeft, Minus } from "lucide-react";
+import MemorizationBar from "@/Components/Repetitions/MemorizationBar";
+import RepetitionsBar from "@/Components/Repetitions/RepetitionsBar";
+import StudentSessionModal from "@/Components/Repetitions/StudentSessionModal";
+import StudentProgressModal from "@/Components/Repetitions/StudentProgressModal";
+import type {
+    AttendeeOption,
+    IncomingRepetitionSection,
+    Rating,
+    RecentActivity,
+    TestedThumn,
+} from "@/Components/Repetitions/types";
 
 interface Hizb {
     id: number;
@@ -43,10 +47,21 @@ interface Student {
     excusedReason?: string;
     hizb_id?: number | null;
     thoman_id?: number | null;
+    memorization_rating?: Rating | null;
+    memorization_remark?: string | null;
     memorization_direction?: "ascending" | "descending";
     last_hizb_id?: number | null;
     last_hizb_ascending?: number | null;
     last_hizb_descending?: number | null;
+    repetitions?: IncomingRepetitionSection[];
+    tested_thumns?: TestedThumn[];
+    tested_hizbs?: TestedHizb[];
+    recent_activities?: RecentActivity[];
+}
+
+interface TestedHizb {
+    hizb_number: number;
+    rating: Rating | null;
 }
 
 interface SessionAttendanceProps {
@@ -62,8 +77,16 @@ interface SessionAttendanceProps {
         group_name?: string | null;
     };
     students: Student[];
+    attendees: AttendeeOption[];
     ahzab: Hizb[];
     athman: Thoman[];
+}
+
+function countTestedHizbs(thumns: TestedThumn[] | undefined): number {
+    if (!thumns || thumns.length === 0) {
+        return 0;
+    }
+    return new Set(thumns.map((t) => t.hizb_number)).size;
 }
 
 // Helper to calculate dual progress
@@ -96,369 +119,46 @@ function calculateStudentProgress(student: Student) {
     };
 }
 
-// Mini Progress Bar Component with Direction Toggle and Session Progress
-function MiniProgressBar({
-    student,
-    ahzab,
-    onDirectionChange,
-    currentSessionHizbId,
-}: {
-    student: Student;
-    ahzab: Hizb[];
-    onDirectionChange: (direction: "ascending" | "descending") => void;
-    currentSessionHizbId?: string | number;
-}) {
-    const progress = calculateStudentProgress(student);
-    const direction = student.memorization_direction ?? "descending";
-
-    // Calculate suggested next hizb
-    const suggestedHizbNumber =
-        direction === "ascending"
-            ? (student.last_hizb_ascending ?? 0) + 1
-            : (student.last_hizb_descending ?? 61) - 1;
-
-    const suggestedHizb = ahzab.find((h) => h.number === suggestedHizbNumber);
-
-    // Find current session hizb details
-    const currentHizb = currentSessionHizbId
-        ? ahzab.find((h) => h.id.toString() === currentSessionHizbId.toString())
-        : null;
-
-    // Calculate pending progress (hizb selected in current session)
-    const getPendingProgress = () => {
-        if (!currentHizb) return { ascending: 0, descending: 0 };
-
-        const hizbNumber = currentHizb.number;
-
-        // Check if this hizb extends current progress
-        if (hizbNumber <= 30) {
-            // Ascending range
-            const currentMax = student.last_hizb_ascending ?? 0;
-            if (hizbNumber > currentMax) {
-                // New progress in ascending direction
-                return {
-                    ascending: hizbNumber - currentMax,
-                    descending: 0,
-                };
-            }
-        } else {
-            // Descending range
-            const currentMin = student.last_hizb_descending ?? 61;
-            if (hizbNumber < currentMin) {
-                // New progress in descending direction
-                return {
-                    ascending: 0,
-                    descending: currentMin - hizbNumber,
-                };
-            }
-        }
-
-        return { ascending: 0, descending: 0 };
-    };
-
-    const pending = getPendingProgress();
-    const hasPendingProgress = pending.ascending > 0 || pending.descending > 0;
-
-    const toggleDirection = () => {
-        const newDirection = direction === "ascending" ? "descending" : "ascending";
-        onDirectionChange(newDirection);
-    };
-
-    // Calculate total including pending
-    const totalWithPending = Math.min(
-        60,
-        progress.total + pending.ascending + pending.descending
-    );
-    const percentageWithPending = Math.round((totalWithPending / 60) * 100);
-
-    return (
-        <TooltipProvider>
-            <Tooltip>
-                <TooltipTrigger asChild>
-                    <div className="mt-2 cursor-help">
-                        {/* Progress Bar */}
-                        <div className="relative h-3 bg-gray-200 rounded-full overflow-hidden">
-                            {/* Ascending solid (green from left) */}
-                            {progress.ascending > 0 && (
-                                <div
-                                    className="absolute top-0 left-0 h-full bg-green-500 transition-all"
-                                    style={{
-                                        width: `${(progress.ascending / 60) * 100}%`,
-                                    }}
-                                />
-                            )}
-                            {/* Ascending pending (striped green) */}
-                            {pending.ascending > 0 && (
-                                <div
-                                    className="absolute top-0 h-full transition-all"
-                                    style={{
-                                        left: `${(progress.ascending / 60) * 100}%`,
-                                        width: `${(pending.ascending / 60) * 100}%`,
-                                        background:
-                                            "repeating-linear-gradient(45deg, #22c55e, #22c55e 2px, #86efac 2px, #86efac 4px)",
-                                    }}
-                                />
-                            )}
-                            {/* Descending solid (blue from right) */}
-                            {progress.descending > 0 && (
-                                <div
-                                    className="absolute top-0 right-0 h-full bg-blue-500 transition-all"
-                                    style={{
-                                        width: `${(progress.descending / 60) * 100}%`,
-                                    }}
-                                />
-                            )}
-                            {/* Descending pending (striped blue) */}
-                            {pending.descending > 0 && (
-                                <div
-                                    className="absolute top-0 h-full transition-all"
-                                    style={{
-                                        right: `${(progress.descending / 60) * 100}%`,
-                                        width: `${(pending.descending / 60) * 100}%`,
-                                        background:
-                                            "repeating-linear-gradient(-45deg, #3b82f6, #3b82f6 2px, #93c5fd 2px, #93c5fd 4px)",
-                                    }}
-                                />
-                            )}
-                            {/* Center marker */}
-                            <div className="absolute top-0 left-1/2 w-px h-full bg-gray-400" />
-                        </div>
-
-                        {/* Direction indicator and progress */}
-                        <div className="flex justify-between items-center mt-1 text-[10px] text-gray-500">
-                            <button
-                                type="button"
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    toggleDirection();
-                                }}
-                                className="flex items-center gap-1 hover:opacity-70 transition-opacity"
-                                title="انقر لتغيير الاتجاه"
-                            >
-                                {direction === "ascending" ? (
-                                    <Badge
-                                        variant="outline"
-                                        className="text-[9px] px-1 py-0 h-4 bg-green-50 border-green-300 text-green-700 cursor-pointer hover:bg-green-100"
-                                    >
-                                        ↑ تصاعدي ⟲
-                                    </Badge>
-                                ) : (
-                                    <Badge
-                                        variant="outline"
-                                        className="text-[9px] px-1 py-0 h-4 bg-blue-50 border-blue-300 text-blue-700 cursor-pointer hover:bg-blue-100"
-                                    >
-                                        ↓ تنازلي ⟲
-                                    </Badge>
-                                )}
-                            </button>
-                            <span className="font-medium">
-                                {hasPendingProgress ? (
-                                    <span className="text-primary">
-                                        {percentageWithPending}% ({totalWithPending}/60)
-                                        <span className="text-[8px] mr-1">+{pending.ascending + pending.descending}</span>
-                                    </span>
-                                ) : (
-                                    `${progress.percentage}% (${progress.total}/60)`
-                                )}
-                            </span>
-                        </div>
-                    </div>
-                </TooltipTrigger>
-                <TooltipContent side="bottom" className="text-right">
-                    <div className="space-y-1 text-xs">
-                        <p className="font-semibold border-b pb-1">التقدم في الحفظ</p>
-                        <div className="flex items-center gap-2">
-                            <div className="w-2 h-2 bg-green-500 rounded" />
-                            <span>
-                                تصاعدي (1→):{" "}
-                                {progress.lastAscending
-                                    ? `حزب ${progress.lastAscending}`
-                                    : "لم يبدأ"}
-                                {pending.ascending > 0 && (
-                                    <span className="text-primary mr-1">
-                                        (+{pending.ascending} هذه الجلسة)
-                                    </span>
-                                )}
-                            </span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <div className="w-2 h-2 bg-blue-500 rounded" />
-                            <span>
-                                تنازلي (←60):{" "}
-                                {progress.lastDescending
-                                    ? `حزب ${progress.lastDescending}`
-                                    : "لم يبدأ"}
-                                {pending.descending > 0 && (
-                                    <span className="text-primary mr-1">
-                                        (+{pending.descending} هذه الجلسة)
-                                    </span>
-                                )}
-                            </span>
-                        </div>
-                        <p className="pt-1 border-t font-medium">
-                            المجموع: {progress.total} حزب ({progress.percentage}%)
-                            {hasPendingProgress && (
-                                <span className="text-primary mr-1">
-                                    → {totalWithPending} ({percentageWithPending}%)
-                                </span>
-                            )}
-                        </p>
-                        {currentHizb && (
-                            <p className="text-primary pt-1 border-t">
-                                الجلسة الحالية: حزب {currentHizb.number} ({currentHizb.start})
-                            </p>
-                        )}
-                        {!currentHizb && suggestedHizb && (
-                            <p className="text-muted-foreground pt-1">
-                                التالي المقترح: {suggestedHizb.start}
-                            </p>
-                        )}
-                        <p className="text-muted-foreground pt-1 border-t">
-                            انقر على الاتجاه لتغييره
-                        </p>
-                    </div>
-                </TooltipContent>
-            </Tooltip>
-        </TooltipProvider>
-    );
-}
-
-// Smart Hizb Select with grouped options
-function SmartHizbSelect({
-    student,
-    ahzab,
-    selectedHizbId,
-    onSelect,
-}: {
-    student: Student;
-    ahzab: Hizb[];
-    selectedHizbId: string;
-    onSelect: (value: string) => void;
-}) {
-    const direction = student.memorization_direction ?? "descending";
-    const progress = calculateStudentProgress(student);
-
-    // Calculate suggested next hizb number
-    const suggestedHizbNumber =
-        direction === "ascending"
-            ? (student.last_hizb_ascending ?? 0) + 1
-            : (student.last_hizb_descending ?? 61) - 1;
-
-    // Check if a hizb is memorized
-    const isMemorized = (hizbNumber: number) => {
-        const fromAscending =
-            student.last_hizb_ascending && hizbNumber <= student.last_hizb_ascending;
-        const fromDescending =
-            student.last_hizb_descending && hizbNumber >= student.last_hizb_descending;
-        return fromAscending || fromDescending;
-    };
-
-    // Sort hizbs based on direction
-    const sortedHizbs = useMemo(() => {
-        return [...ahzab].sort((a, b) => {
-            if (direction === "descending") {
-                return b.number - a.number;
-            }
-            return a.number - b.number;
-        });
-    }, [ahzab, direction]);
-
-    // Group hizbs
-    const suggestedHizb = sortedHizbs.find((h) => h.number === suggestedHizbNumber);
-    const remainingHizbs = sortedHizbs.filter(
-        (h) => h.number !== suggestedHizbNumber && !isMemorized(h.number)
-    );
-    const memorizedHizbs = sortedHizbs.filter(
-        (h) => h.number !== suggestedHizbNumber && isMemorized(h.number)
-    );
-
-    return (
-        <Select value={selectedHizbId} onValueChange={onSelect}>
-            <SelectTrigger className="w-full">
-                <SelectValue placeholder="اختر الحزب" />
-            </SelectTrigger>
-            <SelectContent className="max-h-[300px]">
-                {/* Suggested Hizb */}
-                {suggestedHizb && (
-                    <SelectGroup>
-                        <SelectLabel className="text-primary font-bold text-xs">
-                            المقترح التالي
-                        </SelectLabel>
-                        <SelectItem
-                            value={suggestedHizb.id.toString()}
-                            className="bg-primary/10 font-semibold border-r-2 border-primary"
-                        >
-                            <span className="flex items-center gap-2">
-                                <span className="text-primary">◀</span>
-                                <span>حزب {suggestedHizb.number}</span>
-                                <span className="text-gray-500 text-xs">
-                                    ({suggestedHizb.start})
-                                </span>
-                            </span>
-                        </SelectItem>
-                    </SelectGroup>
-                )}
-
-                {/* Remaining Hizbs */}
-                {remainingHizbs.length > 0 && (
-                    <SelectGroup>
-                        <SelectLabel className="text-xs text-gray-500">
-                            المتبقي
-                        </SelectLabel>
-                        {remainingHizbs.map((hizb) => (
-                            <SelectItem key={hizb.id} value={hizb.id.toString()}>
-                                <span className="flex items-center gap-2">
-                                    <span>حزب {hizb.number}</span>
-                                    <span className="text-gray-400 text-xs">
-                                        ({hizb.start})
-                                    </span>
-                                </span>
-                            </SelectItem>
-                        ))}
-                    </SelectGroup>
-                )}
-
-                {/* Memorized Hizbs */}
-                {memorizedHizbs.length > 0 && (
-                    <SelectGroup>
-                        <SelectLabel className="text-xs text-gray-400">
-                            تم حفظه
-                        </SelectLabel>
-                        {memorizedHizbs.map((hizb) => (
-                            <SelectItem
-                                key={hizb.id}
-                                value={hizb.id.toString()}
-                                className="text-gray-400"
-                            >
-                                <span className="flex items-center gap-2">
-                                    <span className="text-green-500">✓</span>
-                                    <span>حزب {hizb.number}</span>
-                                    <span className="text-gray-300 text-xs">
-                                        ({hizb.start})
-                                    </span>
-                                </span>
-                            </SelectItem>
-                        ))}
-                    </SelectGroup>
-                )}
-            </SelectContent>
-        </Select>
-    );
-}
 
 export default function Attendance({
     auth,
     session,
     program,
     students: initialStudents,
+    attendees,
     ahzab,
     athman,
 }: SessionAttendanceProps) {
     // Track students locally to update direction immediately
     const [students, setStudents] = useState(initialStudents);
+
+    // Sync local state when fresh props arrive (e.g. after saving the session modal triggers router.reload).
+    // Without this the indicator dots and progress bars stay stale after a save.
+    useEffect(() => {
+        setStudents(initialStudents);
+    }, [initialStudents]);
     const [isOptional, setIsOptional] = useState(session.is_optional ?? false);
     const [isSaving, setIsSaving] = useState(false);
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+    const [modalStudentId, setModalStudentId] = useState<number | null>(null);
+    const [modalDefaultTab, setModalDefaultTab] = useState<"memorization" | "repetitions">("memorization");
+    const [progressStudentId, setProgressStudentId] = useState<number | null>(null);
+
+    const openModal = (studentId: number, tab: "memorization" | "repetitions") => {
+        setModalDefaultTab(tab);
+        setModalStudentId(studentId);
+    };
+
+    const closeModal = () => {
+        setModalStudentId(null);
+        router.reload({ only: ["students", "attendees"] });
+    };
+
+    const openProgress = (studentId: number) => setProgressStudentId(studentId);
+    const closeProgress = () => setProgressStudentId(null);
+
+    const modalStudent = students.find((s) => s.id === modalStudentId) ?? null;
+    const progressStudent = students.find((s) => s.id === progressStudentId) ?? null;
 
     const [attendance, setAttendance] = useState<Record<number, any>>(() =>
         initialStudents.reduce((acc, s) => {
@@ -612,7 +312,7 @@ export default function Attendance({
                         const unmarkedCount = students.length - markedCount;
                         const allMarked = unmarkedCount === 0;
                         return (
-                            <div className={`bg-white shadow rounded-lg p-4 border-r-4 ${allMarked ? 'border-green-500' : 'border-amber-500'}`}>
+                            <div className={`bg-white shadow rounded-lg p-4 border-e-4 ${allMarked ? 'border-green-500' : 'border-amber-500'}`}>
                                 <div className="text-sm text-gray-500">التقدم</div>
                                 <div className="text-2xl font-bold">{markedCount}/{students.length}</div>
                                 {!allMarked && (
@@ -684,10 +384,65 @@ export default function Attendance({
                     </div>
                 </div>
 
+                {progressStudent && (
+                    <StudentProgressModal
+                        open={progressStudentId !== null}
+                        onOpenChange={(open) => {
+                            if (!open) closeProgress();
+                        }}
+                        student={{
+                            id: progressStudent.id,
+                            first_name: progressStudent.first_name,
+                            last_name: progressStudent.last_name,
+                            last_hizb_ascending: progressStudent.last_hizb_ascending ?? null,
+                            last_hizb_descending: progressStudent.last_hizb_descending ?? null,
+                            tested_thumns: progressStudent.tested_thumns ?? [],
+                            tested_hizbs: progressStudent.tested_hizbs ?? [],
+                            recent_activities: progressStudent.recent_activities ?? [],
+                        }}
+                        onAddMemorization={() => {
+                            closeProgress();
+                            openModal(progressStudent.id, "memorization");
+                        }}
+                        onAddRepetition={() => {
+                            closeProgress();
+                            openModal(progressStudent.id, "repetitions");
+                        }}
+                    />
+                )}
+
+                {modalStudent && (
+                    <StudentSessionModal
+                        open={modalStudentId !== null}
+                        onOpenChange={(open) => {
+                            if (!open) closeModal();
+                        }}
+                        defaultTab={modalDefaultTab}
+                        sessionId={session.id}
+                        student={{
+                            id: modalStudent.id,
+                            first_name: modalStudent.first_name,
+                            last_name: modalStudent.last_name,
+                            attendance_status: modalStudent.attendance_status ?? "present",
+                            hizb_id: modalStudent.hizb_id ?? null,
+                            thoman_id: modalStudent.thoman_id ?? null,
+                            memorization_rating: modalStudent.memorization_rating ?? null,
+                            memorization_remark: modalStudent.memorization_remark ?? null,
+                            last_hizb_ascending: modalStudent.last_hizb_ascending ?? null,
+                            last_hizb_descending: modalStudent.last_hizb_descending ?? null,
+                            repetitions: modalStudent.repetitions ?? [],
+                        }}
+                        ahzab={ahzab}
+                        athman={athman}
+                        attendees={attendees}
+                        currentUser={{ id: auth.user.id, name: auth.user.name }}
+                    />
+                )}
+
                 <div className="overflow-x-auto bg-white shadow rounded-lg">
                     <table className="w-full border-collapse">
                         <thead>
-                            <tr className="bg-gray-100 text-right">
+                            <tr className="bg-gray-100 text-start">
                                 <th className="p-3 border w-12">#</th>
                                 <th className="p-3 border min-w-[200px]">الاسم والتقدم</th>
                                 <th className="p-3 border w-28">الحالة</th>
@@ -713,17 +468,47 @@ export default function Attendance({
                                             {index + 1}
                                         </td>
                                         <td className="p-3 border">
-                                            <div className="font-medium text-gray-900">
-                                                {student.first_name} {student.last_name}
+                                            <div className="flex items-center justify-between gap-2">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => openProgress(student.id)}
+                                                    className="text-start font-medium text-gray-900 hover:text-primary"
+                                                    title="عرض تفاصيل التقدم"
+                                                >
+                                                    {student.first_name} {student.last_name}
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        handleDirectionChange(
+                                                            student.id,
+                                                            student.memorization_direction === "ascending"
+                                                                ? "descending"
+                                                                : "ascending",
+                                                        )
+                                                    }
+                                                    className="inline-flex w-20 shrink-0 items-center justify-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-medium text-emerald-600 hover:bg-emerald-50"
+                                                    title="انقر لتغيير الاتجاه"
+                                                >
+                                                    <span className="tabular-nums">
+                                                        {student.memorization_direction === "ascending" ? "تصاعدي ↑" : "تنازلي ↓"}
+                                                    </span>
+                                                    <ArrowRightLeft className="h-3 w-3 opacity-50" />
+                                                </button>
                                             </div>
-                                            <MiniProgressBar
-                                                student={student}
-                                                ahzab={ahzab}
-                                                onDirectionChange={(direction) =>
-                                                    handleDirectionChange(student.id, direction)
-                                                }
-                                                currentSessionHizbId={(status === "present" || status === "late_excused") ? hizb_id : undefined}
-                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => openProgress(student.id)}
+                                                className="mt-2 block w-full cursor-pointer space-y-1.5 rounded-md text-start transition-colors hover:bg-gray-50"
+                                                title="عرض تفاصيل التقدم"
+                                            >
+                                                <MemorizationBar
+                                                    memorized={calculateStudentProgress(student).total}
+                                                />
+                                                <RepetitionsBar
+                                                    testedHizbs={student.tested_hizbs ?? []}
+                                                />
+                                            </button>
                                         </td>
 
                                         <td className="p-3 border">
@@ -775,61 +560,90 @@ export default function Attendance({
                                                 />
                                             )}
 
-                                            {(status === "present" || status === "late_excused") && (
-                                                <div className="flex gap-2">
-                                                    <div className="flex-1">
-                                                        <SmartHizbSelect
-                                                            student={student}
-                                                            ahzab={ahzab}
-                                                            selectedHizbId={hizb_id.toString()}
-                                                            onSelect={(value) =>
-                                                                handleChange(
-                                                                    student.id,
-                                                                    "hizb_id",
-                                                                    value
-                                                                )
-                                                            }
-                                                        />
-                                                    </div>
-                                                    <div className="flex-1">
-                                                        <Select
-                                                            value={thoman_id.toString()}
-                                                            onValueChange={(value) =>
-                                                                handleChange(
-                                                                    student.id,
-                                                                    "thoman_id",
-                                                                    value
-                                                                )
-                                                            }
+                                            {(status === "present" || status === "late_excused") && (() => {
+                                                const hasRepetitions = (student.repetitions?.length ?? 0) > 0;
+                                                const hasMemorization =
+                                                    student.memorization_rating !== null && student.memorization_rating !== undefined;
+                                                const memorizationDotColor =
+                                                    student.memorization_rating === "good"
+                                                        ? "bg-emerald-500"
+                                                        : student.memorization_rating === "mid"
+                                                        ? "bg-amber-500"
+                                                        : student.memorization_rating === "bad"
+                                                        ? "bg-red-500"
+                                                        : "bg-slate-400";
+                                                // Average of "تقييم المقطع" across all repetition sections in this session.
+                                                // good=3, mid=2, bad=1. Null ratings skipped.
+                                                // avg === 3 (every rated section good) → green
+                                                // avg === 1 (every rated section bad)  → red
+                                                // anything in between (or no rated section) → amber
+                                                const repetitionDotColor = (() => {
+                                                    const scores = (student.repetitions ?? [])
+                                                        .map((r) =>
+                                                            r.overall_rating === "good"
+                                                                ? 3
+                                                                : r.overall_rating === "mid"
+                                                                ? 2
+                                                                : r.overall_rating === "bad"
+                                                                ? 1
+                                                                : null,
+                                                        )
+                                                        .filter((s): s is 1 | 2 | 3 => s !== null);
+                                                    if (scores.length === 0) {
+                                                        return "bg-amber-500";
+                                                    }
+                                                    const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
+                                                    if (avg === 3) return "bg-emerald-500";
+                                                    if (avg === 1) return "bg-red-500";
+                                                    return "bg-amber-500";
+                                                })();
+                                                return (
+                                                    <div className="flex items-center justify-center gap-2">
+                                                        <Button
+                                                            type="button"
+                                                            size="sm"
+                                                            variant="outline"
+                                                            className="gap-1"
+                                                            onClick={() => openModal(student.id, "repetitions")}
                                                         >
-                                                            <SelectTrigger className="w-full">
-                                                                <SelectValue placeholder="الثمن" />
-                                                            </SelectTrigger>
-                                                            <SelectContent>
-                                                                <SelectGroup>
-                                                                    {athman
-                                                                        .filter(
-                                                                            (t) =>
-                                                                                t.hizb_id.toString() ===
-                                                                                hizb_id.toString()
-                                                                        )
-                                                                        .map((thoman) => (
-                                                                            <SelectItem
-                                                                                key={thoman.id}
-                                                                                value={thoman.id.toString()}
-                                                                            >
-                                                                                {thoman.start}
-                                                                            </SelectItem>
-                                                                        ))}
-                                                                </SelectGroup>
-                                                            </SelectContent>
-                                                        </Select>
+                                                            {hasRepetitions && (
+                                                                <span
+                                                                    className={`inline-block h-1.5 w-1.5 rounded-full ${repetitionDotColor}`}
+                                                                    aria-hidden
+                                                                />
+                                                            )}
+                                                            <RotateCcw className="h-3.5 w-3.5" />
+                                                            تكرار
+                                                            {hasRepetitions && (
+                                                                <Badge variant="secondary" className="ms-1 h-4 px-1 text-[10px]">
+                                                                    {student.repetitions!.length}
+                                                                </Badge>
+                                                            )}
+                                                        </Button>
+                                                        <Button
+                                                            type="button"
+                                                            size="sm"
+                                                            variant="outline"
+                                                            className="gap-1"
+                                                            onClick={() => openModal(student.id, "memorization")}
+                                                        >
+                                                            {hasMemorization && (
+                                                                <span
+                                                                    className={`inline-block h-1.5 w-1.5 rounded-full ${memorizationDotColor}`}
+                                                                    aria-hidden
+                                                                />
+                                                            )}
+                                                            <BookOpenCheck className="h-3.5 w-3.5" />
+                                                            حفظ
+                                                        </Button>
                                                     </div>
-                                                </div>
-                                            )}
+                                                );
+                                            })()}
 
-                                            {(status === "absent" || status === "kicked") && (
-                                                <span className="text-gray-400 text-sm">-</span>
+                                            {(status === "absent" || status === "kicked" || status === "") && (
+                                                <div className="flex items-center justify-center text-gray-300">
+                                                    <Minus className="h-5 w-5" />
+                                                </div>
                                             )}
                                         </td>
                                     </tr>

@@ -10,6 +10,7 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\NotificationPreferenceController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PersonnelController;
+use App\Http\Controllers\PersonnelInviteSettingsController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProgramController;
 use App\Http\Controllers\ProgramSessionController;
@@ -19,7 +20,7 @@ use App\Http\Middleware\AdminMiddleware;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
-Route::middleware(['auth', 'verified'])->group(function () {
+Route::middleware(['auth', 'verified', 'force-password'])->group(function () {
     // Merge-and-force-delete flow for duplicate students. Declared before the
     // resource so the literal `merge-candidates` segment does not get matched
     // as the `{student}` parameter of `students.show`.
@@ -27,13 +28,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('students.mergeCandidates')
         ->middleware(AdminMiddleware::class);
 
-    Route::resource('/students', StudentResourceController::class);
+    Route::resource('/students', StudentResourceController::class)->except(['update']);
     Route::post('/students/{student}', [StudentResourceController::class, 'update'])->name('students.update');
     Route::put('/students/ahzab/{student}', [StudentResourceController::class, 'ahzab'])->name('students.ahzab');
     Route::put('/students/{student}/direction', [StudentResourceController::class, 'updateDirection'])->name('students.direction');
     Route::get('/studentsExport', [StudentResourceController::class, 'export'])->name('students.export');
     Route::post('/students/{student}/restore', [StudentResourceController::class, 'restore'])->name('students.restore')->middleware(AdminMiddleware::class);
     Route::delete('/students/{student}/force-delete', [StudentResourceController::class, 'forceDelete'])->name('students.forceDelete')->middleware(AdminMiddleware::class);
+    Route::get('/students/{student}/activity-log', [StudentResourceController::class, 'activityLog'])
+        ->name('students.activityLog')
+        ->middleware(AdminMiddleware::class);
     Route::get('/students/{trashed}/merge-payload/{canonical}', [StudentResourceController::class, 'mergePayload'])
         ->name('students.mergePayload')
         ->middleware(AdminMiddleware::class);
@@ -52,6 +56,19 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/personnels/{personnel}/restore', [PersonnelController::class, 'restore'])
         ->name('personnels.restore')
         ->middleware(AdminMiddleware::class);
+    Route::post('/personnels/{personnel}/resend-invite', [PersonnelController::class, 'resendInvite'])
+        ->name('personnels.resend-invite')
+        ->middleware(AdminMiddleware::class);
+    Route::post('/personnels/{personnel}/copy-invite-link', [PersonnelController::class, 'copyInviteLink'])
+        ->name('personnels.copy-invite-link')
+        ->middleware(AdminMiddleware::class);
+
+    Route::middleware(AdminMiddleware::class)->group(function () {
+        Route::get('/settings/personnel-invite', [PersonnelInviteSettingsController::class, 'index'])
+            ->name('settings.personnel-invite.edit');
+        Route::put('/settings/personnel-invite', [PersonnelInviteSettingsController::class, 'update'])
+            ->name('settings.personnel-invite.update');
+    });
 
     Route::get('/system/backup', function () {
         return Inertia::render('Dashboard/System/BackupDatabase');
@@ -180,6 +197,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // Record attendance
         Route::post('/{session}/attendance', [ProgramSessionController::class, 'recordAttendance'])->name('recordAttendance');
         Route::post('/{session}/attendance-bulk', [ProgramSessionController::class, 'recordAttendanceBulk'])->name('recordAttendanceBulk');
+
+        // Record repetitions (تكرار) for a single student in the session
+        Route::post('/{session}/repetitions-bulk', [ProgramSessionController::class, 'recordRepetitionsBulk'])->name('recordRepetitionsBulk');
     });
 });
 
@@ -193,7 +213,7 @@ Route::get('/', function () {
 
 Route::get('/dashboard', function () {
     return redirect()->route('students.index');
-})->middleware(['auth', 'verified'])->name('dashboard');
+})->middleware(['auth', 'verified', 'force-password'])->name('dashboard');
 
 Route::middleware(['auth', 'verified'])->group(function () {})->middleware(AdminMiddleware::class);
 

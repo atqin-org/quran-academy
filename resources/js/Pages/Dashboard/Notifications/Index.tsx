@@ -6,12 +6,13 @@ import {
 } from "@/Components/ui/card";
 import { Button } from "@/Components/ui/button";
 import { Badge } from "@/Components/ui/badge";
-import { AlertTriangle, Bell, CalendarClock, Check, CreditCard, Settings2, X } from "lucide-react";
+import { AlertTriangle, Bell, CalendarClock, Check, CreditCard, Settings2, UserCheck, X } from "lucide-react";
 import { AppNotification, CapacityOverflow, TUser } from "@/types";
 
 const CAPACITY_TYPE = "class_over_capacity";
 const SESSION_ATTENDANCE_TYPE = "session_attendance_pending";
 const PAYMENT_OVERDUE_TYPE = "payment_overdue";
+const PERSONNEL_INVITE_ACCEPTED_TYPE = "personnel_invite_accepted";
 
 interface PaginatedNotifications {
     data: AppNotification[];
@@ -250,6 +251,50 @@ function NotificationCard({
                         notification={notification}
                         manageUrl={manageUrl}
                         manageLabel="تسجيل الحضور"
+                        onMarkRead={onMarkRead}
+                        onDismiss={onDismiss}
+                    />
+                </CardContent>
+            </Card>
+        );
+    }
+
+    if (notification.type === PERSONNEL_INVITE_ACCEPTED_TYPE) {
+        const data = notification.data as Record<string, unknown>;
+        const name = (data.personnel_name as string) ?? "موظف جديد";
+        const email = (data.personnel_email as string) ?? "";
+
+        return (
+            <Card className={isUnread ? "border-emerald-300" : "border-gray-200"}>
+                <CardContent className="flex items-start justify-between gap-3 p-4">
+                    <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                            <UserCheck className="h-4 w-4 text-emerald-600" />
+                            <span className="text-sm font-semibold text-emerald-700">
+                                قَبِل الدعوة
+                            </span>
+                            <Badge variant={isUnread ? "default" : "outline"}>
+                                {isUnread ? "غير مقروءة" : "مقروءة"}
+                            </Badge>
+                        </div>
+                        <p className="text-sm font-medium text-gray-900">
+                            {name}
+                        </p>
+                        {email && (
+                            <p className="text-xs text-gray-500 mt-0.5" dir="ltr">
+                                {email}
+                            </p>
+                        )}
+                        {notification.created_at && (
+                            <p className="text-xs text-gray-400 mt-1">
+                                {new Date(notification.created_at).toLocaleString("ar")}
+                            </p>
+                        )}
+                    </div>
+                    <RowActions
+                        notification={notification}
+                        manageUrl={route("personnels.index")}
+                        manageLabel="عرض الموظفين"
                         onMarkRead={onMarkRead}
                         onDismiss={onDismiss}
                     />

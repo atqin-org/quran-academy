@@ -55,12 +55,15 @@ import {
     Users,
     UserCheck,
     UserX,
+    UserCog,
     Search,
     X,
     Clock,
     Filter,
+    Copy,
+    Send,
 } from "lucide-react";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { toast } from "sonner";
 import Avatar from "@/Components/costume-cn/Avatar";
 
@@ -70,6 +73,10 @@ interface DashboardProps extends PageProps {
     flash?: {
         success?: string;
         error?: string;
+        warning?: string;
+        invite_url?: string;
+        invite_channel?: "email" | "link" | "both";
+        invite_user?: string;
     };
 }
 
@@ -111,8 +118,23 @@ export default function Dashboard({
     const { props } = usePage<DashboardProps>();
     const flash = props.flash;
 
+    const [inviteModal, setInviteModal] = useState<{
+        url: string;
+        userLabel?: string;
+        warning?: string;
+    } | null>(null);
+    const inviteUrlInputRef = useRef<HTMLInputElement>(null);
+
     // Show toast notifications for flash messages
     useEffect(() => {
+        if (flash?.invite_url) {
+            setInviteModal({
+                url: flash.invite_url,
+                userLabel: flash.invite_user,
+                warning: flash.warning,
+            });
+            return;
+        }
         if (flash?.success) {
             toast.success(flash.success);
         }
@@ -120,6 +142,15 @@ export default function Dashboard({
             toast.error(flash.error);
         }
     }, [flash]);
+
+    useEffect(() => {
+        if (!inviteModal) return;
+        const timer = window.setTimeout(() => {
+            inviteUrlInputRef.current?.focus();
+            inviteUrlInputRef.current?.select();
+        }, 100);
+        return () => window.clearTimeout(timer);
+    }, [inviteModal]);
 
     const [statusFilter, setStatusFilter] = useState<"all" | "active" | "deactivated">("all");
     const [searchQuery, setSearchQuery] = useState("");
@@ -379,6 +410,14 @@ export default function Dashboard({
                                                             <UserX className="h-3 w-3" />
                                                             معطل
                                                         </Badge>
+                                                    ) : personnel.status === "pending" ? (
+                                                        <Badge
+                                                            variant="default"
+                                                            className="gap-1 bg-amber-500 hover:bg-amber-600"
+                                                        >
+                                                            <UserCog className="h-3 w-3" />
+                                                            معلّق
+                                                        </Badge>
                                                     ) : (
                                                         <Badge
                                                             variant="default"
@@ -404,6 +443,82 @@ export default function Dashboard({
                     </CardContent>
                 </Card>
             </div>
+
+            <Dialog
+                open={inviteModal !== null}
+                onOpenChange={(open) => !open && setInviteModal(null)}
+            >
+                <DialogContent dir="rtl" className="max-w-lg">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <Send className="h-5 w-5 text-amber-500" />
+                            رابط تفعيل الحساب
+                        </DialogTitle>
+                        <DialogDescription>
+                            {inviteModal?.userLabel ? (
+                                <>
+                                    شارك هذا الرابط مع{" "}
+                                    <span className="font-semibold text-gray-900">
+                                        {inviteModal.userLabel}
+                                    </span>
+                                    {" "}لإكمال تفعيل الحساب. صلاحية الرابط 7 أيام.
+                                </>
+                            ) : (
+                                "شارك هذا الرابط مع الموظف لإكمال تفعيل الحساب. صلاحية الرابط 7 أيام."
+                            )}
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    {inviteModal?.warning && (
+                        <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-md p-3">
+                            {inviteModal.warning}
+                        </p>
+                    )}
+
+                    <div className="flex items-center gap-2">
+                        <Input
+                            ref={inviteUrlInputRef}
+                            readOnly
+                            value={inviteModal?.url ?? ""}
+                            dir="ltr"
+                            className="font-mono text-xs"
+                            onFocus={(e) => e.currentTarget.select()}
+                        />
+                        <Button
+                            type="button"
+                            variant="outline"
+                            className="shrink-0 gap-2"
+                            onClick={async () => {
+                                if (!inviteModal?.url) return;
+                                const url = inviteModal.url;
+                                try {
+                                    if (navigator.clipboard?.writeText) {
+                                        await navigator.clipboard.writeText(url);
+                                    } else if (inviteUrlInputRef.current) {
+                                        inviteUrlInputRef.current.focus();
+                                        inviteUrlInputRef.current.select();
+                                        document.execCommand("copy");
+                                    }
+                                    toast.success("تم نسخ الرابط");
+                                } catch {
+                                    toast.error("تعذّر النسخ التلقائي — حدّد الرابط وانسخه يدوياً");
+                                    inviteUrlInputRef.current?.focus();
+                                    inviteUrlInputRef.current?.select();
+                                }
+                            }}
+                        >
+                            <Copy className="h-4 w-4" />
+                            نسخ
+                        </Button>
+                    </div>
+
+                    <DialogFooter>
+                        <DialogClose asChild>
+                            <Button variant="secondary">إغلاق</Button>
+                        </DialogClose>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </DashboardLayout>
     );
 }
@@ -438,6 +553,33 @@ function PersonnelActions({ personnel, currentUserId }: { personnel: TPersonnelF
                                     تعديل
                                 </Link>
                             </DropdownMenuItem>
+
+                            {personnel.status === "pending" && !personnel.deleted_at && (
+                                <>
+                                    <DropdownMenuItem asChild>
+                                        <Link
+                                            href={`/personnels/${personnel.id}/copy-invite-link`}
+                                            method="post"
+                                            as="button"
+                                            className="w-full flex items-center gap-2 cursor-pointer"
+                                        >
+                                            <Copy className="h-4 w-4" />
+                                            نسخ رابط الدعوة
+                                        </Link>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem asChild>
+                                        <Link
+                                            href={`/personnels/${personnel.id}/resend-invite`}
+                                            method="post"
+                                            as="button"
+                                            className="w-full flex items-center gap-2 cursor-pointer text-amber-600 focus:text-amber-600"
+                                        >
+                                            <Send className="h-4 w-4" />
+                                            إعادة إرسال الدعوة
+                                        </Link>
+                                    </DropdownMenuItem>
+                                </>
+                            )}
 
                             {personnel.deleted_at ? (
                                 <DropdownMenuItem

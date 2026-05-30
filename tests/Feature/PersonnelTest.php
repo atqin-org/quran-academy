@@ -1,8 +1,12 @@
 <?php
 
 use App\Models\Club;
+use App\Models\PersonnelInvitation;
+use App\Models\PersonnelInviteSetting;
 use App\Models\User;
+use App\Notifications\Personnel\PersonnelInvited;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Notification;
 
 uses(RefreshDatabase::class);
 
@@ -55,6 +59,7 @@ it('admin can view personnel create form', function () {
 });
 
 it('admin can create personnel with valid data', function () {
+    Notification::fake();
     $admin = User::factory()->create(['role' => 'admin']);
     $club = Club::factory()->create();
 
@@ -75,6 +80,7 @@ it('admin can create personnel with valid data', function () {
         'role' => 'teacher',
         'phone' => '0555555555',
         'email' => 'ahmed@example.com',
+        'status' => 'pending',
     ]);
 
     $newUser = User::where('email', 'ahmed@example.com')->first();
@@ -84,7 +90,8 @@ it('admin can create personnel with valid data', function () {
     ]);
 });
 
-it('creating personnel sets default password', function () {
+it('creates personnel as pending with null password and an invitation', function () {
+    Notification::fake();
     $admin = User::factory()->create(['role' => 'admin']);
     $club = Club::factory()->create();
 
@@ -97,13 +104,168 @@ it('creating personnel sets default password', function () {
         'mail' => 'khaled@example.com',
     ]);
 
+    $user = User::where('email', 'khaled@example.com')->first();
+    expect($user->password)->toBeNull();
+    expect($user->status)->toBe('pending');
+    expect($user->invited_at)->not->toBeNull();
+
+    $this->assertDatabaseHas('personnel_invitations', [
+        'user_id' => $user->id,
+        'accepted_at' => null,
+    ]);
+});
+
+it('sends PersonnelInvited notification when delivery channel includes email', function () {
+    Notification::fake();
+    PersonnelInviteSetting::set('delivery_channel', 'email');
+    $admin = User::factory()->create(['role' => 'admin']);
+    $club = Club::factory()->create();
+
+    $this->actingAs($admin)->post(route('personnels.store'), [
+        'firstName' => 'سارة',
+        'lastName' => 'حسن',
+        'clubs' => [$club->id],
+        'role' => 'teacher',
+        'phone' => '0555555557',
+        'mail' => 'sara@example.com',
+    ]);
+
+    $user = User::where('email', 'sara@example.com')->first();
+    Notification::assertSentTo($user, PersonnelInvited::class);
+});
+
+it('does not send PersonnelInvited notification when delivery channel is link only', function () {
+    Notification::fake();
+    PersonnelInviteSetting::set('delivery_channel', 'link');
+    $admin = User::factory()->create(['role' => 'admin']);
+    $club = Club::factory()->create();
+
+    $this->actingAs($admin)->post(route('personnels.store'), [
+        'firstName' => 'فاطمة',
+        'lastName' => 'خالد',
+        'clubs' => [$club->id],
+        'role' => 'teacher',
+        'phone' => '0555555558',
+        'mail' => 'fatma@example.com',
+    ]);
+
+    $user = User::where('email', 'fatma@example.com')->first();
+    Notification::assertNotSentTo($user, PersonnelInvited::class);
+});
+
+it('flashes invite_url when delivery channel is link or both', function () {
+    Notification::fake();
+    PersonnelInviteSetting::set('delivery_channel', 'link');
+    $admin = User::factory()->create(['role' => 'admin']);
+    $club = Club::factory()->create();
+
+    $response = $this->actingAs($admin)->post(route('personnels.store'), [
+        'firstName' => 'يوسف',
+        'lastName' => 'علي',
+        'clubs' => [$club->id],
+        'role' => 'teacher',
+        'phone' => '0555555559',
+        'mail' => 'yousef@example.com',
+    ]);
+
+    $response->assertSessionHas('invite_url');
+});
+
+it('blocks login for pending personnel', function () {
+    Notification::fake();
+    $admin = User::factory()->create(['role' => 'admin']);
+    $club = Club::factory()->create();
+
+    $this->actingAs($admin)->post(route('personnels.store'), [
+        'firstName' => 'منى',
+        'lastName' => 'كريم',
+        'clubs' => [$club->id],
+        'role' => 'teacher',
+        'phone' => '0555555560',
+        'mail' => 'mona@example.com',
+    ]);
+
+    auth()->logout();
+
     $response = $this->post(route('login'), [
-        'email' => 'khaled@example.com',
+        'email' => 'mona@example.com',
         'password' => 'password',
     ]);
 
-    $response->assertRedirect();
-    $this->assertAuthenticated();
+    $response->assertSessionHasErrors('email');
+    $this->assertGuest();
+});
+
+it('admin can resend invite for pending personnel and old token is invalidated', function () {
+    Notification::fake();
+    $admin = User::factory()->create(['role' => 'admin']);
+    $pending = User::factory()->create(['status' => 'pending', 'password' => null]);
+    $originalInvitation = PersonnelInvitation::generateFor($pending, 'both');
+
+    $response = $this->actingAs($admin)->post(route('personnels.resend-invite', $pending));
+
+    $response->assertRedirect(route('personnels.index'));
+    $this->assertDatabaseMissing('personnel_invitations', [
+        'id' => $originalInvitation->id,
+    ]);
+    $newInvitations = PersonnelInvitation::query()->where('user_id', $pending->id)->get();
+    expect($newInvitations)->toHaveCount(1);
+});
+
+it('cannot resend invite for an already-active personnel', function () {
+    $admin = User::factory()->create(['role' => 'admin']);
+    $active = User::factory()->create(['status' => 'active']);
+
+    $response = $this->actingAs($admin)->post(route('personnels.resend-invite', $active));
+
+    $response->assertRedirect(route('personnels.index'));
+    $response->assertSessionHas('error');
+});
+
+it('always flashes invite_url on resend regardless of delivery channel', function () {
+    Notification::fake();
+    PersonnelInviteSetting::set('delivery_channel', 'email');
+    $admin = User::factory()->create(['role' => 'admin']);
+    $pending = User::factory()->create(['status' => 'pending', 'password' => null]);
+
+    $response = $this->actingAs($admin)->post(route('personnels.resend-invite', $pending));
+
+    $response->assertRedirect(route('personnels.index'));
+    $response->assertSessionHas('invite_url');
+    $response->assertSessionHas('invite_user');
+});
+
+it('admin can generate a copy-link without sending email', function () {
+    Notification::fake();
+    PersonnelInviteSetting::set('delivery_channel', 'email');
+    $admin = User::factory()->create(['role' => 'admin']);
+    $pending = User::factory()->create(['status' => 'pending', 'password' => null]);
+
+    $response = $this->actingAs($admin)->post(route('personnels.copy-invite-link', $pending));
+
+    $response->assertRedirect(route('personnels.index'));
+    $response->assertSessionHas('invite_url');
+    $response->assertSessionHas('invite_user');
+    Notification::assertNotSentTo($pending, PersonnelInvited::class);
+});
+
+it('cannot copy-invite-link for an already-active personnel', function () {
+    $admin = User::factory()->create(['role' => 'admin']);
+    $active = User::factory()->create(['status' => 'active']);
+
+    $response = $this->actingAs($admin)->post(route('personnels.copy-invite-link', $active));
+
+    $response->assertRedirect(route('personnels.index'));
+    $response->assertSessionHas('error');
+});
+
+it('non-admin cannot copy-invite-link', function () {
+    $teacher = User::factory()->create(['role' => 'teacher']);
+    $pending = User::factory()->create(['status' => 'pending', 'password' => null]);
+
+    $response = $this->actingAs($teacher)->post(route('personnels.copy-invite-link', $pending));
+
+    $response->assertForbidden();
 });
 
 it('creating personnel fails without required fields', function () {

@@ -17,10 +17,11 @@ import {
 } from "@/Components/ui/dropdown-menu";
 import { Link, router, useForm } from "@inertiajs/react";
 import { ColumnDef } from "@tanstack/react-table";
-import { Archive, Banknote, MoreHorizontal, RotateCcw, Trash2, UserPen } from "lucide-react";
+import { Archive, Banknote, History, MoreHorizontal, RotateCcw, Trash2, UserPen } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import MergeAndForceDeleteDialog from "./MergeAndForceDeleteDialog";
+import StudentLogModal from "./StudentLogModal";
 import ThomanCircle from "./ThomanCircle";
 
 export type StudentDisplay = {
@@ -438,13 +439,20 @@ export const getColumns = (archived: boolean, isAdmin: boolean): ColumnDef<Stude
                 return <ArchivedStudentActions student={student} />;
             }
 
-            return <ActiveStudentActions student={student} />;
+            return <ActiveStudentActions student={student} isAdmin={isAdmin} />;
         },
     },
 ];
 
-function ActiveStudentActions({ student }: { student: StudentDisplay }) {
+function ActiveStudentActions({
+    student,
+    isAdmin,
+}: {
+    student: StudentDisplay;
+    isAdmin: boolean;
+}) {
     const [dialogOpen, setDialogOpen] = useState(false);
+    const [logOpen, setLogOpen] = useState(false);
     const [isArchiving, setIsArchiving] = useState(false);
 
     const handleArchive = () => {
@@ -491,6 +499,18 @@ function ActiveStudentActions({ student }: { student: StudentDisplay }) {
                             <span className="w-full">الدفع</span>
                         </Link>
                     </DropdownMenuItem>
+                    {isAdmin && (
+                        <DropdownMenuItem className="p-0 m-0">
+                            <button
+                                type="button"
+                                className="w-full cursor-pointer px-4 flex items-center gap-2 rounded-md my-0.5"
+                                onClick={() => setLogOpen(true)}
+                            >
+                                <History />
+                                <span className="w-full">السجل</span>
+                            </button>
+                        </DropdownMenuItem>
+                    )}
                     <DropdownMenuItem className="p-0 m-0">
                         <DialogTrigger asChild>
                             <div className="w-full cursor-pointer px-4 flex items-center gap-2 hover:bg-orange-200 rounded-md my-0.5">
@@ -528,6 +548,13 @@ function ActiveStudentActions({ student }: { student: StudentDisplay }) {
                     </DialogFooter>
                 </DialogHeader>
             </DialogContent>
+            {isAdmin && (
+                <StudentLogModal
+                    studentId={student.id}
+                    open={logOpen}
+                    onOpenChange={setLogOpen}
+                />
+            )}
         </Dialog>
     );
 }
@@ -535,6 +562,7 @@ function ActiveStudentActions({ student }: { student: StudentDisplay }) {
 function ArchivedStudentActions({ student }: { student: StudentDisplay }) {
     const [restoreDialogOpen, setRestoreDialogOpen] = useState(false);
     const [mergeDialogOpen, setMergeDialogOpen] = useState(false);
+    const [logOpen, setLogOpen] = useState(false);
     const [isRestoring, setIsRestoring] = useState(false);
 
     const handleRestore = () => {
@@ -592,10 +620,24 @@ function ArchivedStudentActions({ student }: { student: StudentDisplay }) {
                 <Trash2 className="h-4 w-4" />
                 <span>حذف نهائي</span>
             </Button>
+            <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 gap-1 text-muted-foreground hover:bg-muted"
+                onClick={() => setLogOpen(true)}
+            >
+                <History className="h-4 w-4" />
+                <span>السجل</span>
+            </Button>
             <MergeAndForceDeleteDialog
                 student={{ id: student.id, name: student.name }}
                 open={mergeDialogOpen}
                 onOpenChange={setMergeDialogOpen}
+            />
+            <StudentLogModal
+                studentId={student.id}
+                open={logOpen}
+                onOpenChange={setLogOpen}
             />
         </div>
     );

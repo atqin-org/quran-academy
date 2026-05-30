@@ -25,7 +25,11 @@
     @vite(['resources/js/app.tsx', "resources/js/Pages/{$page['component']}.tsx"])
     @inertiaHead
 
-    @if (filled(config('services.umami.website_id')) && filled(config('services.umami.script_url')))
+    {{-- Skip Umami on routes that carry a secret in the URL (password reset, invite, signed email-verify).
+         Tokens in the path would otherwise be persisted in analytics and let anyone with Umami access reuse them. --}}
+    @php($umamiSensitivePath = request()->is('reset-password/*', 'personnel-invite/*', 'verify-email/*'))
+
+    @if (! $umamiSensitivePath && filled(config('services.umami.website_id')) && filled(config('services.umami.script_url')))
         <script
             defer
             src="{{ config('services.umami.script_url') }}"

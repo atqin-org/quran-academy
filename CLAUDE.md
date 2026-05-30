@@ -382,3 +382,55 @@ export default () => (
 
 - Always use Tailwind CSS v3 - verify you're using only classes supported by this version.
 </laravel-boost-guidelines>
+
+# Project-specific context (Quran Academy)
+
+This block is hand-maintained — keep edits minimal and outside the `<laravel-boost-guidelines>` block above (that section is auto-managed).
+
+## User preferences
+
+- **Replies**: short and direct. State what changed and what file paths were touched; don't restate the request or pad with summaries.
+- **Plans before big changes**: for any non-trivial multi-file feature, propose a plan (via plan mode if available) before editing.
+- **Verify in the browser** for UI changes, not just builds/tests. Use the Playwright MCP when available; otherwise ask the user to reload and confirm.
+- **Always run `vendor/bin/pint --dirty`** before considering a PHP task done. Run `npm run build` for any frontend change.
+- **Don't introduce new top-level folders, dependencies, or abstractions without approval.** Follow what's already in `app/Actions/`, `app/Http/Requests/`, `resources/js/Components/`.
+
+## RTL & UI conventions
+
+- **Project is RTL-only** (Arabic). `<html dir="rtl">` is set in `resources/views/app.blade.php`. Never use physical-side Tailwind classes (`ml-*`, `mr-*`, `pl-*`, `pr-*`, `left-*`, `right-*`, `border-l/r`, `rounded-l/r`, `text-left`, `text-right`). Use logical equivalents: `ms-*`, `me-*`, `ps-*`, `pe-*`, `start-*`, `end-*`, `border-s/e`, `rounded-s/e`, `text-start`, `text-end`.
+- **Radix primitives need explicit `dir="rtl"`** — Radix `Tabs`, `ScrollArea`, `Select`, `DropdownMenu`, `Popover` default to LTR without a `DirectionProvider` and **do not inherit** from a parent `dir="rtl"`. Always pass `dir="rtl"` explicitly when nesting these inside a modal/sheet, otherwise the grid columns reverse and labels stick to the wrong edge.
+- **Label + control stacking**: shadcn `<Label>` is inline (label default). If you pair it with an inline-level control (e.g. `inline-flex` segmented buttons), they collapse onto the same line. Either make the control block-level (`flex w-fit`) or wrap the Label so it gets its own line. shadcn `<SelectTrigger>` and `<Input>` are already block-level — safe.
+- **No native `<input type="number">`** — the browser spinner arrows and scroll-wheel mutation are unwanted. Use a custom +/− stepper with `type="text"`, `inputMode="numeric"`, `pattern="[0-9]*"`, and digit-only filtering. See `resources/js/Components/Repetitions/ThumnButton.tsx` (`MistakesStepper`).
+- **Inertia local-state sync**: Inertia pages that copy a prop into `useState(initialProps)` (e.g. for optimistic UI) must add `useEffect(() => setLocal(initialProps), [initialProps])` — otherwise `router.reload({ only: [...] })` after a save updates the props but leaves the local state stale (visible as dots/bars that don't refresh). See [resources/js/Pages/Dashboard/Sessions/Attendance.tsx](resources/js/Pages/Dashboard/Sessions/Attendance.tsx) (`students` state).
+
+## Color semantics (ratings & status)
+
+- Rating values are `good | mid | bad` (Arabic display: `جيد / متوسط / ضعيف`).
+- Color mapping: **good → emerald-500**, **mid → amber-500**, **bad → red-500**.
+- **Theme colors** by domain: memorization (`حفظ`) = emerald; repetition (`تكرار`) = amber.
+- **Aggregated indicator dots** (e.g. on the `تكرار` row button) use the "all-or-amber" rule: green only when **every** rated section is `good`, red only when **every** rated section is `bad`, anything else (mixed or any `mid`) is amber.
+
+## Domain glossary
+
+- **Hizb** (`ahzab` table) — Quran chapter. 60 total; numbered 1–60.
+- **Thoman** (`athman` table) — 1/8 of a hizb. 8 per hizb, 480 total.
+- **Memorization direction** (`students.memorization_direction`) — `ascending` (1 → 30) or `descending` (60 → 31). Stored per-student, with `last_hizb_ascending` and `last_hizb_descending` defining the memorized envelope.
+- **Section / المقطع** — one tested hizb's worth of repetition work. A session can contain many.
+- **المستظهر** (tester) — the listener evaluating a recitation. Either the logged-in user (مشرف) or another student attending the same session (طالب). Stored as two nullable FKs on `repetitions` (`tester_user_id` XOR `tester_student_id`) — enforced at app level via FormRequest (`required_without` + `different:student_id`).
+- **Per-thumn result** — `good (✓) | bad (✗) | skip (—)`. `skip` is stored as the **absence of a `repetition_thumns` row**, not as an enum value. `bad` adds `mistakes_count` (int) + `note` (text).
+
+## Backend conventions
+
+- **Actions** live under `app/Actions/<Domain>/Verb<Domain>Action.php` (e.g. `RecordAttendanceAction`, `RecordRepetitionsAction`). They take dependency objects + a primitives payload, run inside `DB::transaction`, log via Spatie activity log, and return a small result array.
+- **Bulk save flow**: controller method validates via FormRequest → calls Action → `return back()->with('success', '...')`. Frontend uses `router.post(..., { preserveScroll: true, preserveState: true, onSuccess: closeModal })`. The back-redirect refreshes Inertia props.
+- **Cross-row validation** (e.g. "thumn must belong to this section's hizb", "hizb must be inside student envelope") lives in the Action, not the FormRequest. Throw `ValidationException::withMessages([...])` with Arabic messages indexed by dotted path (`"sections.{$i}.hizb_id"`).
+- **Cumulative projections** for the frontend belong on the model as instance methods returning `Illuminate\Support\Collection` (e.g. `Student::testedThumns()`, `Student::testedHizbs()`). They chain through `groupBy`/`map`/`values`, so the return type **must** be `Support\Collection`, not `Eloquent\Collection`.
+- **No DB-level CHECK constraints** — dev + tests run on SQLite which can't `ALTER TABLE ADD CONSTRAINT` cleanly. Enforce invariants in FormRequest + Action.
+
+## Tooling shortcuts
+
+- **Start everything**: `composer run dev` (concurrent: `artisan serve`, `queue:listen`, `npm run dev`, `schedule:work`).
+- **MCP tools available**: `laravel-boost` (`last-error`, `read-log-entries`, `browser-logs`, `tinker`, `database-query`, `search-docs`), `playwright` (browser navigation/screenshots when connected). Prefer `last-error` over reading logs by hand.
+- **Tests use SQLite in-memory** (`phpunit.xml`). Migrations must run cleanly under SQLite — no MySQL-only syntax (`ALTER ... CHECK`, raw `ENUM` modifications).
+- **Watch for stale `last-error`**: the `last-error` tool returns the most recent log entry, which may be from before your fix. Cross-check the timestamp.
+
