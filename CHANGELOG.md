@@ -1,3 +1,18 @@
+## [0.1.2](https://github.com/atqin-org/quran-academy/compare/v0.1.1...v0.1.2) (2026-05-30)
+
+
+### Features
+
+* add laravel/nightwatch package and update composer.lock ([98ef861](https://github.com/atqin-org/quran-academy/commit/98ef86165cac67500e872b3f05e92cdcd3566908))
+* add logic to skip Umami tracking on sensitive routes to enhance security ([2343c66](https://github.com/atqin-org/quran-academy/commit/2343c666990023e399a93c730cc04a0503f19b03))
+* add personnel invitation and password management features ([0bb852d](https://github.com/atqin-org/quran-academy/commit/0bb852deba9b506bf6ee098399bddb2c59ee8c01))
+* add personnel invite accepted notification handling in NotificationBell and Notifications index ([6bcdb85](https://github.com/atqin-org/quran-academy/commit/6bcdb85d5a59efae62968237d03966db24ffc617))
+* add project-specific context and guidelines for user preferences, RTL conventions, and backend practices in CLAUDE.md ([41bc756](https://github.com/atqin-org/quran-academy/commit/41bc75688440df3cc93a6cc66ef0e1f50ea5f071))
+* add student activity log feature and purge empty guardians command ([512f81f](https://github.com/atqin-org/quran-academy/commit/512f81f15e192f10635fd309894b0eca94ecb868))
+* add StudentProgressModal and StudentSessionModal components for tracking student progress and session management ([ea4a45c](https://github.com/atqin-org/quran-academy/commit/ea4a45c512d988fae073d3175c7f2372100d4a68))
+* enhance Umami API integration by refining identify function and session data handling ([d374893](https://github.com/atqin-org/quran-academy/commit/d37489305dbffdef0c7cdcaabdb7b1edb7b442fb))
+* implement version checking functionality and integrate into ProfileMenu component ([7b951a0](https://github.com/atqin-org/quran-academy/commit/7b951a0791946c2818b1770fc5441ce4d30d367d))
+
 ## [0.1.1](https://github.com/atqin-org/quran-academy/compare/v0.1.0...v0.1.1) (2026-05-12)
 
 
