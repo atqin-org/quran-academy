@@ -1,3 +1,10 @@
+## [0.1.5](https://github.com/atqin-org/quran-academy/compare/v0.1.4...v0.1.5) (2026-05-30)
+
+
+### Features
+
+* add build configuration to optimize chunking and disable gzip-size report ([9887c6f](https://github.com/atqin-org/quran-academy/commit/9887c6ff5c458c34404efdfc921f949da64399f9))
+
 ## [0.1.4](https://github.com/atqin-org/quran-academy/compare/v0.1.3...v0.1.4) (2026-05-30)
 
 
