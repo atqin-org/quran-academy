@@ -19,8 +19,8 @@ export default defineConfig({
         rollupOptions: {
             output: {
                 manualChunks: {
-                    'react-vendor': ['react', 'react-dom'],
-                    'inertia': ['@inertiajs/react'],
+                    // react + react-dom flow into the inertia chunk via @inertiajs/react.
+                    'inertia': ['react', 'react-dom', '@inertiajs/react'],
                     'recharts': ['recharts'],
                     'zod': ['zod'],
                     'date-fns': ['date-fns'],
