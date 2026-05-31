@@ -1,3 +1,10 @@
+## [0.1.6](https://github.com/atqin-org/quran-academy/compare/v0.1.5...v0.1.6) (2026-05-31)
+
+
+### Features
+
+* add casts method to Hizb and Thoman models for type casting attributes ([af4233a](https://github.com/atqin-org/quran-academy/commit/af4233a43255beabb1aa823f749cd131f29240d0))
+
 ## [0.1.5](https://github.com/atqin-org/quran-academy/compare/v0.1.4...v0.1.5) (2026-05-30)
 
 
