@@ -1,3 +1,10 @@
+## [0.1.7](https://github.com/atqin-org/quran-academy/compare/v0.1.6...v0.1.7) (2026-06-06)
+
+
+### Features
+
+* add migration to populate Hizb start references from predefined array ([c36098e](https://github.com/atqin-org/quran-academy/commit/c36098e8c372530bef973f0d30aa40acd4a4aca4))
+
 ## [0.1.6](https://github.com/atqin-org/quran-academy/compare/v0.1.5...v0.1.6) (2026-05-31)
 
 
