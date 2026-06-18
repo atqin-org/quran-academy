@@ -490,7 +490,7 @@ class ProgramSessionController extends Controller
                 'attendance.*.hizb_id' => 'nullable|exists:ahzab,id',
                 'attendance.*.thoman_id' => 'nullable|exists:athman,id',
                 'attendance.*.reason' => 'nullable|string|max:255',
-                'attendance.*.memorization_rating' => 'nullable|in:good,mid,bad',
+                'attendance.*.memorization_rating' => 'nullable|in:good,great,mid,bad,not_memorized',
                 'attendance.*.memorization_remark' => 'nullable|string|max:1000',
             ]);
 

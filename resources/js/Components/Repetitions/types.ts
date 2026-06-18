@@ -1,4 +1,4 @@
-export type Rating = "good" | "mid" | "bad";
+export type Rating = "good" | "great" | "mid" | "bad" | "not_memorized";
 
 export type ThumnResult = "good" | "bad" | "skip";
 
