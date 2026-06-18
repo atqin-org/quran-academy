@@ -17,12 +17,16 @@ const SEGMENT_COUNT = 60;
 
 function colorForRating(rating: Rating | null | undefined): string {
     switch (rating) {
+        case "great":
+            return "bg-green-600";
         case "good":
             return "bg-emerald-500";
         case "mid":
             return "bg-amber-500";
         case "bad":
             return "bg-red-500";
+        case "not_memorized":
+            return "bg-slate-600";
         default:
             // Tested but no rating recorded yet — neutral amber-tinted slot
             return "bg-amber-300";

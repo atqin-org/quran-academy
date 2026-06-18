@@ -227,9 +227,8 @@ class ProgramController extends Controller
         // Check if custom sessions are provided
         $customSessions = $request->input('sessions', []);
         if (! empty($customSessions)) {
-            // Delete existing sessions that are not in the new list
-            $program->sessions()->delete();
-            // Use custom sessions from frontend
+            // Reconcile sessions from the frontend, preserving any that already
+            // have attendance recorded (deleting them would cascade-delete attendance).
             (new GenerateProgramSessionsAction)->executeWithCustomSessions($program, $customSessions);
         } else {
             // Regenerate sessions automatically (fallback)

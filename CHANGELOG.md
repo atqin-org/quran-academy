@@ -1,3 +1,10 @@
+## [0.1.8](https://github.com/atqin-org/quran-academy/compare/v0.1.7...v0.1.8) (2026-06-18)
+
+
+### Features
+
+* extend rating system to include new values and update related logic ([73d4873](https://github.com/atqin-org/quran-academy/commit/73d48731ad245e31a391d30c49337310e0989beb))
+
 ## [0.1.7](https://github.com/atqin-org/quran-academy/compare/v0.1.6...v0.1.7) (2026-06-06)
 
 
