@@ -28,7 +28,7 @@ class StoreRepetitionsRequest extends FormRequest
                 'required_without:sections.*.tester_user_id',
                 'different:student_id',
             ],
-            'sections.*.overall_rating' => ['nullable', 'in:good,mid,bad'],
+            'sections.*.overall_rating' => ['nullable', 'in:good,great,mid,bad,not_memorized'],
             'sections.*.remark' => ['nullable', 'string', 'max:1000'],
             'sections.*.thumns' => ['nullable', 'array', 'max:8'],
             'sections.*.thumns.*.thoman_id' => ['required', 'exists:athman,id'],

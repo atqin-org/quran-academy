@@ -210,6 +210,59 @@ it('exposes tested_thumns and attendees in the attendance page props', function 
     );
 });
 
+it('accepts the new overall_rating values on a repetition section', function (string $rating) {
+    ['user' => $user, 'session' => $session, 'student' => $student] = repetitionsScenario();
+    $hizb = Hizb::where('number', 3)->first();
+
+    $this->actingAs($user)->post(route('sessions.recordRepetitionsBulk', $session), [
+        'student_id' => $student->id,
+        'sections' => [[
+            'hizb_id' => $hizb->id,
+            'tester_user_id' => $user->id,
+            'overall_rating' => $rating,
+            'thumns' => [],
+        ]],
+    ])->assertRedirect();
+
+    expect(Repetition::first()->overall_rating)->toBe($rating);
+})->with(['great', 'not_memorized']);
+
+it('rejects an invalid overall_rating value', function () {
+    ['user' => $user, 'session' => $session, 'student' => $student] = repetitionsScenario();
+    $hizb = Hizb::where('number', 3)->first();
+
+    $this->actingAs($user)
+        ->from(route('sessions.attendance', $session))
+        ->post(route('sessions.recordRepetitionsBulk', $session), [
+            'student_id' => $student->id,
+            'sections' => [[
+                'hizb_id' => $hizb->id,
+                'tester_user_id' => $user->id,
+                'overall_rating' => 'excellent',
+                'thumns' => [],
+            ]],
+        ])
+        ->assertSessionHasErrors('sections.0.overall_rating');
+
+    expect(Repetition::count())->toBe(0);
+});
+
+it('accepts the new memorization_rating values on attendance bulk', function (string $rating) {
+    ['user' => $user, 'session' => $session, 'student' => $student] = repetitionsScenario();
+    $hizb = Hizb::where('number', 5)->first();
+
+    $this->actingAs($user)->post(route('sessions.recordAttendanceBulk', $session), [
+        'attendance' => [[
+            'student_id' => $student->id,
+            'status' => 'present',
+            'hizb_id' => $hizb->id,
+            'memorization_rating' => $rating,
+        ]],
+    ])->assertRedirect();
+
+    expect($session->attendances()->where('student_id', $student->id)->first()->memorization_rating)->toBe($rating);
+})->with(['great', 'not_memorized']);
+
 it('extends attendance bulk to accept memorization_rating and memorization_remark', function () {
     ['user' => $user, 'session' => $session, 'student' => $student] = repetitionsScenario();
     $hizb = Hizb::where('number', 5)->first();

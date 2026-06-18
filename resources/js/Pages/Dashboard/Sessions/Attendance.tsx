@@ -565,36 +565,34 @@ export default function Attendance({
                                                 const hasMemorization =
                                                     student.memorization_rating !== null && student.memorization_rating !== undefined;
                                                 const memorizationDotColor =
-                                                    student.memorization_rating === "good"
+                                                    student.memorization_rating === "great"
+                                                        ? "bg-green-600"
+                                                        : student.memorization_rating === "good"
                                                         ? "bg-emerald-500"
                                                         : student.memorization_rating === "mid"
                                                         ? "bg-amber-500"
                                                         : student.memorization_rating === "bad"
                                                         ? "bg-red-500"
+                                                        : student.memorization_rating === "not_memorized"
+                                                        ? "bg-slate-600"
                                                         : "bg-slate-400";
-                                                // Average of "تقييم المقطع" across all repetition sections in this session.
-                                                // good=3, mid=2, bad=1. Null ratings skipped.
-                                                // avg === 3 (every rated section good) → green
-                                                // avg === 1 (every rated section bad)  → red
-                                                // anything in between (or no rated section) → amber
+                                                // Aggregated "تقييم المقطع" across all repetition sections in this session.
+                                                // Green only when every rated section is good/great, red only when
+                                                // every rated section is bad/not_memorized, otherwise amber (mixed
+                                                // or any mid, or no rated section).
                                                 const repetitionDotColor = (() => {
-                                                    const scores = (student.repetitions ?? [])
-                                                        .map((r) =>
-                                                            r.overall_rating === "good"
-                                                                ? 3
-                                                                : r.overall_rating === "mid"
-                                                                ? 2
-                                                                : r.overall_rating === "bad"
-                                                                ? 1
-                                                                : null,
-                                                        )
-                                                        .filter((s): s is 1 | 2 | 3 => s !== null);
-                                                    if (scores.length === 0) {
+                                                    const ratings = (student.repetitions ?? [])
+                                                        .map((r) => r.overall_rating)
+                                                        .filter((r): r is Rating => r != null);
+                                                    if (ratings.length === 0) {
                                                         return "bg-amber-500";
                                                     }
-                                                    const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
-                                                    if (avg === 3) return "bg-emerald-500";
-                                                    if (avg === 1) return "bg-red-500";
+                                                    if (ratings.every((r) => r === "good" || r === "great")) {
+                                                        return "bg-emerald-500";
+                                                    }
+                                                    if (ratings.every((r) => r === "bad" || r === "not_memorized")) {
+                                                        return "bg-red-500";
+                                                    }
                                                     return "bg-amber-500";
                                                 })();
                                                 return (

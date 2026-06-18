@@ -37,15 +37,19 @@ interface Props {
 }
 
 const RATING_LABELS: Record<Rating, string> = {
+    great: "جيد جدا",
     good: "ممتاز",
     mid: "جيد",
     bad: "ضعيف",
+    not_memorized: "لم يحفظ",
 };
 
 const RATING_BADGE_CLASSES: Record<Rating, string> = {
+    great: "border-green-200 bg-green-50 text-green-700",
     good: "border-emerald-200 bg-emerald-50 text-emerald-700",
     mid: "border-amber-200 bg-amber-50 text-amber-700",
     bad: "border-red-200 bg-red-50 text-red-700",
+    not_memorized: "border-slate-200 bg-slate-50 text-slate-700",
 };
 
 function calculateMemorized(ascending: number | null, descending: number | null): number {

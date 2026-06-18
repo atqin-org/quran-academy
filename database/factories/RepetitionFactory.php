@@ -27,7 +27,7 @@ class RepetitionFactory extends Factory
             'hizb_id' => Hizb::query()->inRandomOrder()->value('id') ?? Hizb::factory(),
             'tester_user_id' => User::factory(),
             'tester_student_id' => null,
-            'overall_rating' => fake()->randomElement(['good', 'mid', 'bad']),
+            'overall_rating' => fake()->randomElement(['good', 'great', 'mid', 'bad', 'not_memorized']),
             'remark' => null,
         ];
     }
