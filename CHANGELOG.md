@@ -1,3 +1,10 @@
+## [0.1.9](https://github.com/atqin-org/quran-academy/compare/v0.1.8...v0.1.9) (2026-07-25)
+
+
+### Features
+
+* enhance notification handling to log failures and retry on next sync ([10c369f](https://github.com/atqin-org/quran-academy/commit/10c369f4d460be8d7494fc0f486d946a122d0f1d))
+
 ## [0.1.8](https://github.com/atqin-org/quran-academy/compare/v0.1.7...v0.1.8) (2026-06-18)
 
 
