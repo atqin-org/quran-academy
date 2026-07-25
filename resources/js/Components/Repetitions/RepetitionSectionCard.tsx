@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { Trash2 } from "lucide-react";
 import { Button } from "@/Components/ui/button";
 import { Card } from "@/Components/ui/card";
@@ -93,6 +94,18 @@ export default function RepetitionSectionCard({
         });
     };
 
+    const startByNumber = useMemo(() => {
+        const map = new Map<number, string>();
+        if (section.hizb_id !== null) {
+            for (const t of athman) {
+                if (t.hizb_id === section.hizb_id) {
+                    map.set(t.number, t.start);
+                }
+            }
+        }
+        return map;
+    }, [athman, section.hizb_id]);
+
     const title = `المقطع ${ORDINAL_AR[index] ?? `رقم ${index + 1}`}`;
 
     return (
@@ -149,12 +162,22 @@ export default function RepetitionSectionCard({
                 <div className="grid grid-cols-1 items-start gap-2 sm:grid-cols-2">
                     <div className="flex flex-col gap-2">
                         {section.thumns.slice(0, 4).map((t) => (
-                            <ThumnButton key={t.thoman_number} thumn={t} onChange={setThumn} />
+                            <ThumnButton
+                                key={t.thoman_number}
+                                thumn={t}
+                                onChange={setThumn}
+                                start={startByNumber.get(t.thoman_number)}
+                            />
                         ))}
                     </div>
                     <div className="flex flex-col gap-2">
                         {section.thumns.slice(4).map((t) => (
-                            <ThumnButton key={t.thoman_number} thumn={t} onChange={setThumn} />
+                            <ThumnButton
+                                key={t.thoman_number}
+                                thumn={t}
+                                onChange={setThumn}
+                                start={startByNumber.get(t.thoman_number)}
+                            />
                         ))}
                     </div>
                 </div>

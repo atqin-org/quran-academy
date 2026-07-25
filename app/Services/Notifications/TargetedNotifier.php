@@ -5,7 +5,9 @@ namespace App\Services\Notifications;
 use App\Models\User;
 use Illuminate\Notifications\Notification;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification as NotificationFacade;
+use Throwable;
 
 abstract class TargetedNotifier
 {
@@ -79,6 +81,9 @@ abstract class TargetedNotifier
      *   in that user's visible set (resolved or access removed).
      * - Send a fresh notification for any visible target_key not already in
      *   the user's unread set (dedup).
+     * - A failed send (e.g. mail transport error) is logged and skipped so it
+     *   cannot abort the remaining users/targets of the pass; the target stays
+     *   unsent and is retried on the next sync.
      *
      * @return array{sent: int, resolved: int}
      */
@@ -118,8 +123,17 @@ abstract class TargetedNotifier
 
             foreach ($userTargets as $key => $context) {
                 if (! array_key_exists($key, $unreadByTarget)) {
-                    NotificationFacade::send($notifiable, $this->makeNotification($context));
-                    $sent++;
+                    try {
+                        NotificationFacade::send($notifiable, $this->makeNotification($context));
+                        $sent++;
+                    } catch (Throwable $exception) {
+                        Log::error('Targeted notification send failed', [
+                            'type' => $type,
+                            'user_id' => $notifiable->id,
+                            'target_key' => $key,
+                            'exception' => $exception->getMessage(),
+                        ]);
+                    }
                 }
             }
         }

@@ -7,6 +7,7 @@ import type { RepetitionThumnDraft, ThumnResult } from "./types";
 interface Props {
     thumn: RepetitionThumnDraft;
     onChange: (next: RepetitionThumnDraft) => void;
+    start?: string;
 }
 
 function MistakesStepper({
@@ -97,7 +98,7 @@ function IconButton({
     );
 }
 
-export default function ThumnButton({ thumn, onChange }: Props) {
+export default function ThumnButton({ thumn, onChange, start }: Props) {
     const setResult = (next: ThumnResult) => {
         // Toggle off if already selected
         const result: ThumnResult = thumn.result === next ? "skip" : next;
@@ -120,9 +121,19 @@ export default function ThumnButton({ thumn, onChange }: Props) {
                 thumn.result === "skip" && "border-muted",
             )}
         >
-            <div className="flex items-center justify-between gap-2">
-                <span className="text-sm font-medium">الثمن {thumn.thoman_number}</span>
-                <div className="flex items-center gap-1">
+            <div className="flex items-start justify-between gap-2">
+                <div className="flex min-w-0 flex-col">
+                    <span className="text-sm font-medium">الثمن {thumn.thoman_number}</span>
+                    {start && (
+                        <span
+                            className="truncate pb-1.5 font-quran text-base leading-relaxed text-muted-foreground"
+                            title={start}
+                        >
+                            {start}
+                        </span>
+                    )}
+                </div>
+                <div className="flex shrink-0 items-center gap-1">
                     <IconButton
                         label="جيد"
                         active={thumn.result === "good"}
