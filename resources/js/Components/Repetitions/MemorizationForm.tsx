@@ -53,6 +53,8 @@ export default function MemorizationForm({
         return athman.filter((t) => t.hizb_id === hizbId).sort((a, b) => a.number - b.number);
     }, [hizbId, athman]);
 
+    const selectedThumn = availableThumns.find((t) => t.id === thomanId);
+
     const handleSave = () => {
         setSaving(true);
         setErrors({});
@@ -123,18 +125,38 @@ export default function MemorizationForm({
                         dir="rtl"
                     >
                         <SelectTrigger className="h-9">
-                            <SelectValue placeholder="إختر..." />
+                            <SelectValue placeholder="إختر...">
+                                {selectedThumn ? `الثمن ${selectedThumn.number}` : null}
+                            </SelectValue>
                         </SelectTrigger>
                         <SelectContent>
                             {availableThumns.map((t) => (
                                 <SelectItem key={t.id} value={String(t.id)}>
-                                    الثمن {t.number}
+                                    <span className="flex flex-col items-start gap-1 py-1">
+                                        <span className="text-sm font-medium">الثمن {t.number}</span>
+                                        {t.start && (
+                                            <span className="font-quran text-base leading-relaxed text-muted-foreground">
+                                                {t.start}
+                                            </span>
+                                        )}
+                                    </span>
                                 </SelectItem>
                             ))}
                         </SelectContent>
                     </Select>
                 </div>
             </div>
+
+            {selectedThumn?.start && (
+                <div className="rounded-lg border border-emerald-100 bg-emerald-50/50 p-3">
+                    <p className="mb-1 text-[10px] font-medium text-emerald-700">
+                        بداية الثمن {selectedThumn.number}
+                    </p>
+                    <p dir="rtl" className="font-quran text-xl leading-loose text-foreground">
+                        {selectedThumn.start}
+                    </p>
+                </div>
+            )}
 
             <div className="space-y-1">
                 <Label className="text-xs text-muted-foreground">التقييم</Label>
