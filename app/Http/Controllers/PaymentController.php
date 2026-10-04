@@ -37,7 +37,8 @@ class PaymentController extends Controller
 
         // check expact values and the calculated values
 
-        $student = Student::find($request->student_id);
+        $student = Student::findOrFail($request->student_id);
+        abort_unless(auth()->user()->canAccess($student->club_id, $student->category_id), 403);
         $expect = $request->input('expect', []);
         if ($request->type == 'ins') {
             $expect['duration'] = 33;
@@ -120,6 +121,8 @@ class PaymentController extends Controller
      */
     public function show(Student $student)
     {
+        abort_unless(auth()->user()->canAccess($student->club_id, $student->category_id), 403);
+
         $payments = Payment::with('user:id,name,last_name,phone,role,avatar_style,avatar_color,avatar_variant,hashvatar_mode,hashvatar_animated,hashvatar_tones')
             ->where('student_id', $student->id)
             ->latest()

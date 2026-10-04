@@ -45,6 +45,7 @@ class OverduePaymentNotifier extends TargetedNotifier
                 'student_id' => $student->id,
                 'student_name' => trim($student->first_name.' '.$student->last_name),
                 'club_id' => $student->club_id,
+                'category_id' => $student->category_id,
                 'club_name' => $student->club?->name,
                 'category_name' => $student->category?->name,
                 'sessions_credit' => (int) $student->sessions_credit,

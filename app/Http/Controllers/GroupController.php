@@ -18,14 +18,38 @@ use Inertia\Response;
 class GroupController extends Controller
 {
     /**
+     * Abort unless the user may access this club + category class.
+     */
+    private function authorizeClassAccess(?int $clubId, ?int $categoryId): void
+    {
+        if (! auth()->user()->canAccess($clubId, $categoryId)) {
+            abort(403, 'غير مصرح لك بالوصول إلى هذا الفصل');
+        }
+    }
+
+    /**
+     * Abort unless the user may access every given student's class.
+     *
+     * @param  iterable<Student>  $students
+     */
+    private function authorizeStudentsAccess(iterable $students): void
+    {
+        foreach ($students as $student) {
+            $this->authorizeClassAccess($student->club_id, $student->category_id);
+        }
+    }
+
+    /**
      * Groups management page for a club (with categories sidebar)
      */
     public function clubGroups(Club $club, ?Category $category = null): Response
     {
+        $this->authorizeClassAccess($club->id, $category?->id);
+
         // Get all categories that have students in this club
         $categoriesWithStudents = Category::whereHas('students', function ($query) use ($club) {
             $query->where('club_id', $club->id);
-        })->orderBy('id')->get();
+        })->whereIn('id', auth()->user()->accessibleCategories($club->id)->pluck('id'))->orderBy('id')->get();
 
         // If no category selected, use the first one (if available)
         $selectedCategory = $category ?? $categoriesWithStudents->first();
@@ -93,6 +117,8 @@ class GroupController extends Controller
             'category_id' => 'required|exists:categories,id',
         ]);
 
+        $this->authorizeClassAccess((int) $request->club_id, (int) $request->category_id);
+
         $groups = Group::where('club_id', $request->club_id)
             ->where('category_id', $request->category_id)
             ->where('is_active', true)
@@ -108,6 +134,8 @@ class GroupController extends Controller
      */
     public function manage(Club $club, Category $category): Response
     {
+        $this->authorizeClassAccess($club->id, $category->id);
+
         $groups = Group::where('club_id', $club->id)
             ->where('category_id', $category->id)
             ->where('is_active', true)
@@ -145,6 +173,9 @@ class GroupController extends Controller
             'student_ids' => 'nullable|array',
             'student_ids.*' => 'exists:students,id',
         ]);
+
+        $this->authorizeClassAccess((int) $request->club_id, (int) $request->category_id);
+        $this->authorizeStudentsAccess(Student::whereIn('id', $request->input('student_ids', []))->get());
 
         // Check if group creation is allowed
         if (! CreateGroupAction::canCreateNewGroup($request->club_id, $request->category_id)) {
@@ -220,6 +251,8 @@ class GroupController extends Controller
             'capacity' => 'nullable|integer|min:1',
         ]);
 
+        $this->authorizeClassAccess($group->club_id, $group->category_id);
+
         $oldCapacity = $group->capacity;
         $group->update(['capacity' => $validated['capacity'] ?? null]);
 
@@ -241,6 +274,8 @@ class GroupController extends Controller
      */
     public function destroy(Group $group): RedirectResponse
     {
+        $this->authorizeClassAccess($group->club_id, $group->category_id);
+
         if ($group->students()->count() > 0) {
             return redirect()->back()->with('error', 'لا يمكن حذف الفوج لأنه يحتوي على طلاب');
         }
@@ -303,6 +338,8 @@ class GroupController extends Controller
 
         $sourceGroup = Group::findOrFail($request->source_group_id);
         $targetGroup = Group::findOrFail($request->target_group_id);
+        $this->authorizeClassAccess($sourceGroup->club_id, $sourceGroup->category_id);
+        $this->authorizeClassAccess($targetGroup->club_id, $targetGroup->category_id);
 
         // Verify both groups belong to same club+category
         if ($sourceGroup->club_id !== $targetGroup->club_id ||
@@ -354,6 +391,7 @@ class GroupController extends Controller
 
         $student = Student::findOrFail($request->student_id);
         $targetGroup = $request->group_id ? Group::find($request->group_id) : null;
+        $this->authorizeStudentsAccess([$student]);
 
         // Check if groups exist for this club+category
         $groupCount = Group::where('club_id', $student->club_id)
@@ -407,6 +445,7 @@ class GroupController extends Controller
         ]);
 
         $targetGroup = $request->group_id ? Group::find($request->group_id) : null;
+        $this->authorizeStudentsAccess(Student::whereIn('id', $request->student_ids)->get());
         $firstStudent = Student::find($request->student_ids[0]);
         $clubId = $firstStudent->club_id;
         $categoryId = $firstStudent->category_id;

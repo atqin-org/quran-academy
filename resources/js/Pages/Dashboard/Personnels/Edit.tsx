@@ -7,7 +7,8 @@ import { TPersonnelForm, TPersonnelFormDB } from "./Types/Personnel";
 interface DashboardProps extends PageProps {
     personnel: TPersonnelFormDB;
     clubs: { id: number; name: string }[];
-    categories: { id: number; name: string }[];
+    categories: { id: number; name: string; display_name?: string }[];
+    clubCategories: Record<number, number[]>;
 }
 
 export default function Edit({
@@ -15,6 +16,7 @@ export default function Edit({
     personnel,
     clubs,
     categories,
+    clubCategories,
 }: DashboardProps) {
     const initialFormState: TPersonnelForm = {
         firstName: personnel.name,
@@ -22,6 +24,7 @@ export default function Edit({
         mail: personnel.email,
         phone: personnel.phone || "",
         clubs: personnel.clubs.map((c) => c.id),
+        club_categories: Array.isArray(clubCategories) ? {} : clubCategories,
         role: personnel.role,
         card: personnel.card || undefined,
     };

@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Personnel\SyncPersonnelAccessAction;
 use App\Http\Requests\StorePersonnelRequest;
+use App\Http\Requests\UpdatePersonnelRequest;
 use App\Models\Category;
 use App\Models\Club;
 use App\Models\PersonnelInvitation;
@@ -10,7 +12,6 @@ use App\Models\PersonnelInviteSetting;
 use App\Models\User;
 use App\Notifications\Personnel\PersonnelInvited;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use Spatie\Activitylog\Models\Activity;
@@ -23,7 +24,7 @@ class PersonnelController extends Controller
      */
     public function index()
     {
-        $personnels = User::withTrashed()->with('clubs')->latest()->get()->map(function ($user) {
+        $personnels = User::withTrashed()->with(['clubs', 'categoryRestrictions'])->latest()->get()->map(function ($user) {
             $lastActivity = Activity::where('causer_id', $user->id)
                 ->where('causer_type', User::class)
                 ->latest()
@@ -60,7 +61,7 @@ class PersonnelController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StorePersonnelRequest $request): RedirectResponse
+    public function store(StorePersonnelRequest $request, SyncPersonnelAccessAction $syncPersonnelAccess): RedirectResponse
     {
         $validated = $request->validated();
 
@@ -76,7 +77,7 @@ class PersonnelController extends Controller
             'invited_at' => now(),
         ]);
 
-        $user->clubs()->attach($validated['clubs'] ?? []);
+        $syncPersonnelAccess->execute($user, $validated['clubs'] ?? [], $validated['club_categories'] ?? []);
 
         $flash = $this->issueInvitation($user);
         $flash['invite_user'] = trim(($user->name ?? '').' '.($user->last_name ?? ''));
@@ -186,6 +187,10 @@ class PersonnelController extends Controller
             'Dashboard/Personnels/Edit',
             [
                 'personnel' => $personnel->load('clubs'),
+                'clubCategories' => $personnel->categoryRestrictions()
+                    ->get(['categories.id'])
+                    ->groupBy(fn (Category $category) => $category->pivot->club_id)
+                    ->map(fn ($categories) => $categories->pluck('id')->values()),
                 'clubs' => Club::all(),
                 'categories' => Category::all(),
             ]
@@ -195,28 +200,21 @@ class PersonnelController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(UpdatePersonnelRequest $request, string $id, SyncPersonnelAccessAction $syncPersonnelAccess): RedirectResponse
     {
-        $request->validate([
-            'firstName' => 'required',
-            'lastName' => 'required',
-            'clubs' => 'array|required_unless:role,admin',
-            'role' => 'required',
-            'phone' => 'required',
-            'mail' => 'required|email',
-        ]);
+        $validated = $request->validated();
 
         $user = User::withTrashed()->findOrFail($id);
 
         $user->update([
-            'name' => $request->firstName,
-            'last_name' => $request->lastName,
-            'role' => $request->role,
-            'phone' => $request->phone,
-            'email' => $request->mail,
+            'name' => $validated['firstName'],
+            'last_name' => $validated['lastName'],
+            'role' => $validated['role'],
+            'phone' => $validated['phone'],
+            'email' => $validated['mail'],
         ]);
 
-        $user->clubs()->sync($request->clubs);
+        $syncPersonnelAccess->execute($user, $validated['clubs'] ?? [], $validated['club_categories'] ?? []);
 
         return redirect()->route('personnels.index')->with('success', 'تم تحديث البيانات بنجاح');
     }

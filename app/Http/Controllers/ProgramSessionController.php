@@ -74,10 +74,9 @@ class ProgramSessionController extends Controller
     private function authorizeSessionAccess(ProgramSession $session): void
     {
         $user = Auth::user();
-        $sessionClubId = $session->program->club_id;
-        $accessibleClubIds = $user->accessibleClubs()->pluck('id')->toArray();
+        $program = $session->program;
 
-        if (! in_array($sessionClubId, $accessibleClubIds)) {
+        if (! $user->canAccess($program->club_id, $program->category_id)) {
             abort(403, 'غير مصرح لك بالوصول إلى هذه الحصة');
         }
     }
@@ -88,9 +87,7 @@ class ProgramSessionController extends Controller
     private function authorizeProgramAccess(Program $program): void
     {
         $user = Auth::user();
-        $accessibleClubIds = $user->accessibleClubs()->pluck('id')->toArray();
-
-        if (! in_array($program->club_id, $accessibleClubIds)) {
+        if (! $user->canAccess($program->club_id, $program->category_id)) {
             abort(403, 'غير مصرح لك بالوصول إلى هذا البرنامج');
         }
     }

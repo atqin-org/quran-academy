@@ -4,6 +4,8 @@ export interface TPersonnelForm {
     mail: string
     phone?: string;
     clubs: number[];
+    /** club id → allowed category ids; a missing or empty list means every category */
+    club_categories: Record<number, number[]>;
     role: string | undefined;
     card?: File | string;
 }
@@ -19,6 +21,12 @@ export interface TPersonnelFormDB {
         name: string;
     }[];
     role: string;
+    category_restrictions?: {
+        id: number;
+        name: string;
+        display_name?: string;
+        pivot: { club_id: number };
+    }[];
     status?: "pending" | "active";
     deleted_at: string | null;
     last_activity_at: string | null;
