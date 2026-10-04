@@ -33,7 +33,7 @@ interface PersonnelFormProps {
     setData: (key: string, value: any) => void;
     errors: any;
     clubs: { id: number; name: string }[];
-    categories?: { id: number; name: string }[];
+    categories?: { id: number; name: string; display_name?: string }[];
     processing: boolean;
     mode: "create" | "edit";
     personnelId?: string;
@@ -70,11 +70,21 @@ const PersonnelForm = ({
         if (selectedClubs.includes(clubId)) {
             setSelectedClubs(selectedClubs.filter((id) => id !== clubId));
             setData("clubs", selectedClubs.filter((id) => id !== clubId));
+            const { [clubId]: _removed, ...remaining } = data.club_categories ?? {};
+            setData("club_categories", remaining);
         } else {
             setSelectedClubs([...selectedClubs, clubId]);
             setData("clubs", [...selectedClubs, clubId]);
         }
     }
+
+    const handleCategoryToggle = (clubId: number, categoryId: number) => {
+        const current = data.club_categories?.[clubId] ?? [];
+        const next = current.includes(categoryId)
+            ? current.filter((id) => id !== categoryId)
+            : [...current, categoryId];
+        setData("club_categories", { ...data.club_categories, [clubId]: next });
+    };
 
     const form = useForm({
         resolver: zodResolver(FormSchemaP),
@@ -283,6 +293,69 @@ const PersonnelForm = ({
                     />
                 </div>
             </div>
+
+            {/* Category access per club */}
+            {data.role !== "admin" && selectedClubs.length > 0 && (categories?.length ?? 0) > 0 && (
+                <div className="flex flex-col gap-3">
+                    <div>
+                        <Label>الأقسام المسموح بها</Label>
+                        <p className="text-sm text-muted-foreground">
+                            بدون اختيار أي قسم = جميع الأقسام في النادي
+                        </p>
+                    </div>
+                    {selectedClubs.map((clubId) => {
+                        const selectedCategoryIds = data.club_categories?.[clubId] ?? [];
+
+                        return (
+                            <div
+                                key={clubId}
+                                className="flex flex-col gap-2 rounded-md border bg-white p-3"
+                            >
+                                <div className="flex items-center justify-between gap-2">
+                                    <span className="font-medium">
+                                        {clubs.find((club) => club.id === clubId)?.name}
+                                    </span>
+                                    <span className="text-xs text-muted-foreground">
+                                        {selectedCategoryIds.length === 0
+                                            ? "جميع الأقسام"
+                                            : `${selectedCategoryIds.length} قسم`}
+                                    </span>
+                                </div>
+                                <div className="flex flex-wrap gap-2">
+                                    {categories!.map((category) => {
+                                        const isSelected = selectedCategoryIds.includes(category.id);
+
+                                        return (
+                                            <button
+                                                key={category.id}
+                                                type="button"
+                                                aria-pressed={isSelected}
+                                                onClick={() => handleCategoryToggle(clubId, category.id)}
+                                                className={cn(
+                                                    "rounded-full border px-3 py-1 text-sm transition-colors",
+                                                    isSelected
+                                                        ? "border-primary bg-primary text-primary-foreground"
+                                                        : "bg-white text-gray-700 hover:bg-gray-100"
+                                                )}
+                                            >
+                                                {category.display_name ?? category.name}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                                <FormErrorMessage
+                                    errors={
+                                        errors[`club_categories.${clubId}`] ??
+                                        Object.entries(errors).find(([key]) =>
+                                            key.startsWith(`club_categories.${clubId}.`)
+                                        )?.[1]
+                                    }
+                                />
+                            </div>
+                        );
+                    })}
+                </div>
+            )}
 
             {/* Card Field */}
             <div className="w-full">

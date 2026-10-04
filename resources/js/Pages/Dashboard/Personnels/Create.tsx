@@ -10,13 +10,14 @@ const initialFormState: TPersonnelForm = {
     mail: "",
     phone: "",
     clubs: [],
+    club_categories: {},
     role: undefined,
     card: undefined,
 };
 
 interface DashboardProps extends PageProps {
     clubs: { id: number; name: string }[];
-    categories: { id: number; name: string }[];
+    categories: { id: number; name: string; display_name?: string }[];
 }
 
 export default function Dashboard({ auth, clubs, categories }: DashboardProps) {
@@ -42,6 +43,7 @@ export default function Dashboard({ auth, clubs, categories }: DashboardProps) {
                     setData={setData}
                     errors={errors}
                     clubs={clubs}
+                    categories={categories}
                     processing={processing}
                     mode="create"
                     handleSubmit={handleSubmit}

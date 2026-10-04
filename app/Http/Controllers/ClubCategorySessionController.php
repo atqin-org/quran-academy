@@ -32,7 +32,7 @@ class ClubCategorySessionController extends Controller
     {
         $this->authorizeClubAccess($club);
 
-        $categories = Category::all();
+        $categories = Auth::user()->accessibleCategories($club->id);
         $configs = ClubCategorySession::where('club_id', $club->id)
             ->get()
             ->keyBy('category_id');
@@ -77,6 +77,12 @@ class ClubCategorySessionController extends Controller
             'configs.*.sessions_per_month' => 'required|integer|min:1|max:31',
             'configs.*.capacity' => 'nullable|integer|min:1',
         ]);
+
+        foreach ($validated['configs'] as $config) {
+            if (! Auth::user()->canAccess($club->id, (int) $config['category_id'])) {
+                abort(403, 'غير مصرح لك بتعديل إعدادات هذا القسم');
+            }
+        }
 
         foreach ($validated['configs'] as $config) {
             ClubCategorySession::updateOrCreate(

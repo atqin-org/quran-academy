@@ -16,12 +16,24 @@ use Inertia\Inertia;
 
 class ProgramController extends Controller
 {
+    private const FORBIDDEN_CATEGORY_MESSAGE = 'لا تملك صلاحية على هذا القسم في هذا النادي';
+
+    /**
+     * Abort unless the user may access the program's club and category.
+     */
+    private function authorizeProgramAccess(Program $program): void
+    {
+        if (! Auth::user()->canAccess($program->club_id, $program->category_id)) {
+            abort(403, 'غير مصرح لك بالوصول إلى هذا البرنامج');
+        }
+    }
+
     // عرض قائمة البرامج
     public function index(Request $request)
     {
         $perPage = 5;
 
-        $programs = Program::with(['subject', 'club', 'category'])
+        $programs = Auth::user()->constrainQuery(Program::with(['subject', 'club', 'category']))
             ->orderBy('created_at', 'desc')
             ->paginate($perPage)
             ->withQueryString();
@@ -36,8 +48,9 @@ class ProgramController extends Controller
     {
         return Inertia::render('Dashboard/Program/Create', [
             'subjects' => Subject::all(['id', 'name']),
-            'clubs' => Club::all(['id', 'name']),
-            'categories' => Category::all(['id', 'name', 'gender']),
+            'clubs' => Auth::user()->accessibleClubs()->map->only(['id', 'name'])->values(),
+            'categories' => Auth::user()->accessibleCategories()->map->only(['id', 'name', 'gender'])->values(),
+            'accessMap' => Auth::user()->accessMapForFrontend(),
             'days' => [
                 ['value' => 'Sat', 'label' => 'السبت'],
                 ['value' => 'Sun', 'label' => 'الأحد'],
@@ -53,6 +66,10 @@ class ProgramController extends Controller
     // تخزين برنامج جديد
     public function store(Request $request)
     {
+        if (! Auth::user()->canAccess((int) $request->input('club_id'), (int) $request->input('category_id'))) {
+            return redirect()->back()->withInput()->withErrors(['category_id' => self::FORBIDDEN_CATEGORY_MESSAGE]);
+        }
+
         $days = collect($request->input('days_of_week', []))
             ->pluck('value')
             ->toArray();
@@ -87,6 +104,8 @@ class ProgramController extends Controller
     // عرض تفاصيل برنامج واحد
     public function show(Program $program)
     {
+        $this->authorizeProgramAccess($program);
+
         $program->load([
             'subject',
             'club',
@@ -151,6 +170,8 @@ class ProgramController extends Controller
 
     public function edit(Program $program)
     {
+        $this->authorizeProgramAccess($program);
+
         $program->load('sessions');
 
         $daysMap = [
@@ -207,14 +228,21 @@ class ProgramController extends Controller
                 'sessions' => $existingSessions,
             ],
             'subjects' => Subject::all(['id', 'name']),
-            'clubs' => Club::all(['id', 'name']),
-            'categories' => Category::all(['id', 'name', 'gender']),
+            'clubs' => Auth::user()->accessibleClubs()->map->only(['id', 'name'])->values(),
+            'categories' => Auth::user()->accessibleCategories()->map->only(['id', 'name', 'gender'])->values(),
+            'accessMap' => Auth::user()->accessMapForFrontend(),
         ]);
     }
 
     // تحديث برنامج
     public function update(Request $request, Program $program)
     {
+        $this->authorizeProgramAccess($program);
+
+        if (! Auth::user()->canAccess((int) $request->input('club_id', $program->club_id), (int) $request->input('category_id', $program->category_id))) {
+            return redirect()->back()->withInput()->withErrors(['category_id' => self::FORBIDDEN_CATEGORY_MESSAGE]);
+        }
+
         $oldData = $program->toArray();
 
         $days = collect($request->input('days_of_week', []))
@@ -252,6 +280,8 @@ class ProgramController extends Controller
     // حذف برنامج
     public function destroy(Program $program)
     {
+        $this->authorizeProgramAccess($program);
+
         $programName = $program->name;
         $programId = $program->id;
 
