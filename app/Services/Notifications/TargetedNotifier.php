@@ -12,14 +12,6 @@ use Throwable;
 abstract class TargetedNotifier
 {
     /**
-     * Per-instance cache of accessible-club ids per user, populated lazily
-     * during sync() to avoid N+1 lookups.
-     *
-     * @var array<int, array<int>>
-     */
-    private array $accessibleClubIdsCache = [];
-
-    /**
      * Database `type` string identifying notifications dispatched by this notifier.
      * Must match a key in App\Notifications\Registry.
      */
@@ -51,14 +43,14 @@ abstract class TargetedNotifier
 
     /**
      * Decide whether the given user should see the given target. Default rule:
-     * admins see everything; non-admins see only targets whose `club_id` is in
-     * their attached clubs.
+     * admins see everything; non-admins see only targets whose `club_id` (and
+     * `category_id`, when present) fall inside their club / category access.
      *
      * @param  array<string, mixed>  $context
      */
     protected function targetVisibleTo(User $user, array $context): bool
     {
-        if ($user->role === 'admin') {
+        if ($user->isAdmin()) {
             return true;
         }
 
@@ -67,10 +59,9 @@ abstract class TargetedNotifier
             return false;
         }
 
-        $accessible = $this->accessibleClubIdsCache[$user->id]
-            ??= $user->clubs()->pluck('clubs.id')->all();
+        $categoryId = $context['category_id'] ?? null;
 
-        return in_array($clubId, $accessible, true);
+        return $user->canAccess((int) $clubId, $categoryId === null ? null : (int) $categoryId);
     }
 
     /**

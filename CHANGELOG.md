@@ -1,3 +1,10 @@
+## [0.1.10](https://github.com/atqin-org/quran-academy/compare/v0.1.9...v0.1.10) (2026-10-04)
+
+
+### Features
+
+* Enhance personnel and student category access management ([069dc8b](https://github.com/atqin-org/quran-academy/commit/069dc8b666b12009d8a17bb99512ef4d54bed7e9))
+
 ## [0.1.9](https://github.com/atqin-org/quran-academy/compare/v0.1.8...v0.1.9) (2026-07-25)
 
 

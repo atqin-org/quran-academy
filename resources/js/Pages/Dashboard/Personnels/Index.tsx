@@ -360,15 +360,30 @@ export default function Dashboard({
                                                 <TableCell>
                                                     <div className="flex gap-1 flex-wrap items-center">
                                                         {personnel.clubs.slice(0, 3).map(
-                                                            (club) => (
-                                                                <Badge
-                                                                    key={club.id}
-                                                                    variant="secondary"
-                                                                    className="text-xs"
-                                                                >
-                                                                    {club.name}
-                                                                </Badge>
-                                                            )
+                                                            (club) => {
+                                                                const restrictedCategories = (
+                                                                    personnel.category_restrictions ?? []
+                                                                ).filter((category) => category.pivot.club_id === club.id);
+
+                                                                return (
+                                                                    <Badge
+                                                                        key={club.id}
+                                                                        variant="secondary"
+                                                                        className="text-xs"
+                                                                        title={
+                                                                            restrictedCategories.length > 0
+                                                                                ? restrictedCategories
+                                                                                      .map((category) => category.display_name ?? category.name)
+                                                                                      .join("، ")
+                                                                                : "جميع الأقسام"
+                                                                        }
+                                                                    >
+                                                                        {club.name}
+                                                                        {restrictedCategories.length > 0 &&
+                                                                            ` · ${restrictedCategories.length} أقسام`}
+                                                                    </Badge>
+                                                                );
+                                                            }
                                                         )}
                                                         {personnel.clubs.length > 3 && (
                                                             <TooltipProvider>

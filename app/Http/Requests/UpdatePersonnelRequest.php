@@ -3,8 +3,9 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
-class StorePersonnelRequest extends FormRequest
+class UpdatePersonnelRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -12,21 +13,21 @@ class StorePersonnelRequest extends FormRequest
     }
 
     /**
-     * @return array<string, array<int, string>|string>
+     * @return array<string, array<int, mixed>|string>
      */
     public function rules(): array
     {
         return [
             'firstName' => ['required', 'string', 'max:255'],
             'lastName' => ['required', 'string', 'max:255'],
-            'clubs' => ['array', 'required_unless:role,admin'],
+            'clubs' => ['nullable', 'array', 'required_unless:role,admin'],
             'clubs.*' => ['integer', 'exists:clubs,id'],
             'club_categories' => ['nullable', 'array'],
             'club_categories.*' => ['nullable', 'array'],
             'club_categories.*.*' => ['integer', 'exists:categories,id'],
             'role' => ['required', 'in:admin,moderator,staff,teacher'],
             'phone' => ['required', 'string'],
-            'mail' => ['required', 'email', 'unique:users,email'],
+            'mail' => ['required', 'email', Rule::unique('users', 'email')->ignore($this->route('personnel'))],
         ];
     }
 

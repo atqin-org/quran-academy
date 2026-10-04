@@ -22,6 +22,18 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class StudentResourceController extends Controller
 {
+    private const FORBIDDEN_CATEGORY_MESSAGE = 'لا تملك صلاحية على هذا القسم في هذا النادي';
+
+    /**
+     * Abort unless the user may access the student's club and category.
+     */
+    private function authorizeStudentAccess(Student $student): void
+    {
+        if (! Auth::user()->canAccess($student->club_id, $student->category_id)) {
+            abort(403, 'غير مصرح لك بالوصول إلى هذا الطالب');
+        }
+    }
+
     /**
      * Display a listing of the resource.
      */
@@ -35,9 +47,9 @@ class StudentResourceController extends Controller
         $query = $archived ? Student::onlyTrashed() : Student::query();
         $user = Auth::user();
 
-        // Apply club restriction first
+        // Apply club / category restriction first
         $accessibleClubs = $user->accessibleClubs()->pluck('id')->toArray();
-        $query->whereIn('club_id', $accessibleClubs);
+        $user->constrainQuery($query);
 
         // Then apply search filter
         if ($search = $request->input('search')) {
@@ -97,22 +109,21 @@ class StudentResourceController extends Controller
         });
 
         // Adjust the counts for gender and categories based on accessible clubs
-        $genderCountsQuery = Student::select('gender', DB::raw('count(*) as total'))
-            ->whereIn('club_id', $accessibleClubs);
+        $genderCountsQuery = $user->constrainQuery(Student::select('gender', DB::raw('count(*) as total')));
         if ($archived) {
             $genderCountsQuery->onlyTrashed();
         }
         $genderCounts = $genderCountsQuery->groupBy('gender')->get();
 
-        $categoryCounts = Category::withCount(['students' => function ($query) use ($accessibleClubs, $archived) {
-            $query->whereIn('club_id', $accessibleClubs);
+        $categoryCounts = Category::withCount(['students' => function ($query) use ($user, $archived) {
+            $user->constrainQuery($query);
             if ($archived) {
                 $query->onlyTrashed();
             }
-        }])->get();
+        }])->whereIn('id', $user->accessibleCategories()->pluck('id'))->get();
 
-        $clubCounts = Club::withCount(['students' => function ($query) use ($accessibleClubs, $archived) {
-            $query->whereIn('club_id', $accessibleClubs);
+        $clubCounts = Club::withCount(['students' => function ($query) use ($user, $archived) {
+            $user->constrainQuery($query);
             if ($archived) {
                 $query->onlyTrashed();
             }
@@ -137,9 +148,8 @@ class StudentResourceController extends Controller
         $query = Student::query();
         $user = Auth::user();
 
-        // Apply club restriction
-        $accessibleClubs = $user->accessibleClubs()->pluck('id')->toArray();
-        $query->whereIn('club_id', $accessibleClubs);
+        // Apply club / category restriction
+        $user->constrainQuery($query);
 
         // Apply search filter
         if ($search = $request->input('search')) {
@@ -194,7 +204,8 @@ class StudentResourceController extends Controller
             'Dashboard/Students/Create',
             [
                 'clubs' => Auth::user()->accessibleClubs(),
-                'categories' => Category::all(),
+                'categories' => Auth::user()->accessibleCategories(),
+                'accessMap' => Auth::user()->accessMapForFrontend(),
             ]
         );
     }
@@ -231,6 +242,10 @@ class StudentResourceController extends Controller
             'picture' => 'nullable|mimes:jpg,jpeg,png,pdf|max:6144', // 6144 KB = 6 MB
             'file' => 'nullable|mimes:jpg,jpeg,png,pdf|max:6144',    // 6144 KB = 6 MB
         ]);
+
+        if (! Auth::user()->canAccess((int) $request->club, (int) $request->category)) {
+            return redirect()->back()->withInput()->withErrors(['category' => self::FORBIDDEN_CATEGORY_MESSAGE]);
+        }
 
         // Check for duplicate students (including archived) by normalized name + birthdate
         $normalizedFirst = ArabicNormalizer::normalize($request->firstName);
@@ -291,6 +306,7 @@ class StudentResourceController extends Controller
             'mother',
             'attendances.session',
         ])->findOrFail($id);
+        $this->authorizeStudentAccess($student);
 
         $totalHizb = 60;
 
@@ -466,7 +482,8 @@ class StudentResourceController extends Controller
      */
     public function edit(string $id)
     {
-        $student = Student::find($id)->load('father', 'mother');
+        $student = Student::findOrFail($id)->load('father', 'mother');
+        $this->authorizeStudentAccess($student);
         $siblings = $student->getSiblings();
 
         return Inertia::render(
@@ -475,7 +492,8 @@ class StudentResourceController extends Controller
                 'student' => $student,
                 'siblings' => $siblings,
                 'clubs' => Auth::user()->accessibleClubs(),
-                'categories' => Category::all(),
+                'categories' => Auth::user()->accessibleCategories(),
+                'accessMap' => Auth::user()->accessMapForFrontend(),
             ]
         );
     }
@@ -495,6 +513,7 @@ class StudentResourceController extends Controller
         }
         // Find the student by ID
         $student = Student::findOrFail($id);
+        $this->authorizeStudentAccess($student);
         $student->ahzab_up = $request->ahzab_up;
         $student->ahzab_down = $request->ahzab_down;
         $student->save();
@@ -512,6 +531,7 @@ class StudentResourceController extends Controller
         ]);
 
         $student = Student::findOrFail($id);
+        $this->authorizeStudentAccess($student);
         $student->memorization_direction = $request->direction;
         $student->save();
 
@@ -553,6 +573,11 @@ class StudentResourceController extends Controller
         ]);
         // Find the student by ID
         $student = Student::findOrFail($id)->load('father', 'mother');
+        $this->authorizeStudentAccess($student);
+
+        if (! Auth::user()->canAccess((int) $request->club, (int) $request->category)) {
+            return redirect()->back()->withInput()->withErrors(['category' => self::FORBIDDEN_CATEGORY_MESSAGE]);
+        }
 
         $father = Guardian::find($student->father_id);
         $mother = Guardian::find($student->mother_id);
@@ -613,6 +638,7 @@ class StudentResourceController extends Controller
     public function destroy(string $id)
     {
         $student = Student::findOrFail($id);
+        $this->authorizeStudentAccess($student);
 
         $student->delete();
 
@@ -698,10 +724,8 @@ class StudentResourceController extends Controller
         ]);
 
         $user = Auth::user();
-        $accessibleClubs = $user->accessibleClubs()->pluck('id')->toArray();
 
-        $query = Student::query()
-            ->whereIn('club_id', $accessibleClubs)
+        $query = $user->constrainQuery(Student::query())
             ->with(['club:id,name', 'category:id,name']);
 
         if (! empty($data['exclude'])) {
@@ -935,6 +959,7 @@ class StudentResourceController extends Controller
     public function payment(string $id)
     {
         $student = Student::findOrFail($id);
+        $this->authorizeStudentAccess($student);
 
         $student->delete();
 

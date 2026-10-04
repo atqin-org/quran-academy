@@ -52,6 +52,7 @@ class PendingAttendanceNotifier extends TargetedNotifier
                 'id' => $session->id,
                 'program_name' => $session->program?->name,
                 'club_id' => $session->program?->club_id,
+                'category_id' => $session->program?->category_id,
                 'club_name' => $session->program?->club?->name,
                 'category_name' => $session->program?->category?->name,
                 'session_date' => $session->session_date?->toDateString(),
