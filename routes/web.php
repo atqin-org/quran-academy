@@ -138,6 +138,7 @@ Route::middleware(['auth', 'verified', 'force-password'])->group(function () {
     Route::prefix('groups')->name('groups.')->group(function () {
         Route::get('/api', [GroupController::class, 'getGroups'])->name('index');
         Route::get('/club/{club}/{category?}', [GroupController::class, 'clubGroups'])->name('clubGroups');
+        Route::get('/club/{club}/{category}/attendance-export', [GroupController::class, 'exportAttendance'])->name('attendanceExport');
         Route::get('/manage/{club}/{category}', [GroupController::class, 'manage'])->name('manage');
         Route::post('/', [GroupController::class, 'store'])->name('store');
         Route::put('/{group}/capacity', [GroupController::class, 'updateCapacity'])->name('updateCapacity');
