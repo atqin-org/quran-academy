@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Actions\Group\CreateGroupAction;
 use App\Actions\Group\MergeGroupsAction;
 use App\Actions\Group\TransferStudentAction;
+use App\Exports\GroupAttendanceExport;
+use App\Http\Requests\ExportGroupAttendanceRequest;
 use App\Models\Category;
 use App\Models\Club;
 use App\Models\Group;
@@ -12,8 +14,12 @@ use App\Models\Student;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
+use Maatwebsite\Excel\Facades\Excel;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class GroupController extends Controller
 {
@@ -159,6 +165,51 @@ class GroupController extends Controller
             'groups' => $groups,
             'ungroupedStudents' => $ungroupedStudents,
         ]);
+    }
+
+    /**
+     * Download the attendance register (Excel) of a club+category class for a period
+     */
+    public function exportAttendance(ExportGroupAttendanceRequest $request, Club $club, Category $category): BinaryFileResponse
+    {
+        $this->authorizeClassAccess($club->id, $category->id);
+
+        $groupIds = $request->groupIds();
+
+        if ($groupIds !== null) {
+            $classGroupsCount = Group::where('club_id', $club->id)
+                ->where('category_id', $category->id)
+                ->where('is_active', true)
+                ->whereIn('id', $groupIds)
+                ->count();
+
+            if ($classGroupsCount !== count($groupIds)) {
+                throw ValidationException::withMessages([
+                    'group_ids' => 'بعض الأفواج المحددة لا تنتمي إلى هذا الفصل',
+                ]);
+            }
+        }
+
+        $from = Carbon::createFromFormat('Y-m-d', $request->validated('from'))->startOfDay();
+        $to = Carbon::createFromFormat('Y-m-d', $request->validated('to'))->startOfDay();
+        $layout = $request->validated('layout');
+
+        activity('group')
+            ->causedBy(auth()->user())
+            ->withProperties([
+                'club_id' => $club->id,
+                'category_id' => $category->id,
+                'from' => $from->toDateString(),
+                'to' => $to->toDateString(),
+                'layout' => $layout,
+                'group_ids' => $groupIds,
+            ])
+            ->log("تم تصدير سجل الحضور: {$club->name} - {$category->display_name}");
+
+        return Excel::download(
+            new GroupAttendanceExport($club, $category, $from, $to, $layout, $groupIds),
+            "attendance-club{$club->id}-cat{$category->id}-{$from->toDateString()}_{$to->toDateString()}.xlsx"
+        );
     }
 
     /**
