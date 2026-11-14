@@ -16,6 +16,13 @@ class Hizb extends Model
         'start',
     ];
 
+    protected function casts(): array
+    {
+        return [
+            'number' => 'integer',
+        ];
+    }
+
     /**
      * العلاقة: الحزب له عدة أثمان
      */

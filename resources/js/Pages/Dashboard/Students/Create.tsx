@@ -1,3 +1,4 @@
+import { AccessMap, categoriesForClub } from "@/lib/utils";
 import DashboardLayout from "@/Layouts/DashboardLayout";
 import { PageProps } from "@/types";
 import { Head, useForm as useInertiaForm } from "@inertiajs/react";
@@ -36,9 +37,10 @@ const initialFormState: TStudentForm = {
 interface DashboardProps extends PageProps {
     clubs: { id: number; name: string }[];
     categories: { id: number; name: string }[];
+    accessMap?: AccessMap;
 }
 
-export default function Dashboard({ auth, clubs, categories }: DashboardProps) {
+export default function Dashboard({ auth, clubs, categories, accessMap }: DashboardProps) {
     const { data, setData, post, processing, errors } = useInertiaForm<
         TStudentForm & { [key: string]: any }
     >(initialFormState);
@@ -64,7 +66,7 @@ export default function Dashboard({ auth, clubs, categories }: DashboardProps) {
                     setData={setData}
                     errors={errors}
                     clubs={clubs}
-                    categories={categories}
+                    categories={categoriesForClub(categories, accessMap, data.club)}
                     processing={processing}
                     mode="create"
                     handleSubmit={handleSubmit}

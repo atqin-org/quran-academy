@@ -292,7 +292,7 @@ function SessionCard({ session, isPast = false }: { session: ProgramSession; isP
                                         selected={editDate}
                                         onSelect={setEditDate}
                                         locale={ar}
-                                        initialFocus
+                                        autoFocus
                                     />
                                 </PopoverContent>
                             </Popover>
@@ -632,7 +632,7 @@ export default function Programs({ auth, program }: ProgramsProps) {
                                         selected={newSessionDate}
                                         onSelect={setNewSessionDate}
                                         locale={ar}
-                                        initialFocus
+                                        autoFocus
                                     />
                                 </PopoverContent>
                             </Popover>

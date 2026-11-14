@@ -20,7 +20,9 @@ class RecordAttendanceAction
         string $status,
         $hizb_id = null,
         $thoman_id = null,
-        $excusedReason = null
+        $excusedReason = null,
+        ?string $memorizationRating = null,
+        ?string $memorizationRemark = null
     ) {
         try {
             // Get existing attendance to check previous status
@@ -38,6 +40,8 @@ class RecordAttendanceAction
                     'thoman_id' => $thoman_id,
                     'excusedReason' => $excusedReason,
                     'group_id' => $student->group_id,
+                    'memorization_rating' => $memorizationRating,
+                    'memorization_remark' => $memorizationRemark,
                 ]
             );
 

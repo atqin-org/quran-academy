@@ -31,6 +31,16 @@ class AuthenticatedSessionController extends Controller
     {
         $request->authenticate();
 
+        if (Auth::user()?->isPending()) {
+            Auth::guard('web')->logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            return back()->withErrors([
+                'email' => 'هذا الحساب لم يقم بتفعيل كلمة المرور بعد. تحقق من رسالة الدعوة.',
+            ])->onlyInput('email');
+        }
+
         $request->session()->regenerate();
 
         return redirect()->intended(route('dashboard', absolute: false));

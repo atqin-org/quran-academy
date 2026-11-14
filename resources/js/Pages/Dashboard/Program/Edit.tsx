@@ -63,7 +63,7 @@ import axios from "axios";
 import { format, addDays, isBefore, isAfter, isSameDay, parse } from "date-fns";
 import { ar } from "date-fns/locale";
 import { DateRange } from "react-day-picker";
-import { cn } from "@/lib/utils";
+import { AccessMap, categoriesForClub, cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { Link } from "@inertiajs/react";
 
@@ -112,6 +112,7 @@ interface Props extends PageProps {
     subjects: { id: number; name: string }[];
     clubs: { id: number; name: string }[];
     categories: { id: number; name: string; display_name: string }[];
+    accessMap?: AccessMap;
 }
 
 const daysOfWeek = [
@@ -142,6 +143,7 @@ export default function ProgramEdit({
     subjects,
     clubs,
     categories,
+    accessMap,
 }: Props) {
     const [step, setStep] = useState<1 | 2 | 3>(1);
 
@@ -498,7 +500,7 @@ export default function ProgramEdit({
                                             <SelectValue placeholder="اختر الفئة" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            {categories.map((cat: any) => (
+                                            {categoriesForClub(categories, accessMap, data.club_id).map((cat: any) => (
                                                 <SelectItem key={cat.id} value={String(cat.id)}>
                                                     {cat.display_name}
                                                 </SelectItem>
@@ -588,7 +590,7 @@ export default function ProgramEdit({
                                         </PopoverTrigger>
                                         <PopoverContent className="w-auto p-0" align="start">
                                             <Calendar
-                                                initialFocus
+                                                autoFocus
                                                 mode="range"
                                                 defaultMonth={dateRange?.from}
                                                 selected={dateRange}
@@ -795,7 +797,7 @@ export default function ProgramEdit({
                                                 }
                                             }}
                                             classNames={{
-                                                day_selected: "bg-primary text-primary-foreground hover:bg-primary/90",
+                                                selected: "bg-primary text-primary-foreground hover:bg-primary/90",
                                             }}
                                         />
                                     </div>
@@ -1039,7 +1041,7 @@ export default function ProgramEdit({
                                             selected={newSessionDate}
                                             onSelect={setNewSessionDate}
                                             locale={ar}
-                                            initialFocus
+                                            autoFocus
                                         />
                                     </PopoverContent>
                                 </Popover>

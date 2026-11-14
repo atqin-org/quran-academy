@@ -1,5 +1,5 @@
-import { Link } from "@inertiajs/react";
-import { TUser } from "@/types";
+import { Link, usePage } from "@inertiajs/react";
+import { PageProps, TUser } from "@/types";
 import { profileMenuLinks } from "@/Data/Routes";
 import { cn } from "@/lib/utils";
 import {
@@ -7,6 +7,7 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from "@/Components/ui/popover";
+import Avatar from "@/Components/costume-cn/Avatar";
 
 interface ProfileMenuProps {
     auth: TUser;
@@ -29,56 +30,29 @@ const translateRole = (role: string) => {
     }
 };
 
-// Colors with good contrast for white text
-const avatarColors = [
-    "bg-red-600",
-    "bg-orange-600",
-    "bg-amber-600",
-    "bg-green-600",
-    "bg-emerald-600",
-    "bg-teal-600",
-    "bg-cyan-700",
-    "bg-sky-600",
-    "bg-blue-600",
-    "bg-indigo-600",
-    "bg-violet-600",
-    "bg-purple-600",
-    "bg-fuchsia-600",
-    "bg-pink-600",
-    "bg-rose-600",
-];
-
-// Generate a consistent color based on name
-const getAvatarColor = (name: string): string => {
-    // Generate a hash from the name
-    let hash = 0;
-    for (let i = 0; i < name.length; i++) {
-        hash = name.charCodeAt(i) + ((hash << 5) - hash);
-    }
-
-    // Use the hash to pick a color
-    const index = Math.abs(hash) % avatarColors.length;
-    return avatarColors[index];
-};
-
-// Get initials from name with separator
-const getInitials = (firstName: string, lastName: string): string => {
-    const first = firstName.charAt(0).toUpperCase();
-    const last = lastName.charAt(0).toUpperCase();
-    return `${first}.${last}`;
-};
-
 const ProfileMenu: React.FC<ProfileMenuProps> = ({
     auth,
     isCollapsed,
     mobile,
 }) => {
+    const { version } = usePage<PageProps>().props;
     const filteredLinks = profileMenuLinks.filter(
         (link) => !link.visibleFor || link.visibleFor.includes(auth.role)
     );
 
-    const initials = getInitials(auth.name, auth.last_name);
-    const avatarColor = getAvatarColor(`${auth.name} ${auth.last_name}`);
+    const dotClass =
+        version?.is_latest === true
+            ? "bg-emerald-500"
+            : version?.is_latest === false
+            ? "bg-amber-500"
+            : "bg-gray-300";
+
+    const versionTooltip =
+        version?.is_latest === true
+            ? "أحدث إصدار"
+            : version?.is_latest === false && version.latest
+            ? `إصدار جديد متوفر: v${version.latest}`
+            : "تعذّر التحقق من الإصدار";
 
     return (
         <Popover>
@@ -93,15 +67,7 @@ const ProfileMenu: React.FC<ProfileMenuProps> = ({
                         }
                     )}
                 >
-                    <div
-                        className={cn(
-                            "flex-shrink-0 flex items-center justify-center rounded-full text-white font-bold shadow-sm",
-                            avatarColor,
-                            "w-9 h-9 text-xs"
-                        )}
-                    >
-                        {initials}
-                    </div>
+                    <Avatar user={auth} size="md" />
                     {(!isCollapsed || mobile) && (
                         <div className="flex flex-col items-start text-sm flex-1 min-w-0">
                             <span className={`truncate font-semibold text-start ${mobile ? "" : "w-[100px]"}`}>
@@ -164,6 +130,38 @@ const ProfileMenu: React.FC<ProfileMenuProps> = ({
                         );
                     })}
                 </div>
+
+                {version?.current && (
+                    <div className="border-t border-gray-100 mt-1 pt-2">
+                        <a
+                            href={
+                                version.is_latest === false && version.latest_url
+                                    ? version.latest_url
+                                    : version.releases_url
+                            }
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            title={versionTooltip}
+                            className="flex items-center justify-between px-3 py-1.5 text-[11px] text-gray-400 hover:text-gray-600 transition-colors"
+                        >
+                            <span className="flex items-center gap-1.5">
+                                <span
+                                    className={cn(
+                                        "h-1.5 w-1.5 rounded-full",
+                                        dotClass
+                                    )}
+                                    aria-hidden
+                                />
+                                v{version.current}
+                            </span>
+                            {version.is_latest === false && version.latest && (
+                                <span className="text-amber-600">
+                                    تحديث متاح
+                                </span>
+                            )}
+                        </a>
+                    </div>
+                )}
             </PopoverContent>
         </Popover>
     );

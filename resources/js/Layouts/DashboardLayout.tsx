@@ -1,3 +1,4 @@
+import NotificationBell from "@/Components/NotificationBell";
 import Sidebar from "@/Components/costume-cn/Sidebar";
 import {
     Breadcrumb,
@@ -79,37 +80,40 @@ export default function DashboardLayout({
                         </SheetHeader>
                     </SheetContent>
                 </Sheet>
-                <Breadcrumb className="my-2">
-                    <BreadcrumbList>
-                        {sidebarLinkObj && (
-                            <>
-                                <BreadcrumbItem>
-                                    <BreadcrumbLink href={sidebarLinkObj.href}>
-                                        {sidebarLinkObj.label}
-                                    </BreadcrumbLink>
-                                </BreadcrumbItem>
-                                {breadcrumbLinkObj &&
-                                    sidebarLinkObj.crud === true && (
-                                        <>
-                                            <BreadcrumbSeparator>
-                                                <Slash />
-                                            </BreadcrumbSeparator>
-                                            <BreadcrumbItem>
-                                                <BreadcrumbLink
-                                                    href={
-                                                        breadcrumbLinkObj.action
-                                                    }
-                                                >
-                                                    {breadcrumbLinkObj.label}{" "}
-                                                    {sidebarLinkObj.label}
-                                                </BreadcrumbLink>
-                                            </BreadcrumbItem>
-                                        </>
-                                    )}
-                            </>
-                        )}
-                    </BreadcrumbList>
-                </Breadcrumb>
+                <div className="my-2 flex items-center justify-between gap-3">
+                    <Breadcrumb>
+                        <BreadcrumbList>
+                            {sidebarLinkObj && (
+                                <>
+                                    <BreadcrumbItem>
+                                        <BreadcrumbLink href={sidebarLinkObj.href}>
+                                            {sidebarLinkObj.label}
+                                        </BreadcrumbLink>
+                                    </BreadcrumbItem>
+                                    {breadcrumbLinkObj &&
+                                        sidebarLinkObj.crud === true && (
+                                            <>
+                                                <BreadcrumbSeparator>
+                                                    <Slash />
+                                                </BreadcrumbSeparator>
+                                                <BreadcrumbItem>
+                                                    <BreadcrumbLink
+                                                        href={
+                                                            breadcrumbLinkObj.action
+                                                        }
+                                                    >
+                                                        {breadcrumbLinkObj.label}{" "}
+                                                        {sidebarLinkObj.label}
+                                                    </BreadcrumbLink>
+                                                </BreadcrumbItem>
+                                            </>
+                                        )}
+                                </>
+                            )}
+                        </BreadcrumbList>
+                    </Breadcrumb>
+                    <NotificationBell />
+                </div>
                 <main className="mt-4 flex-grow">{children}</main>
             </div>
         </div>

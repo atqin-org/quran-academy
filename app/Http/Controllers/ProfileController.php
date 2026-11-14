@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ProfileUpdateRequest;
+use App\Notifications\Registry;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -18,9 +19,26 @@ class ProfileController extends Controller
      */
     public function edit(Request $request): Response
     {
+        $user = $request->user();
+        $preferences = collect(Registry::all())->map(function (array $meta, string $type) use ($user) {
+            $pref = $user->preferenceFor($type);
+
+            return [
+                'type' => $type,
+                'label' => $meta['label'],
+                'description' => $meta['description'],
+                'allow_email' => $meta['allow_email'],
+                'allow_push' => $meta['allow_push'],
+                'in_app' => (bool) $pref->in_app,
+                'push' => (bool) $pref->push,
+                'email' => (bool) $pref->email,
+            ];
+        })->values()->all();
+
         return Inertia::render('Dashboard/Profile/Edit', [
-            'mustVerifyEmail' => $request->user() instanceof MustVerifyEmail,
+            'mustVerifyEmail' => $user instanceof MustVerifyEmail,
             'status' => session('status'),
+            'preferences' => $preferences,
         ]);
     }
 

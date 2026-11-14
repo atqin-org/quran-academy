@@ -1,3 +1,4 @@
+import { AccessMap, categoriesForClub } from "@/lib/utils";
 import { Badge } from "@/Components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
 import {
@@ -19,6 +20,7 @@ interface DashboardProps extends PageProps {
     siblings: TSiblings[];
     clubs: { id: number; name: string }[];
     categories: { id: number; name: string }[];
+    accessMap?: AccessMap;
 }
 
 export default function Update({
@@ -27,6 +29,7 @@ export default function Update({
     siblings,
     clubs,
     categories,
+    accessMap,
 }: DashboardProps) {
     console.log(siblings);
     const { data, setData, post, processing, errors } = useInertiaForm<
@@ -120,7 +123,7 @@ export default function Update({
                     setData={setData}
                     errors={errors}
                     clubs={clubs}
-                    categories={categories}
+                    categories={categoriesForClub(categories, accessMap, data.club)}
                     processing={processing}
                     mode="edit"
                     studentId={id}

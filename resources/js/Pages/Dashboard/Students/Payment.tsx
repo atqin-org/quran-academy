@@ -28,7 +28,7 @@ import {
 } from "@/Components/ui/select";
 import { Banknote, ChevronLeft, ChevronRight, CreditCard, Shield } from "lucide-react";
 import { useMemo, useState } from "react";
-import UserAvatar from "@/Components/costume-cn/UserAvatar";
+import Avatar from "@/Components/costume-cn/Avatar";
 
 interface DashboardProps extends PageProps {
     student: any & {
@@ -606,9 +606,8 @@ export default function Dashboard({ auth, student, payments, sessionsPerMonth }:
                                         {uniqueUsers.map(user => (
                                             <SelectItem key={user.id} value={user.id.toString()}>
                                                 <div className="flex items-center gap-2">
-                                                    <UserAvatar
-                                                        firstName={user.name}
-                                                        lastName={user.last_name}
+                                                    <Avatar
+                                                        user={user}
                                                         size="xs"
                                                     />
                                                     {user.name}
@@ -668,9 +667,8 @@ export default function Dashboard({ auth, student, payments, sessionsPerMonth }:
                                                             <TooltipTrigger asChild>
                                                                 <div className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer hover:text-gray-900 transition-colors">
                                                                     {payment.user ? (
-                                                                        <UserAvatar
-                                                                            firstName={payment.user.name}
-                                                                            lastName={payment.user.last_name || ""}
+                                                                        <Avatar
+                                                                            user={payment.user}
                                                                             size="xs"
                                                                         />
                                                                     ) : null}

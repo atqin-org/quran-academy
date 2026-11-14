@@ -237,7 +237,7 @@ it('merging groups with 3+ groups keeps target group', function () {
 });
 
 it('cannot delete group with students', function () {
-    $user = User::factory()->create();
+    $user = User::factory()->create(['role' => 'admin']);
     $club = Club::factory()->create();
     $category = Category::factory()->create();
 
@@ -261,7 +261,7 @@ it('cannot delete group with students', function () {
 });
 
 it('can delete empty group when more than 2 groups exist', function () {
-    $user = User::factory()->create();
+    $user = User::factory()->create(['role' => 'admin']);
     $club = Club::factory()->create();
     $category = Category::factory()->create();
 
@@ -283,7 +283,7 @@ it('can delete empty group when more than 2 groups exist', function () {
 });
 
 it('deletes both groups when only 2 groups exist and one is deleted', function () {
-    $user = User::factory()->create();
+    $user = User::factory()->create(['role' => 'admin']);
     $club = Club::factory()->create();
     $category = Category::factory()->create();
 
@@ -368,7 +368,7 @@ it('can transfer student to ungrouped via action when no groups constraint', fun
 });
 
 it('cannot transfer student to ungrouped via controller when groups exist', function () {
-    $user = User::factory()->create();
+    $user = User::factory()->create(['role' => 'admin']);
     $club = Club::factory()->create();
     $category = Category::factory()->create();
 
@@ -403,7 +403,7 @@ it('cannot transfer student to ungrouped via controller when groups exist', func
 });
 
 it('cannot transfer last student from a group', function () {
-    $user = User::factory()->create();
+    $user = User::factory()->create(['role' => 'admin']);
     $club = Club::factory()->create();
     $category = Category::factory()->create();
 
@@ -639,7 +639,7 @@ it('groups are scoped to club and category', function () {
 });
 
 it('can get groups via ajax endpoint', function () {
-    $user = User::factory()->create();
+    $user = User::factory()->create(['role' => 'admin']);
     $club = Club::factory()->create();
     $category = Category::factory()->create();
 
@@ -658,7 +658,7 @@ it('can get groups via ajax endpoint', function () {
 });
 
 it('can bulk transfer students leaving at least one in source', function () {
-    $user = User::factory()->create();
+    $user = User::factory()->create(['role' => 'admin']);
     $club = Club::factory()->create();
     $category = Category::factory()->create();
 
@@ -695,7 +695,7 @@ it('can bulk transfer students leaving at least one in source', function () {
 });
 
 it('cannot bulk transfer all students from a group', function () {
-    $user = User::factory()->create();
+    $user = User::factory()->create(['role' => 'admin']);
     $club = Club::factory()->create();
     $category = Category::factory()->create();
 
@@ -848,7 +848,7 @@ it('attendance records survive student soft deletion', function () {
 });
 
 it('can create group with students via store endpoint', function () {
-    $user = User::factory()->create();
+    $user = User::factory()->create(['role' => 'admin']);
     $club = Club::factory()->create();
     $category = Category::factory()->create();
 
@@ -903,7 +903,7 @@ it('can create group with students via store endpoint', function () {
 });
 
 it('cannot create group with students that would empty source group', function () {
-    $user = User::factory()->create();
+    $user = User::factory()->create(['role' => 'admin']);
     $club = Club::factory()->create();
     $category = Category::factory()->create();
 

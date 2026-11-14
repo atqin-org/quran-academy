@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Category;
 use App\Models\Club;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -20,7 +21,7 @@ class ClubController extends Controller
         $usersWithNoClubsByRole = $usersWithNoClubs->groupBy('role')->map->count()->toArray();
 
         // Get all categories ordered by ID for consistent ordering (used for tooltips)
-        $allCategories = \App\Models\Category::orderBy('id')->get()->keyBy('id');
+        $allCategories = Category::orderBy('id')->get()->keyBy('id');
 
         $clubs = Club::withTrashed()
             ->with([
@@ -95,6 +96,8 @@ class ClubController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'location' => 'required|string|max:255',
+            'latitude' => 'nullable|numeric|between:-90,90',
+            'longitude' => 'nullable|numeric|between:-180,180',
         ]);
 
         Club::create($validated);
@@ -139,6 +142,8 @@ class ClubController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'location' => 'required|string|max:255',
+            'latitude' => 'nullable|numeric|between:-90,90',
+            'longitude' => 'nullable|numeric|between:-180,180',
         ]);
 
         $club = Club::withTrashed()->findOrFail($id);

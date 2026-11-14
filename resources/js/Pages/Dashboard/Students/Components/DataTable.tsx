@@ -168,7 +168,7 @@ export function DataTable<TData, TValue>({
         });
     }, [buildRequestData]);
 
-    // Auto-apply filters (sort, gender, category, club, per_page) with debounce
+    // Auto-apply filters (search, sort, gender, category, club, per_page) with debounce
     React.useEffect(() => {
         if (isInitialMount.current) {
             isInitialMount.current = false;
@@ -185,16 +185,12 @@ export function DataTable<TData, TValue>({
                 clearTimeout(debounceTimer.current);
             }
         };
-    }, [selectedSortBy, sortTypeIsAsc, selectedGender, selectedClub, selectedCategory, selectedPerPage]);
+    }, [searchTerm, selectedSortBy, sortTypeIsAsc, selectedGender, selectedClub, selectedCategory, selectedPerPage]);
 
     const handleSearchTermChange = (
         event: React.ChangeEvent<HTMLInputElement>
     ) => {
         setSearchTerm(event.target.value);
-    };
-    const handleSearchRequest = (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
-        fireRequest();
     };
     const handleSortByChange = (value: string) => {
         setSelectedSortBy(value);
@@ -251,20 +247,15 @@ export function DataTable<TData, TValue>({
     return (
         <div className="w-full">
             <div className="flex items-center py-4 gap-2 w-full">
-                <form
-                    className="flex items-center gap-2 w-full "
-                    onSubmit={handleSearchRequest}
-                >
+                <div className="relative flex items-center w-full">
+                    <Search className="absolute start-3 h-4 w-4 text-muted-foreground pointer-events-none" />
                     <Input
                         placeholder="ابحث عن طالب.."
                         value={searchTerm}
                         onChange={handleSearchTermChange}
-                        className=""
+                        className="ps-9"
                     />
-                    <Button type="submit">
-                        <Search />
-                    </Button>
-                </form>
+                </div>
                 <div className="hidden xl:flex items-center w-fit gap-2">
                     <Separator
                         orientation="vertical"

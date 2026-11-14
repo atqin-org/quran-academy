@@ -17,6 +17,14 @@ class Thoman extends Model
         'start',
     ];
 
+    protected function casts(): array
+    {
+        return [
+            'hizb_id' => 'integer',
+            'number' => 'integer',
+        ];
+    }
+
     /**
      * العلاقة: الثمن يتبع حزب واحد
      */

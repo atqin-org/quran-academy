@@ -80,6 +80,7 @@ export default {
                     "IBM Plex Sans Arabic",
                     ...defaultTheme.fontFamily.sans,
                 ],
+                quran: ["Amiri Quran", ...defaultTheme.fontFamily.serif],
             },
             keyframes: {
                 "accordion-down": {

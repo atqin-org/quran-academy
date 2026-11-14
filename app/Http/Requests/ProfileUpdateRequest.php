@@ -32,7 +32,40 @@ class ProfileUpdateRequest extends FormRequest
             'last_name' => ['required', 'string', 'max:255'],
             'phone' => ['required', 'string', 'regex:/^(?:\+213|0)[2-7]\d{8}$/'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', Rule::unique(User::class)->ignore($this->user()->id)],
+            'avatar_style' => ['nullable', 'in:initials,hashvatar,boring'],
+            'avatar_color' => ['nullable', 'regex:/^#[0-9a-fA-F]{6}$/'],
+            'avatar_variant' => ['nullable', 'in:beam,marble,pixel,sunset,ring,bauhaus'],
+            'hashvatar_mode' => ['nullable', 'in:gradient,dither'],
+            'hashvatar_animated' => ['nullable', 'boolean'],
+            'hashvatar_tones' => ['nullable', 'in:auto,ocean,sunset,forest,candy,warm,mono'],
         ];
+    }
+
+    /**
+     * Strip avatar fields that don't apply to the chosen style so stale
+     * values from a previous selection don't linger in the DB.
+     */
+    public function validated($key = null, $default = null)
+    {
+        $data = parent::validated();
+
+        $style = $data['avatar_style'] ?? null;
+
+        if ($style !== 'initials') {
+            $data['avatar_color'] = null;
+        }
+
+        if ($style !== 'boring') {
+            $data['avatar_variant'] = null;
+        }
+
+        if ($style !== 'hashvatar') {
+            $data['hashvatar_mode'] = null;
+            $data['hashvatar_animated'] = null;
+            $data['hashvatar_tones'] = null;
+        }
+
+        return $key === null ? $data : data_get($data, $key, $default);
     }
 
     /**
@@ -42,6 +75,7 @@ class ProfileUpdateRequest extends FormRequest
     {
         return [
             'phone.regex' => 'رقم الهاتف غير صالح. الرجاء إدخال رقم جزائري (مثال: 0555123456 أو +213555123456).',
+            'avatar_color.regex' => 'لون الصورة الرمزية غير صالح.',
         ];
     }
 }

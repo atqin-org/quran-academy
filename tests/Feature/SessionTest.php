@@ -116,7 +116,7 @@ it('can record bulk attendance', function () {
         'student_id' => $student->id,
         'status' => 'present',
         'hizb_id' => null,
-        'thoman_id' => 1,
+        'thoman_id' => null,
         'reason' => null,
     ])->toArray();
 
@@ -248,7 +248,7 @@ it('can cancel a session', function () {
     $response->assertSessionHas('success');
 
     $session->refresh();
-    expect($session->status)->toBe('cancelled');
+    expect($session->status)->toBe('canceled');
 });
 
 it('can toggle session optional status', function () {

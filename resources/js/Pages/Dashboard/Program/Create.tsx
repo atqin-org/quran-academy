@@ -62,7 +62,7 @@ import { format, addDays, isBefore, isAfter, isSameDay } from "date-fns";
 import axios from "axios";
 import { ar } from "date-fns/locale";
 import { DateRange } from "react-day-picker";
-import { cn } from "@/lib/utils";
+import { categoriesForClub, cn } from "@/lib/utils";
 import { toast } from "sonner";
 
 interface SessionPreview {
@@ -108,6 +108,7 @@ export default function ProgramCreate({
     subjects,
     clubs,
     categories,
+    accessMap,
 }: any) {
     const [step, setStep] = useState<1 | 2 | 3>(1);
     const [dateRange, setDateRange] = useState<DateRange | undefined>();
@@ -423,7 +424,7 @@ export default function ProgramCreate({
                                             <SelectValue placeholder="اختر الفئة" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            {categories.map((cat: any) => (
+                                            {categoriesForClub(categories, accessMap, data.club_id).map((cat: any) => (
                                                 <SelectItem key={cat.id} value={String(cat.id)}>
                                                     {cat.display_name}
                                                 </SelectItem>
@@ -513,7 +514,7 @@ export default function ProgramCreate({
                                         </PopoverTrigger>
                                         <PopoverContent className="w-auto p-0" align="start">
                                             <Calendar
-                                                initialFocus
+                                                autoFocus
                                                 mode="range"
                                                 defaultMonth={dateRange?.from}
                                                 selected={dateRange}
@@ -706,7 +707,7 @@ export default function ProgramCreate({
                                                 }
                                             }}
                                             classNames={{
-                                                day_selected: "bg-primary text-primary-foreground hover:bg-primary/90",
+                                                selected: "bg-primary text-primary-foreground hover:bg-primary/90",
                                             }}
                                         />
                                     </div>
@@ -946,7 +947,7 @@ export default function ProgramCreate({
                                             selected={newSessionDate}
                                             onSelect={setNewSessionDate}
                                             locale={ar}
-                                            initialFocus
+                                            autoFocus
                                         />
                                     </PopoverContent>
                                 </Popover>

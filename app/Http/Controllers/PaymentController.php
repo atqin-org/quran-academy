@@ -37,7 +37,8 @@ class PaymentController extends Controller
 
         // check expact values and the calculated values
 
-        $student = Student::find($request->student_id);
+        $student = Student::findOrFail($request->student_id);
+        abort_unless(auth()->user()->canAccess($student->club_id, $student->category_id), 403);
         $expect = $request->input('expect', []);
         if ($request->type == 'ins') {
             $expect['duration'] = 33;
@@ -60,9 +61,11 @@ class PaymentController extends Controller
                 }
             }
 
-            // Calculate next October 31 from base date
+            // Calculate next October 31 from base date.
+            // If the base date is already on/after Oct 31 (e.g. renewing an
+            // existing policy that expires today), push to next year's Oct 31.
             $nextOctober31 = Carbon::create($baseDate->year, 10, 31, 0, 0, 0);
-            if ($baseDate->greaterThan($nextOctober31)) {
+            if ($baseDate->greaterThanOrEqualTo($nextOctober31)) {
                 $nextOctober31->addYear();
             }
 
@@ -118,7 +121,9 @@ class PaymentController extends Controller
      */
     public function show(Student $student)
     {
-        $payments = Payment::with('user:id,name,last_name,phone,role')
+        abort_unless(auth()->user()->canAccess($student->club_id, $student->category_id), 403);
+
+        $payments = Payment::with('user:id,name,last_name,phone,role,avatar_style,avatar_color,avatar_variant,hashvatar_mode,hashvatar_animated,hashvatar_tones')
             ->where('student_id', $student->id)
             ->latest()
             ->get();

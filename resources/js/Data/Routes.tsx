@@ -1,5 +1,6 @@
 import {
     Backpack,
+    Bell,
     ChartPie,
     DatabaseBackup,
     House,
@@ -9,6 +10,7 @@ import {
     NotebookPen,
     Presentation,
     ScrollText,
+    Send,
     User,
     Users,
 } from "lucide-react";
@@ -109,6 +111,20 @@ export const profileMenuLinks = [
         label: "نسخ احتياطي",
         latin: "Backups",
         href: "/system/backup",
+        visibleFor: ["admin"],
+    },
+    {
+        icon: <Bell className="h-4 w-4" />,
+        label: "أنواع التنبيهات",
+        latin: "Notification Types",
+        href: "/system/notification-types",
+        visibleFor: ["admin"],
+    },
+    {
+        icon: <Send className="h-4 w-4" />,
+        label: "دعوات الموظفين",
+        latin: "Personnel Invites",
+        href: "/settings/personnel-invite",
         visibleFor: ["admin"],
     },
     {

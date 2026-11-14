@@ -1,12 +1,16 @@
 <?php
 
+use App\Http\Controllers\AdminNotificationTypeController;
 use App\Http\Controllers\BackupController;
 use App\Http\Controllers\ClubCategorySessionController;
 use App\Http\Controllers\ClubController;
 use App\Http\Controllers\GroupController;
 use App\Http\Controllers\LogController;
+use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\NotificationPreferenceController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PersonnelController;
+use App\Http\Controllers\PersonnelInviteSettingsController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProgramController;
 use App\Http\Controllers\ProgramSessionController;
@@ -16,7 +20,7 @@ use App\Http\Middleware\AdminMiddleware;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
-Route::middleware(['auth', 'verified'])->group(function () {
+Route::middleware(['auth', 'verified', 'force-password'])->group(function () {
     // Merge-and-force-delete flow for duplicate students. Declared before the
     // resource so the literal `merge-candidates` segment does not get matched
     // as the `{student}` parameter of `students.show`.
@@ -24,13 +28,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('students.mergeCandidates')
         ->middleware(AdminMiddleware::class);
 
-    Route::resource('/students', StudentResourceController::class);
+    Route::resource('/students', StudentResourceController::class)->except(['update']);
     Route::post('/students/{student}', [StudentResourceController::class, 'update'])->name('students.update');
     Route::put('/students/ahzab/{student}', [StudentResourceController::class, 'ahzab'])->name('students.ahzab');
     Route::put('/students/{student}/direction', [StudentResourceController::class, 'updateDirection'])->name('students.direction');
     Route::get('/studentsExport', [StudentResourceController::class, 'export'])->name('students.export');
     Route::post('/students/{student}/restore', [StudentResourceController::class, 'restore'])->name('students.restore')->middleware(AdminMiddleware::class);
     Route::delete('/students/{student}/force-delete', [StudentResourceController::class, 'forceDelete'])->name('students.forceDelete')->middleware(AdminMiddleware::class);
+    Route::get('/students/{student}/activity-log', [StudentResourceController::class, 'activityLog'])
+        ->name('students.activityLog')
+        ->middleware(AdminMiddleware::class);
     Route::get('/students/{trashed}/merge-payload/{canonical}', [StudentResourceController::class, 'mergePayload'])
         ->name('students.mergePayload')
         ->middleware(AdminMiddleware::class);
@@ -49,6 +56,19 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/personnels/{personnel}/restore', [PersonnelController::class, 'restore'])
         ->name('personnels.restore')
         ->middleware(AdminMiddleware::class);
+    Route::post('/personnels/{personnel}/resend-invite', [PersonnelController::class, 'resendInvite'])
+        ->name('personnels.resend-invite')
+        ->middleware(AdminMiddleware::class);
+    Route::post('/personnels/{personnel}/copy-invite-link', [PersonnelController::class, 'copyInviteLink'])
+        ->name('personnels.copy-invite-link')
+        ->middleware(AdminMiddleware::class);
+
+    Route::middleware(AdminMiddleware::class)->group(function () {
+        Route::get('/settings/personnel-invite', [PersonnelInviteSettingsController::class, 'index'])
+            ->name('settings.personnel-invite.edit');
+        Route::put('/settings/personnel-invite', [PersonnelInviteSettingsController::class, 'update'])
+            ->name('settings.personnel-invite.update');
+    });
 
     Route::get('/system/backup', function () {
         return Inertia::render('Dashboard/System/BackupDatabase');
@@ -70,6 +90,18 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+    Route::put('/profile/notifications', [NotificationPreferenceController::class, 'update'])->name('profile.notifications.update');
+
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead'])->name('notifications.readAll');
+    Route::post('/notifications/{id}/read', [NotificationController::class, 'markRead'])->name('notifications.read');
+    Route::delete('/notifications/{id}', [NotificationController::class, 'destroy'])->name('notifications.destroy');
+
+    Route::middleware(AdminMiddleware::class)->group(function () {
+        Route::get('/system/notification-types', [AdminNotificationTypeController::class, 'index'])->name('admin.notificationTypes.index');
+        Route::put('/system/notification-types', [AdminNotificationTypeController::class, 'update'])->name('admin.notificationTypes.update');
+    });
 
     Route::get('/system/logs', [LogController::class, 'index'])->name('admin.logs.index')->middleware(AdminMiddleware::class);
 
@@ -108,6 +140,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/club/{club}/{category?}', [GroupController::class, 'clubGroups'])->name('clubGroups');
         Route::get('/manage/{club}/{category}', [GroupController::class, 'manage'])->name('manage');
         Route::post('/', [GroupController::class, 'store'])->name('store');
+        Route::put('/{group}/capacity', [GroupController::class, 'updateCapacity'])->name('updateCapacity');
         Route::delete('/{group}', [GroupController::class, 'destroy'])->name('destroy');
         Route::post('/merge', [GroupController::class, 'merge'])->name('merge');
         Route::post('/transfer-student', [GroupController::class, 'transferStudent'])->name('transferStudent');
@@ -164,6 +197,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // Record attendance
         Route::post('/{session}/attendance', [ProgramSessionController::class, 'recordAttendance'])->name('recordAttendance');
         Route::post('/{session}/attendance-bulk', [ProgramSessionController::class, 'recordAttendanceBulk'])->name('recordAttendanceBulk');
+
+        // Record repetitions (تكرار) for a single student in the session
+        Route::post('/{session}/repetitions-bulk', [ProgramSessionController::class, 'recordRepetitionsBulk'])->name('recordRepetitionsBulk');
     });
 });
 
@@ -177,7 +213,7 @@ Route::get('/', function () {
 
 Route::get('/dashboard', function () {
     return redirect()->route('students.index');
-})->middleware(['auth', 'verified'])->name('dashboard');
+})->middleware(['auth', 'verified', 'force-password'])->name('dashboard');
 
 Route::middleware(['auth', 'verified'])->group(function () {})->middleware(AdminMiddleware::class);
 

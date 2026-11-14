@@ -5,12 +5,12 @@ namespace App\Http\Controllers;
 use App\Exports\StudentsExport;
 use App\Helpers\ArabicNormalizer;
 use App\Http\Requests\MergeAndForceDeleteRequest;
+use App\Http\Resources\ActivityLogResource;
 use App\Models\Category;
 use App\Models\Club;
 use App\Models\Guardian;
 use App\Models\Payment;
 use App\Models\Student;
-use App\Rules\AtLeastOnePhone;
 use App\Rules\FileOrString;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
@@ -22,18 +22,34 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class StudentResourceController extends Controller
 {
+    private const FORBIDDEN_CATEGORY_MESSAGE = 'لا تملك صلاحية على هذا القسم في هذا النادي';
+
+    /**
+     * Abort unless the user may access the student's club and category.
+     */
+    private function authorizeStudentAccess(Student $student): void
+    {
+        if (! Auth::user()->canAccess($student->club_id, $student->category_id)) {
+            abort(403, 'غير مصرح لك بالوصول إلى هذا الطالب');
+        }
+    }
+
     /**
      * Display a listing of the resource.
      */
     public function index(Request $request)
     {
+        // Remember the full URL so create/update/destroy can redirect back
+        // here with the same filters / search / page intact.
+        session(['students_index_url' => $request->fullUrl()]);
+
         $archived = $request->boolean('archived');
         $query = $archived ? Student::onlyTrashed() : Student::query();
         $user = Auth::user();
 
-        // Apply club restriction first
+        // Apply club / category restriction first
         $accessibleClubs = $user->accessibleClubs()->pluck('id')->toArray();
-        $query->whereIn('club_id', $accessibleClubs);
+        $user->constrainQuery($query);
 
         // Then apply search filter
         if ($search = $request->input('search')) {
@@ -93,22 +109,21 @@ class StudentResourceController extends Controller
         });
 
         // Adjust the counts for gender and categories based on accessible clubs
-        $genderCountsQuery = Student::select('gender', DB::raw('count(*) as total'))
-            ->whereIn('club_id', $accessibleClubs);
+        $genderCountsQuery = $user->constrainQuery(Student::select('gender', DB::raw('count(*) as total')));
         if ($archived) {
             $genderCountsQuery->onlyTrashed();
         }
         $genderCounts = $genderCountsQuery->groupBy('gender')->get();
 
-        $categoryCounts = Category::withCount(['students' => function ($query) use ($accessibleClubs, $archived) {
-            $query->whereIn('club_id', $accessibleClubs);
+        $categoryCounts = Category::withCount(['students' => function ($query) use ($user, $archived) {
+            $user->constrainQuery($query);
             if ($archived) {
                 $query->onlyTrashed();
             }
-        }])->get();
+        }])->whereIn('id', $user->accessibleCategories()->pluck('id'))->get();
 
-        $clubCounts = Club::withCount(['students' => function ($query) use ($accessibleClubs, $archived) {
-            $query->whereIn('club_id', $accessibleClubs);
+        $clubCounts = Club::withCount(['students' => function ($query) use ($user, $archived) {
+            $user->constrainQuery($query);
             if ($archived) {
                 $query->onlyTrashed();
             }
@@ -133,9 +148,8 @@ class StudentResourceController extends Controller
         $query = Student::query();
         $user = Auth::user();
 
-        // Apply club restriction
-        $accessibleClubs = $user->accessibleClubs()->pluck('id')->toArray();
-        $query->whereIn('club_id', $accessibleClubs);
+        // Apply club / category restriction
+        $user->constrainQuery($query);
 
         // Apply search filter
         if ($search = $request->input('search')) {
@@ -190,7 +204,8 @@ class StudentResourceController extends Controller
             'Dashboard/Students/Create',
             [
                 'clubs' => Auth::user()->accessibleClubs(),
-                'categories' => Category::all(),
+                'categories' => Auth::user()->accessibleCategories(),
+                'accessMap' => Auth::user()->accessMapForFrontend(),
             ]
         );
     }
@@ -214,8 +229,8 @@ class StudentResourceController extends Controller
             'socialStatus' => 'required|in:good,mid,low',
             'hasCronicDisease' => 'required|in:yes,no',
             'cronicDisease' => 'nullable|string',
-            'father.phone' => ['nullable', 'regex:/^0[567]\d{8}$/', new AtLeastOnePhone('motherPhone')],
-            'mother.phone' => ['nullable', 'regex:/^0[567]\d{8}$/', new AtLeastOnePhone('fatherPhone')],
+            'father.phone' => ['required_without:mother.phone', 'nullable', 'regex:/^0[567]\d{8}$/'],
+            'mother.phone' => ['required_without:father.phone', 'nullable', 'regex:/^0[567]\d{8}$/'],
             'father.name' => 'nullable|string',
             'mother.name' => 'nullable|string',
             'father.job' => 'nullable|string',
@@ -227,6 +242,10 @@ class StudentResourceController extends Controller
             'picture' => 'nullable|mimes:jpg,jpeg,png,pdf|max:6144', // 6144 KB = 6 MB
             'file' => 'nullable|mimes:jpg,jpeg,png,pdf|max:6144',    // 6144 KB = 6 MB
         ]);
+
+        if (! Auth::user()->canAccess((int) $request->club, (int) $request->category)) {
+            return redirect()->back()->withInput()->withErrors(['category' => self::FORBIDDEN_CATEGORY_MESSAGE]);
+        }
 
         // Check for duplicate students (including archived) by normalized name + birthdate
         $normalizedFirst = ArabicNormalizer::normalize($request->firstName);
@@ -250,24 +269,29 @@ class StudentResourceController extends Controller
             return redirect()->back()->withInput()->withErrors(['firstName' => $message]);
         }
 
-        $father_id = Guardian::create([
-            'phone' => $request->father['phone'],
-            'name' => $request->father['name'],
-            'job' => $request->father['job'],
-            'gender' => 'male',
-        ])->id;
-        $mother_id = Guardian::create([
-            'phone' => $request->mother['phone'],
-            'name' => $request->mother['name'],
-            'job' => $request->mother['job'],
-            'gender' => 'female',
-        ])->id;
+        $father_id = $this->isGuardianDataEmpty($request->father)
+            ? null
+            : Guardian::create([
+                'phone' => $request->father['phone'] ?? null,
+                'name' => $request->father['name'] ?? null,
+                'job' => $request->father['job'] ?? null,
+                'gender' => 'male',
+            ])->id;
+        $mother_id = $this->isGuardianDataEmpty($request->mother)
+            ? null
+            : Guardian::create([
+                'phone' => $request->mother['phone'] ?? null,
+                'name' => $request->mother['name'] ?? null,
+                'job' => $request->mother['job'] ?? null,
+                'gender' => 'female',
+            ])->id;
         // add $father_id and $mother_id to the student
         $request->merge(['father_id' => $father_id, 'mother_id' => $mother_id]);
         Student::create($request->all());
 
-        // redirect to the students index page
-        return redirect()->route('students.index')->with('success', 'تم إضافة الطالب بنجاح');
+        // redirect back to the index page, preserving any active filters
+        return redirect(session('students_index_url', route('students.index')))
+            ->with('success', 'تم إضافة الطالب بنجاح');
     }
 
     /**
@@ -282,6 +306,7 @@ class StudentResourceController extends Controller
             'mother',
             'attendances.session',
         ])->findOrFail($id);
+        $this->authorizeStudentAccess($student);
 
         $totalHizb = 60;
 
@@ -457,7 +482,8 @@ class StudentResourceController extends Controller
      */
     public function edit(string $id)
     {
-        $student = Student::find($id)->load('father', 'mother');
+        $student = Student::findOrFail($id)->load('father', 'mother');
+        $this->authorizeStudentAccess($student);
         $siblings = $student->getSiblings();
 
         return Inertia::render(
@@ -466,7 +492,8 @@ class StudentResourceController extends Controller
                 'student' => $student,
                 'siblings' => $siblings,
                 'clubs' => Auth::user()->accessibleClubs(),
-                'categories' => Category::all(),
+                'categories' => Auth::user()->accessibleCategories(),
+                'accessMap' => Auth::user()->accessMapForFrontend(),
             ]
         );
     }
@@ -486,6 +513,7 @@ class StudentResourceController extends Controller
         }
         // Find the student by ID
         $student = Student::findOrFail($id);
+        $this->authorizeStudentAccess($student);
         $student->ahzab_up = $request->ahzab_up;
         $student->ahzab_down = $request->ahzab_down;
         $student->save();
@@ -503,6 +531,7 @@ class StudentResourceController extends Controller
         ]);
 
         $student = Student::findOrFail($id);
+        $this->authorizeStudentAccess($student);
         $student->memorization_direction = $request->direction;
         $student->save();
 
@@ -529,8 +558,8 @@ class StudentResourceController extends Controller
             'socialStatus' => 'required|in:good,mid,low',
             'hasCronicDisease' => 'required|in:yes,no',
             'cronicDisease' => 'nullable|string',
-            'father.phone' => ['nullable', 'regex:/^0[567]\d{8}$/', new AtLeastOnePhone('motherPhone')],
-            'mother.phone' => ['nullable', 'regex:/^0[567]\d{8}$/', new AtLeastOnePhone('fatherPhone')],
+            'father.phone' => ['required_without:mother.phone', 'nullable', 'regex:/^0[567]\d{8}$/'],
+            'mother.phone' => ['required_without:father.phone', 'nullable', 'regex:/^0[567]\d{8}$/'],
             'father.name' => 'nullable|string',
             'mother.name' => 'nullable|string',
             'father.job' => 'nullable|string',
@@ -544,40 +573,53 @@ class StudentResourceController extends Controller
         ]);
         // Find the student by ID
         $student = Student::findOrFail($id)->load('father', 'mother');
+        $this->authorizeStudentAccess($student);
+
+        if (! Auth::user()->canAccess((int) $request->club, (int) $request->category)) {
+            return redirect()->back()->withInput()->withErrors(['category' => self::FORBIDDEN_CATEGORY_MESSAGE]);
+        }
 
         $father = Guardian::find($student->father_id);
         $mother = Guardian::find($student->mother_id);
-        if ($father) {
+        $fatherEmpty = $this->isGuardianDataEmpty($request->father);
+        $motherEmpty = $this->isGuardianDataEmpty($request->mother);
+
+        if ($father && ! $fatherEmpty) {
             $father->update([
-                'phone' => $request->father['phone'],
-                'name' => $request->father['name'],
-                'job' => $request->father['job'],
+                'phone' => $request->father['phone'] ?? null,
+                'name' => $request->father['name'] ?? null,
+                'job' => $request->father['job'] ?? null,
             ]);
-        } else {
+        } elseif (! $father && ! $fatherEmpty) {
             $father = Guardian::create([
-                'phone' => $request->father['phone'],
-                'name' => $request->father['name'],
-                'job' => $request->father['job'],
+                'phone' => $request->father['phone'] ?? null,
+                'name' => $request->father['name'] ?? null,
+                'job' => $request->father['job'] ?? null,
                 'gender' => 'male',
             ]);
             $student->father_id = $father->id;
         }
-        if ($mother) {
+
+        if ($mother && ! $motherEmpty) {
             $mother->update([
-                'phone' => $request->mother['phone'],
-                'name' => $request->mother['name'],
-                'job' => $request->mother['job'],
+                'phone' => $request->mother['phone'] ?? null,
+                'name' => $request->mother['name'] ?? null,
+                'job' => $request->mother['job'] ?? null,
             ]);
-        } else {
+        } elseif (! $mother && ! $motherEmpty) {
             $mother = Guardian::create([
-                'phone' => $request->mother['phone'],
-                'name' => $request->mother['name'],
-                'job' => $request->mother['job'],
+                'phone' => $request->mother['phone'] ?? null,
+                'name' => $request->mother['name'] ?? null,
+                'job' => $request->mother['job'] ?? null,
                 'gender' => 'female',
             ]);
             $student->mother_id = $mother->id;
         }
-        $request->merge(['father_id' => $father->id, 'mother_id' => $mother->id]);
+
+        $request->merge([
+            'father_id' => $father?->id,
+            'mother_id' => $mother?->id,
+        ]);
 
         // Update the student with validated data
         $student->update($request->all());
@@ -585,8 +627,9 @@ class StudentResourceController extends Controller
         // Save the updated student
         $student->save();
 
-        // Redirect with a success message
-        return redirect()->route('students.index')->with('success', 'تم تحديث الطالب بنجاح');
+        // Redirect back to the index page, preserving any active filters
+        return redirect(session('students_index_url', route('students.index')))
+            ->with('success', 'تم تحديث الطالب بنجاح');
     }
 
     /**
@@ -595,6 +638,7 @@ class StudentResourceController extends Controller
     public function destroy(string $id)
     {
         $student = Student::findOrFail($id);
+        $this->authorizeStudentAccess($student);
 
         $student->delete();
 
@@ -680,10 +724,8 @@ class StudentResourceController extends Controller
         ]);
 
         $user = Auth::user();
-        $accessibleClubs = $user->accessibleClubs()->pluck('id')->toArray();
 
-        $query = Student::query()
-            ->whereIn('club_id', $accessibleClubs)
+        $query = $user->constrainQuery(Student::query())
             ->with(['club:id,name', 'category:id,name']);
 
         if (! empty($data['exclude'])) {
@@ -869,6 +911,33 @@ class StudentResourceController extends Controller
     }
 
     /**
+     * Treat the request guardian payload as empty when name, phone, and job are
+     * all blank/null. Prevents the controller from creating placeholder
+     * Guardian rows (id + gender + timestamps only) when the form left the
+     * other parent untouched.
+     *
+     * @param  array<string, mixed>|null  $data
+     */
+    private function isGuardianDataEmpty(?array $data): bool
+    {
+        if ($data === null) {
+            return true;
+        }
+
+        foreach (['name', 'phone', 'job'] as $field) {
+            $value = $data[$field] ?? null;
+            if (is_string($value) && trim($value) !== '') {
+                return false;
+            }
+            if (! is_string($value) && $value !== null && $value !== '') {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
      * @return array<string, mixed>
      */
     private function serializePayment(Payment $payment): array
@@ -890,9 +959,30 @@ class StudentResourceController extends Controller
     public function payment(string $id)
     {
         $student = Student::findOrFail($id);
+        $this->authorizeStudentAccess($student);
 
         $student->delete();
 
-        return redirect()->route('students.index')->with('success', 'تم حذف الطالب بنجاح');
+        return redirect(session('students_index_url', route('students.index')))
+            ->with('success', 'تم حذف الطالب بنجاح');
+    }
+
+    /**
+     * Return the full activity-log timeline for a single student as JSON.
+     * Admin-only via route middleware. Includes soft-deleted students so the
+     * modal works from the archived tab.
+     */
+    public function activityLog(string $id): JsonResponse
+    {
+        $student = Student::withTrashed()->findOrFail($id);
+
+        $logs = $student->activities()
+            ->with('causer')
+            ->latest()
+            ->get();
+
+        return response()->json([
+            'logs' => ActivityLogResource::collection($logs),
+        ]);
     }
 }

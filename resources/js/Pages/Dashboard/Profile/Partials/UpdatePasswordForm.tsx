@@ -3,6 +3,7 @@ import InputError from "@/Components/InputError";
 import InputLabel from "@/Components/InputLabel";
 import PrimaryButton from "@/Components/PrimaryButton";
 import TextInput from "@/Components/TextInput";
+import PasswordStrength, { isPasswordValid } from "@/Components/PasswordStrength";
 import { useForm } from "@inertiajs/react";
 import { Transition } from "@headlessui/react";
 
@@ -27,6 +28,10 @@ export default function UpdatePasswordForm({
         password: "",
         password_confirmation: "",
     });
+
+    const isValid =
+        data.current_password.length > 0 &&
+        isPasswordValid(data.password, data.password_confirmation);
 
     const updatePassword: FormEventHandler = (e) => {
         e.preventDefault();
@@ -128,8 +133,13 @@ export default function UpdatePasswordForm({
                     />
                 </div>
 
+                <PasswordStrength
+                    password={data.password}
+                    confirmation={data.password_confirmation}
+                />
+
                 <div className="flex items-center gap-4">
-                    <PrimaryButton disabled={processing}>
+                    <PrimaryButton disabled={processing || !isValid}>
                         تحديث كلمة المرور
                     </PrimaryButton>
 

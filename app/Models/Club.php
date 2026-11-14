@@ -13,6 +13,13 @@ class Club extends Model
     protected $fillable = [
         'name',
         'location',
+        'latitude',
+        'longitude',
+    ];
+
+    protected $casts = [
+        'latitude' => 'float',
+        'longitude' => 'float',
     ];
 
     public function students()

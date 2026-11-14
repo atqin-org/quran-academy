@@ -12,8 +12,12 @@ class ActivityLogResource extends JsonResource
         return [
             'id' => $this->id,
             'type' => $this->log_name,
+            'event' => $this->event,
+            'subject_id' => $this->subject_id,
+            'subject_type' => $this->subject_type,
             'description' => $this->description,
             'causer' => $this->causer ? [
+                'id' => $this->causer->id,
                 'name' => $this->causer->name,
                 'email' => $this->causer->email,
             ] : null,
