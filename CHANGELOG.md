@@ -1,3 +1,15 @@
+## [0.1.11](https://github.com/atqin-org/quran-academy/compare/v0.1.10...v0.1.11) (2026-11-14)
+
+
+### Bug Fixes
+
+* change file permissions for multiple .gitignore files ([3aee9bd](https://github.com/atqin-org/quran-academy/commit/3aee9bd3c1ef71d50728d818b30a056e73bc40a3))
+
+
+### Features
+
+* add group attendance export functionality ([000f463](https://github.com/atqin-org/quran-academy/commit/000f463b4cc247197cba508e9c770c39012187ed))
+
 ## [0.1.10](https://github.com/atqin-org/quran-academy/compare/v0.1.9...v0.1.10) (2026-10-04)
 
 
