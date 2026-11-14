@@ -20,6 +20,7 @@ import {
     Merge,
     FolderOpen,
     AlertTriangle,
+    FileSpreadsheet,
 } from "lucide-react";
 import { useState, useMemo } from "react";
 import {
@@ -40,6 +41,7 @@ import {
 import { Checkbox } from "@/Components/ui/checkbox";
 import { Label } from "@/Components/ui/label";
 import { cn } from "@/lib/utils";
+import AttendanceExportDialog from "./Components/AttendanceExportDialog";
 
 interface Student {
     id: number;
@@ -94,6 +96,7 @@ export default function Index({
     const [mergeDialogOpen, setMergeDialogOpen] = useState(false);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [createDialogOpen, setCreateDialogOpen] = useState(false);
+    const [exportDialogOpen, setExportDialogOpen] = useState(false);
     const [groupToDelete, setGroupToDelete] = useState<Group | null>(null);
     const [sourceGroupForMerge, setSourceGroupForMerge] = useState<string>("");
     const [targetGroupForMerge, setTargetGroupForMerge] = useState<string>("");
@@ -500,6 +503,14 @@ export default function Index({
                                         </Badge>
                                     </div>
                                     <div className="flex gap-2">
+                                        <Button
+                                            variant="outline"
+                                            onClick={() => setExportDialogOpen(true)}
+                                            className="gap-2"
+                                        >
+                                            <FileSpreadsheet className="h-4 w-4" />
+                                            تصدير الحضور
+                                        </Button>
                                         {groups.length >= 2 && (
                                             <Button
                                                 variant="outline"
@@ -755,6 +766,17 @@ export default function Index({
                         )}
                     </div>
                 </div>
+
+                {selectedCategory && (
+                    <AttendanceExportDialog
+                        open={exportDialogOpen}
+                        onOpenChange={setExportDialogOpen}
+                        club={club}
+                        category={selectedCategory}
+                        groups={groups}
+                        ungroupedCount={ungroupedStudents.length}
+                    />
+                )}
 
                 {/* Transfer Dialog */}
                 <Dialog
